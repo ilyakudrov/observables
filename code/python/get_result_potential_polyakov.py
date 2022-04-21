@@ -42,14 +42,22 @@ def potential_polyakov_numba(x):
     return y
 
 
+HYP_alpha1 = 1
+HYP_alpha2 = 1
+HYP_alpha3 = 0.5
+APE_alpha = 0.75
+HYP_steps = 1
+APE_steps = 0
 conf_type = "qc2dstag"
 # conf_type = "SU2_dinam"
-conf_sizes = ["40^4", "32^4"]
+# conf_sizes = ["40^4", "32^4"]
 # conf_sizes = ["32^4"]
-# conf_sizes = ["40^4"]
+conf_sizes = ["40^4"]
+# conf_sizes = ["24^4"]
 
 # for monopole in ['/', 'monopoless', 'monopole']:
-for monopole in ['/', 'monopoless']:
+# for monopole in ['/', 'monopoless']:
+for monopole in ['/']:
     for conf_size in conf_sizes:
         if conf_size == '40^4':
             conf_max = 700
@@ -60,13 +68,18 @@ for monopole in ['/', 'monopoless']:
             conf_max = 2800
             mu1 = ['0.00']
             chains = {"/"}
+        elif conf_size == '24^4':
+            conf_max = 2100
+            mu1 = ['0.05']
+            chains = {"/"}
         for mu in mu1:
             data = []
             for chain in chains:
                 for i in range(0, conf_max):
                     # file_path = f"../../data/flux_tube/qc2dstag/{conf_size}/HYP_APE/mu{mu}/s{chain}/T={T}/R={R}/electric_{i:04}"
                     # file_path = f"../../data/flux_tube/qc2dstag/{conf_size}/HYP_APE/mu{mu}/T={T}/R={R}/electric_{i:04}"
-                    file_path = f"../../data/polyakov_loop/{monopole}/qc2dstag/{conf_size}/mu{mu}/HYP6_APE0/{chain}/polyakov_loop_{i:04}"
+                    file_path = f"../../data/polyakov_loop/{monopole}/qc2dstag/{conf_size}/mu{mu}/HYP{HYP_steps}_alpha={HYP_alpha1}_{HYP_alpha2}_{HYP_alpha3}_APE{APE_steps}_APE_alpha={APE_alpha}/{chain}/polyakov_loop_{i:04}"
+                    # file_path = f"../../data/polyakov_loop/{monopole}/qc2dstag/{conf_size}/mu{mu}/HYP1_APE0_alpha={APE_alpha}/{chain}/polyakov_loop_{i:04}"
 
                     # print(file_path)
                     if(os.path.isfile(file_path)):
@@ -91,4 +104,4 @@ for monopole in ['/', 'monopoless']:
                 pass
 
             df1.to_csv(
-                f"{path_output}/potential_polyakov_HYP6_APE0_mu={mu}.csv", index=False)
+                f"{path_output}/potential_polyakov_HYP{HYP_steps}_alpha={HYP_alpha1}_{HYP_alpha2}_{HYP_alpha3}_APE{APE_steps}_alpha={APE_alpha}_mu={mu}.csv", index=False)
