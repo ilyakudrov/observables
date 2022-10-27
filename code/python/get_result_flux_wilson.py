@@ -104,8 +104,8 @@ flux_coord = 'd'
 # flux_coord = 'x_tr'
 direction = ''
 # direction = '_tr'
-# shift = False
-shift = True
+shift = False
+# shift = True
 fix_tr = False
 # fix_tr = True
 # smearing = 'HYP1_alpha=1_1_0.5_APE200_alpha=0.5'
