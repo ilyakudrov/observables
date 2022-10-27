@@ -48,9 +48,29 @@ def make_observables(data):
 
 
 def get_stats(data):
+    n = data.shape[0]
+    data = data.agg([np.mean, np.std])
+    data.loc['std'] = data.loc['std'] / math.sqrt(n)
+
+    return data
+
+
+def get_coefficients(data):
+    data['a1'] = data['s2'] * 2
+
+    data.loc['b3', 'mean']
 
 
 def process(data):
+    data_0 = data[data['T'] == '0']
+    data_T = data[data['T'] == 'T']
+
+    df_0 = get_stats(data_0)
+    df_T = get_stats(data_T)
+
+    df_T.loc['mean'] = df_T.loc['mean'] - df_0.loc['mean']
+    df_T.loc['std'] = np.sqrt(
+        df_T.loc['std'] * df_T.loc['std'] - df_0.loc['std'] * df_0.loc['std'])
 
 
 Nt = 6
@@ -88,35 +108,20 @@ for beta in betas:
 
 df = read_data(paths)
 
-
 df = make_observables(df, vol)
 
 print(df)
 
 start = time.time()
 
-bin = 1000
-df_res = df.groupby(['beta']).apply(get_coefficients, bin).reset_index(
+df_res = df.groupby(['beta']).apply(process).reset_index(
     level='beta').reset_index(drop=True)
 
-# bins = autocorr.int_log_range(1, 10000, 1.05)
-
-# data_bins = []
-
-# for bin in bins:
-#     data_bins.append(df.groupby(['beta']).apply(get_coefficients, bin).reset_index(
-#         level='beta').reset_index(drop=True))
-#     data_bins[-1]['bin'] = bin
-
-# df_res = pd.concat(data_bins)
 
 print(df_res)
 
-
 df_res[obs1] = df_res[obs1] * coef1
 df_res[obs2] = df_res[obs2] * coef2
-
-# df_res['<ratio>'] = df_res[]
 
 end = time.time()
 
@@ -130,4 +135,4 @@ try:
 except:
     pass
 df_res.to_csv(
-    f"{path_output}/coefficients.csv", index=False)
+    f"{path_output}/coefficients_naive.csv", index=False)
