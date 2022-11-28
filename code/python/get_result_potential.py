@@ -11,57 +11,30 @@ import statistics_python.src.statistics_observables as stat
 from astropy.stats import jackknife_resampling, jackknife_stats, bootstrap
 
 
-def get_potential_smearing(data, df1, df, time_size_max):
+def get_potential(data):
+    time_size_min = data["T"].min()
+    time_size_max = data["T"].max()
 
-    time_size = data["T"].iloc[0]
-    space_size = data["r/a"].iloc[0]
-    smearing_step = data["smearing_step"].iloc[0]
+    potential = []
 
-    if time_size < time_size_max:
+    # print(data)
 
-        x1 = data['wilson_loop'].to_numpy()
+    for time_size in range(time_size_min, time_size_max):
 
-        x2 = df[(df["T"] == time_size + 1) & (df["r/a"]
-                                              == space_size) & (df["smearing_step"] == smearing_step)]['wilson_loop'].to_numpy()
+        x1 = data.loc[data['T'] == time_size, 'wilson_loop'].to_numpy()
+        x2 = data.loc[data['T'] == time_size + 1, 'wilson_loop'].to_numpy()
 
         # print(x1)
+        # print(x2)
 
         x3 = np.vstack((x1, x2))
 
         # field, err = stat.jackknife_var(x3, potential)
         field, err = stat.jackknife_var_numba(x3, potential_numba)
 
-        new_row = {'aV(r)': field, 'err': err}
+        potential.append([time_size, field, err])
 
-        df1 = df1.append(new_row, ignore_index=True)
-
-        return df1
-
-
-def get_potential(data, df1, df, time_size_max):
-
-    time_size = data["T"].iloc[0]
-    space_size = data["r/a"].iloc[0]
-
-    if time_size < time_size_max:
-
-        x1 = data['wilson_loop'].to_numpy()
-
-        x2 = df[(df["T"] == time_size + 1) & (df["r/a"]
-                                              == space_size)]['wilson_loop'].to_numpy()
-
-        # print(x1)
-
-        x3 = np.vstack((x1, x2))
-
-        # field, err = stat.jackknife_var(x3, potential)
-        field, err = stat.jackknife_var_numba(x3, potential_numba)
-
-        new_row = {'aV(r)': field, 'err': err}
-
-        df1 = df1.append(new_row, ignore_index=True)
-
-        return df1
+    return pd.DataFrame(potential, columns=['T', 'aV(r)', 'err'])
 
 
 @njit
@@ -91,39 +64,41 @@ def estimate_composite(x, y, err_x, err_y):
 
 
 axis = 'on-axis'
-# conf_type = "gluodynamics"
-conf_type = "QCD/140MeV"
+conf_type = "gluodynamics"
+# conf_type = "QCD/140MeV"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
 # conf_sizes = ["40^4", "32^4"]
 # conf_sizes = ["36^4"]
 # conf_sizes = ["32^4"]
 # conf_sizes = ["48^4"]
-# conf_sizes = ["36^4"]
-conf_sizes = ["nt16_gov", "nt14", "nt12"]
+conf_sizes = ["16^4"]
+# conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
-# betas = ['beta2.8']
+betas = ['beta6.1']
 # betas = ['beta2.7', 'beta2.8']
 # betas = ['beta2.5', 'beta2.6']
-betas = ['/']
+# betas = ['/']
 # smeared = 'smeared'
-# smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
-#                  'HYP1_alpha=1_1_0.5_APE_alpha=0.5']
-smeared_array = ['HYP0_APE_alpha=0.5']
+smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
+                 'HYP1_alpha=1_1_0.5_APE_alpha=0.5']
+# smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
+# smeared_array = ['HYP0_APE_alpha=0.5']
 # smeared = 'HYP1_alpha=1_0.5_0.5_APE_alpha=0.5'
-# matrix_type_wilson_array = ['monopole', 'monopoless']
-# matrix_type_wilson_array = ['monopole']
-matrix_type_wilson_array = ['original']
+matrix_type_wilson_array = ['monopole', 'monopoless']
+#matrix_type_wilson_array = ['monopole']
+# matrix_type_wilson_array = ['original', 'monopole', 'monopoless']
 wilson_loop_type = 'wilson_loop'
 potential_type = 'potential'
 # additional_parameters = 'DP_steps_500/copies=3'
-# additional_parameters = 'T_step=0.0005/T_final=0.5/OR_steps=4'
-# additional_parameters = 'T_step=0.0005/T_final=0.0005/OR_steps=4'
+# additional_parameters = 'T_step=5e-05/T_final=0.5/OR_steps=4'
 # additional_parameters = 'T_step=0.001/T_final=0.5/OR_steps=4'
 # additional_parameters = 'T_step=0.0001/T_final=0.5/OR_steps=4'
 additional_parameters = '/'
 # wilson_loop_type = 'wilson_loop_adjoint'
 # potential_type = 'potential_adjoint'
+
+calculation_type = 'smearing'
 
 conf_max = 2000
 mu1 = ['/']
@@ -161,21 +136,27 @@ for matrix_type_wilson in matrix_type_wilson_array:
                     conf_max = 5000
                     mu1 = ['']
                     chains = ['/']
+                elif conf_size == '16^4':
+                    conf_max = 5000
+                    mu1 = ['']
+                    chains = ['/']
                 for mu in mu1:
                     print(matrix_type_wilson, conf_size, mu, beta, smeared)
                     data = []
                     for chain in chains:
                         for i in range(0, conf_max + 1):
                             # file_path = f"../../data/{wilson_loop_type}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{monopole}/{smeared}/{chain}/wilson_loop_{i:04}"
-                            # file_path = f'../../data/smearing/{wilson_loop_type}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type_wilson}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
-                            file_path = f'../../data/wilson_loop/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type_wilson}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
+                            file_path = f'../../data/smearing/{wilson_loop_type}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type_wilson}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
+                            # file_path = f'../../data/wilson_loop/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type_wilson}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
                             # file_path = f'../../data/smearing/{wilson_loop_type}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{chain}/wilson_loops_{i:04}'
                             # print(file_path)
                             if(os.path.isfile(file_path)):
-                                # data.append(pd.read_csv(file_path, header=0,
-                                #             names=['smearing_step', "T", "r/a", "wilson_loop"]))
-                                data.append(pd.read_csv(file_path, header=0,
-                                            names=["T", "r/a", "wilson_loop"]))
+                                if calculation_type == 'smearing':
+                                    data.append(pd.read_csv(file_path, header=0,
+                                                            names=['smearing_step', "T", "r/a", "wilson_loop"]))
+                                elif calculation_type == 'no_smearing':
+                                    data.append(pd.read_csv(file_path, header=0,
+                                                            names=["T", "r/a", "wilson_loop"]))
                                 data[-1]["conf_num"] = i
                                 if adjoint_fix:
                                     data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1
@@ -185,23 +166,27 @@ for matrix_type_wilson in matrix_type_wilson_array:
                     elif len(data) != 0:
                         df = pd.concat(data)
 
-                        df1 = pd.DataFrame(columns=["aV(r)", "err"])
-                        time_size_max = df["T"].max()
-                        # df = df[df['smearing_step'] <= 1]
                         start = time.time()
 
-                        # df1 = df.groupby(['smearing_step', 'T', 'r/a']).apply(get_potential_smearing, df1,
-                        #                                                       df, time_size_max).reset_index()
-                        df1 = df.groupby(['T', 'r/a']).apply(get_potential, df1,
-                                                             df, time_size_max).reset_index()
+                        if calculation_type == 'smearing':
+                            df1 = df.groupby(
+                                ['smearing_step', 'r/a']).apply(get_potential).reset_index(['smearing_step', 'r/a']).reset_index()
+                        elif calculation_type == 'no_smearing':
+                            df1 = df.groupby(
+                                ['r/a']).apply(get_potential).reset_index('r/a').reset_index()
+
+                        # print(df1)
 
                         end = time.time()
                         print("execution time = %s" % (end - start))
-                        # df1 = df1[['smearing_step',
-                        #            'T', 'r/a', 'aV(r)', 'err']]
-                        df1 = df1[['T', 'r/a', 'aV(r)', 'err']]
-                        # path_output = f"../../result/smearing/{potential_type}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
-                        path_output = f"../../result/potential/wilson_loop/{potential_type}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+
+                        if calculation_type == 'smearing':
+                            df1 = df1[['smearing_step',
+                                       'T', 'r/a', 'aV(r)', 'err']]
+                            path_output = f"../../result/smearing/{potential_type}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+                        elif calculation_type == 'no_smearing':
+                            df1 = df1[['T', 'r/a', 'aV(r)', 'err']]
+                            path_output = f"../../result/potential/wilson_loop/{potential_type}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
                         try:
                             os.makedirs(path_output)
                         except:
