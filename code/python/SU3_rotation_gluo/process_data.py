@@ -5,11 +5,11 @@ import time
 import numpy as np
 import os.path
 import pandas as pd
+import itertools
+
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", "..", ".."))
 import statistics_python.src.statistics_observables as stat
-import itertools
-import autocorr
 
 
 class DataRotation:
@@ -47,11 +47,11 @@ class DataRotation:
                                                     'S2_total/vol': 's2'})
                 data[-1]['T'] = T_label
             elif version == 'new':
-                data[-1] = data[-1][['<S1>_center/vol', '<S2>_center/vol',
+                data[-1] = data[-1][['<S2>_center/vol',
                                     '<S1^2>_center/vol', '<S2^2>_center/vol',
                                      '<S1^4>_center/vol', '<S2 S1^2>_center/vol']]
-                data[-1] = data[-1].rename(columns={'<S1>_center/vol': 's1',
-                                                    '<S2>_center/vol': 's2'})
+                data[-1] = data[-1].rename(columns={'<S2>_center/vol': 's2'})
+                data[-1]['s1'] = 0.0
                 data[-1]['T'] = T_label
             else:
                 print('wrong version')
@@ -269,17 +269,17 @@ def filter_bins(data, beta, bin):
     return pd.concat([df1, df2])
 
 
-def make_paths(path, betas, chains_T, chains_0):
+def make_paths(path, betas, chains_T, chains_0, file_name):
     paths = {}
     for beta in betas:
         paths_T = []
         paths_0 = []
         for chain_T in chains_T:
-            file_path = f'{path}/{Nt_T}x{Nz}x{Ns}^2/PBC_cV/0.00v/{beta}/{chain_T}/action_data'
+            file_path = f'{path}/{Nt_T}x{Nz}x{Ns}^2/PBC_cV/0.00v/{beta}/{chain_T}/{file_name}'
             if os.path.isfile(file_path):
                 paths_T.append(file_path)
         for chain_0 in chains_0:
-            file_path = f'{path}/{Nt_0}x{Nz}x{Ns}^2/PBC_cV/0.00v/{beta}/{chain_0}/action_data'
+            file_path = f'{path}/{Nt_0}x{Nz}x{Ns}^2/PBC_cV/0.00v/{beta}/{chain_0}/{file_name}'
             if os.path.isfile(file_path):
                 paths_0.append(file_path)
 
@@ -289,42 +289,35 @@ def make_paths(path, betas, chains_T, chains_0):
     return paths
 
 
-Nt_T = 6
-Nt_0 = 24
-Ns = 31
-Nz = 24
+Nt_T = 3
+Nt_0 = 8
+Ns = 11
+Nz = 10
+# Nt3
+betas = ['3.961']
 # Nt4
 # betas = ['3.88', '4.04', '4.12', '4.20', '4.26',
-#          '4.36', '4.52', '4.68', '4.84', '5.00']
+#         '4.36', '4.52', '4.68', '4.84', '5.00']
 # betas = ['3.88']
 # Nt5
-# betas = ['4.00', '4.166', '4.253', '4.341', '4.407', '4.517', '4.69', '4.859']
+#betas = ['4.00', '4.166', '4.253', '4.341', '4.407', '4.517', '4.69', '4.859']
 # betas = ['4.00']
 # Nt6
-betas = ['4.10', '4.279', '4.374', '4.468', '4.539', '4.656', '4.838', '5.0']
+#betas = ['4.10', '4.279', '4.374', '4.468', '4.539', '4.656', '4.838', '5.0']
 
-data_version = 'old'
-path = f'../../../data/SU3_gluodynamics/{data_version}'
-chains = ['run3001000', 'run3003000', 'run3005000',
-          'run3007000', 'run3009000', 'run3011000',
-          'run3013000', 'run3015000', 'run3002000',
-          'run3004000', 'run3006000', 'run3008000',
-          'run3010000', 'run3012000', 'run3014000',
-          'run3016000',
-          'run3001001', 'run3003001', 'run3005001',
-          'run3007001', 'run3009001', 'run3011001',
-          'run3013001', 'run3015001', 'run3002001',
-          'run3004001', 'run3006001', 'run3008001',
-          'run3010001', 'run3012001', 'run3014001',
-          'run3016001']
+data_version = 'new'
+path = f'/home/clusters/rrcmpi/kudrov/SU3_gluodynamics_rotation/results/{data_version}/logs'
+chains = []
+for i in range(2):
+    chains.append('run3001' + '{:03d}'.format(i))
 chains_T = chains
 chains_0 = chains
 
-paths = make_paths(path, betas, chains_T, chains_0)
+paths = make_paths(path, betas, chains_T, chains_0, 'action_data.csv')
 
-data_columns = 'old'
+data_columns = 'new'
 data = DataRotation(paths, Nt_T, Nt_0, Nz, Ns, data_columns)
-# print(data.data)
+print(data.data)
 
 start = time.time()
 
