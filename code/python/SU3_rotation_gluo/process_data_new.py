@@ -101,14 +101,26 @@ class DataRotation:
 
         # k2_arr = np.stack((df['s1^2*vol'].to_numpy(dtype=np.float64),
         #                    df['s2'].to_numpy(dtype=np.float64)))
-        k4_arr = np.stack((self.data['s2^2*vol'].to_numpy(dtype=np.float64),
-                           self.data['s2*sqrt_vol'].to_numpy(dtype=np.float64),
-                           self.data['s2*vol^2'].to_numpy(dtype=np.float64),
-                           self.data['s1^2'].to_numpy(dtype=np.float64),
-                           self.data['s2*s1^2*vol^2'].to_numpy(
-                               dtype=np.float64),
-                           self.data['s1^4*vol^3'].to_numpy(dtype=np.float64),
-                           self.data['s1^2*sqrt_vol^3'].to_numpy(dtype=np.float64)))
+
+        arr1 = self.data['s2^2*vol'].to_numpy(dtype=np.float64)
+        self.data = self.data.drop('s2^2*vol', axis=1)
+        arr2 = self.data['s2*sqrt_vol'].to_numpy(dtype=np.float64)
+        self.data = self.data.drop('s2*sqrt_vol', axis=1)
+        arr3 = self.data['s2*vol^2'].to_numpy(dtype=np.float64)
+        self.data = self.data.drop('s2*vol^2', axis=1)
+        arr4 = self.data['s1^2'].to_numpy(dtype=np.float64)
+        self.data = self.data.drop('s1^2', axis=1)
+        arr5 = self.data['s2*s1^2*vol^2'].to_numpy(dtype=np.float64)
+        self.data = self.data.drop('s2*s1^2*vol^2', axis=1)
+        arr6 = self.data['s1^4*vol^3'].to_numpy(dtype=np.float64)
+        self.data = self.data.drop('s1^4*vol^3', axis=1)
+        arr7 = self.data['s1^2*sqrt_vol^3'].to_numpy(dtype=np.float64)
+        self.data = self.data.drop('s1^2*sqrt_vol^3', axis=1)
+
+        k4_arr = np.stack((arr1, arr2,
+                           arr3, arr4,
+                           arr5, arr6,
+                           arr7))
 
         # aver_s1, err_s1 = stat.jackknife_var_numba_binning(
         #     s1, DataRotation.trivial, get_bin_borders(len(s1[0]), bin))
@@ -150,10 +162,10 @@ class DataRotation:
         data['s1^2'] = data['s1^2*vol'] / vol
         data['s1^2*sqrt_vol^3'] = data['s1^2*vol'] * \
             math.sqrt(vol)
-        data.drop('s1^2*vol', axis=1)
+        data = data.drop('s1^2*vol', axis=1)
         data['s2*sqrt_vol'] = data['s2'] * math.sqrt(vol)
         data['s2*vol^2'] = data['s2'] * vol**2
-        data.drop('s2', axis=1)
+        data = data.drop('s2', axis=1)
 
         return data
 
