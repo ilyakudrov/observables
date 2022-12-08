@@ -275,11 +275,13 @@ def make_paths(path, betas, chains_T, chains_0, file_name):
         paths_T = []
         paths_0 = []
         for chain_T in chains_T:
-            file_path = f'{path}/{Nt_T}x{Nz}x{Ns}^2/PBC_cV/0.00v/{beta}/{chain_T}/{file_name}'
+            # file_path = f'{path}/{Nt_T}x{Nz}x{Ns}^2/PBC_cV/0.00v/{beta}/{chain_T}/{file_name}'
+            file_path = f'{path}/{Nt_T}x{Nz}x{Ns}^2/{beta}/{chain_T}/{file_name}'
             if os.path.isfile(file_path):
                 paths_T.append(file_path)
         for chain_0 in chains_0:
-            file_path = f'{path}/{Nt_0}x{Nz}x{Ns}^2/PBC_cV/0.00v/{beta}/{chain_0}/{file_name}'
+            # file_path = f'{path}/{Nt_0}x{Nz}x{Ns}^2/PBC_cV/0.00v/{beta}/{chain_0}/{file_name}'
+            file_path = f'{path}/{Nt_0}x{Nz}x{Ns}^2/{beta}/{chain_0}/{file_name}'
             if os.path.isfile(file_path):
                 paths_0.append(file_path)
 
@@ -306,7 +308,8 @@ betas = ['3.961']
 #betas = ['4.10', '4.279', '4.374', '4.468', '4.539', '4.656', '4.838', '5.0']
 
 data_version = 'new'
-path = f'/home/clusters/rrcmpi/kudrov/SU3_gluodynamics_rotation/results/{data_version}/logs'
+# path = f'/home/clusters/rrcmpi/kudrov/SU3_gluodynamics_rotation/results/{data_version}/logs'
+path = f'/home/ilya/soft/lattice/observables/data/SU3_gluodynamics/{data_version}'
 chains = []
 for i in range(2):
     chains.append('run3001' + '{:03d}'.format(i))
