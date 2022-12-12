@@ -29,11 +29,11 @@ class DataRotation:
         data = []
         for path in paths:
             data.append(pd.read_csv(path, sep=','))
-            data[-1] = data[-1].rename(columns={'<S2>_center/vol': 's2',
-                                                '<S1^2>_center/vol': 's1^2*vol',
+            data[-1] = data[-1].rename(columns={'<S1^2>_center/vol': 's1^2*vol',
+                                                '<S2>_center/vol': 's2',
                                                 '<S2^2>_center/vol': 's2^2*vol',
-                                                '<S2 S1^2>_center/vol': 's2*s1^2*vol^2',
-                                                '<S1^4>_center/vol': 's1^4*vol^3'})
+                                                '<S1^4>_center/vol': 's1^4*vol^3',
+                                                '<S2 S1^2>_center/vol': 's2*s1^2*vol^2'})
 
         return pd.concat(data)
 

@@ -75,7 +75,7 @@ conf_type = "gluodynamics"
 conf_sizes = ["16^4"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
-betas = ['beta6.1']
+betas = ['beta6.0']
 # betas = ['beta2.7', 'beta2.8']
 # betas = ['beta2.5', 'beta2.6']
 # betas = ['/']
@@ -85,8 +85,9 @@ smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
 # smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP0_APE_alpha=0.5']
 # smeared = 'HYP1_alpha=1_0.5_0.5_APE_alpha=0.5'
-matrix_type_wilson_array = ['monopole', 'monopoless']
-#matrix_type_wilson_array = ['monopole']
+matrix_type_wilson_array = ['monopole',
+                            'monopoless', 'photon', 'offdiagonal']
+# matrix_type_wilson_array = ['original', 'abelian']
 # matrix_type_wilson_array = ['original', 'monopole', 'monopoless']
 wilson_loop_type = 'wilson_loop'
 potential_type = 'potential'
@@ -94,7 +95,8 @@ potential_type = 'potential'
 # additional_parameters = 'T_step=5e-05/T_final=0.5/OR_steps=4'
 # additional_parameters = 'T_step=0.001/T_final=0.5/OR_steps=4'
 # additional_parameters = 'T_step=0.0001/T_final=0.5/OR_steps=4'
-additional_parameters = '/'
+# additional_parameters = '/'
+additional_parameters = 'compensate_0'
 # wilson_loop_type = 'wilson_loop_adjoint'
 # potential_type = 'potential_adjoint'
 
