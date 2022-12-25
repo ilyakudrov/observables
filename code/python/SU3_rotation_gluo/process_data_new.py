@@ -84,6 +84,9 @@ class DataRotation:
         for i in range(n):
             y[i] = 12 * (x[0][i] - x[1][i] * x[1][i] + x[2][i] * x[3]
                          [i] - x[4][i]) + x[5][i] - 3 * x[6][i] * x[6][i]
+            # if i < 5:
+            #     print(x[0][i])
+            # y[i] = x[5][i]
         return y
 
     def do_jackknife(self, bin, c2, c4):
@@ -186,6 +189,7 @@ class DataRotation:
 
 def process_data(paths, bin, Nt_T, Nt_0, Nz, Ns):
     data_T = DataRotation(paths[0], Nt_T, Nz, Ns)
+    print(data_T.data.head())
     data_T.data.info()
     c2 = data_T.get_coefficients2()
     c4 = data_T.get_coefficients4()
@@ -272,7 +276,7 @@ data_version = 'new'
 # path = f'/home/clusters/rrcmpi/kudrov/SU3_gluodynamics_rotation/results/{data_version}/logs'
 path = f'/home/ilya/soft/lattice/observables/data/SU3_gluodynamics/{data_version}'
 chains = []
-for i in range(2):
+for i in range(1, 3):
     chains.append('run3001' + '{:03d}'.format(i))
 chains_T = chains
 chains_0 = chains
