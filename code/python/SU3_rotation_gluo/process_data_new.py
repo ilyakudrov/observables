@@ -12,6 +12,14 @@ sys.path.append(os.path.join(os.path.dirname(
 import statistics_python.src.statistics_observables as stat
 
 
+def usage():
+    process = psutil.Process(os.getpid())
+    values = psutil.virtual_memory()
+    return (process.memory_info().rss / (1024.0 ** 2),
+            values.available / (1024.0 ** 2),
+            values.percent)
+
+
 class DataRotation:
 
     def __init__(self, paths, Nt, Nz, Ns):
@@ -34,6 +42,8 @@ class DataRotation:
                                                 '<S2^2>_center/vol': 's2^2*vol',
                                                 '<S1^4>_center/vol': 's1^4*vol^3',
                                                 '<S2 S1^2>_center/vol': 's2*s1^2*vol^2'})
+            print("reading memory", usage())
+            data_final = pd.concat([data_final, data])
 
         return pd.concat(data)
 
@@ -105,40 +115,35 @@ class DataRotation:
         # k2_arr = np.stack((df['s1^2*vol'].to_numpy(dtype=np.float64),
         #                    df['s2'].to_numpy(dtype=np.float64)))
 
-        arr1 = self.data['s2^2*vol'].to_numpy(dtype=np.float64)
+        print("before to_numpy", usage())
+
+        k4_arr = np.array([self.data['s2^2*vol'].to_numpy(dtype=np.float64)])
         self.data = self.data.drop('s2^2*vol', axis=1)
-        arr2 = self.data['s2*sqrt_vol'].to_numpy(dtype=np.float64)
+        k4_arr = np.vstack(
+            [k4_arr, self.data['s2*sqrt_vol'].to_numpy(dtype=np.float64)])
         self.data = self.data.drop('s2*sqrt_vol', axis=1)
-        arr3 = self.data['s2*vol^2'].to_numpy(dtype=np.float64)
+        k4_arr = np.vstack(
+            [k4_arr, self.data['s2*vol^2'].to_numpy(dtype=np.float64)])
         self.data = self.data.drop('s2*vol^2', axis=1)
-        arr4 = self.data['s1^2'].to_numpy(dtype=np.float64)
+        k4_arr = np.vstack(
+            [k4_arr, self.data['s1^2'].to_numpy(dtype=np.float64)])
         self.data = self.data.drop('s1^2', axis=1)
-        arr5 = self.data['s2*s1^2*vol^2'].to_numpy(dtype=np.float64)
+        k4_arr = np.vstack(
+            [k4_arr, self.data['s2*s1^2*vol^2'].to_numpy(dtype=np.float64)])
         self.data = self.data.drop('s2*s1^2*vol^2', axis=1)
-        arr6 = self.data['s1^4*vol^3'].to_numpy(dtype=np.float64)
+        k4_arr = np.vstack(
+            [k4_arr, self.data['s1^4*vol^3'].to_numpy(dtype=np.float64)])
         self.data = self.data.drop('s1^4*vol^3', axis=1)
-        arr7 = self.data['s1^2*sqrt_vol^3'].to_numpy(dtype=np.float64)
+        k4_arr = np.vstack(
+            [k4_arr, self.data['s1^2*sqrt_vol^3'].to_numpy(dtype=np.float64)])
         self.data = self.data.drop('s1^2*sqrt_vol^3', axis=1)
 
-        k4_arr = np.stack((arr1, arr2,
-                           arr3, arr4,
-                           arr5, arr6,
-                           arr7))
+        print("after to_numpy", usage())
 
-        # aver_s1, err_s1 = stat.jackknife_var_numba_binning(
-        #     s1, DataRotation.trivial, get_bin_borders(len(s1[0]), bin))
-        # aver_a1, err_a1 = stat.jackknife_var_numba_binning(
-        #     a1_arr, DataRotation.trivial, get_bin_borders(len(a1_arr[0]), bin))
-        # aver_a2, err_a2 = stat.jackknife_var_numba_binning(
-        #     a2_arr, DataRotation.trivial, get_bin_borders(len(a2_arr[0]), bin))
-        # aver_b3, err_b3 = stat.jackknife_var_numba_binning(
-        #     b3_arr, DataRotation.b3, get_bin_borders(len(b3_arr[0]), bin))
-        # aver_b2, err_b2 = stat.jackknife_var_numba_binning(
-        #     b2_arr, DataRotation.b2, get_bin_borders(len(b2_arr[0]), bin))
-        # aver_b1, err_b1 = stat.jackknife_var_numba_binning(
-        #     b1_arr, DataRotation.b1, get_bin_borders(len(b1_arr[0]), bin))
-        # aver_k2, err_k2 = stat.jackknife_var_numba_binning(
-        #     k2_arr, DataRotation.k2, get_bin_borders(len(k2_arr[0]), bin))
+        del self.data
+
+        print("after del data", usage())
+
         aver_k4, err_k4 = stat.jackknife_var_numba_binning(
             k4_arr, DataRotation.k4, get_bin_borders(len(k4_arr[0]), bin))
 
