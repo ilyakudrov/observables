@@ -72,10 +72,10 @@ conf_type = "gluodynamics"
 # conf_sizes = ["36^4"]
 # conf_sizes = ["32^4"]
 # conf_sizes = ["48^4"]
-conf_sizes = ["36^4"]
+conf_sizes = ["24^4"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
-betas = ['beta6.3']
+betas = ['beta6.0']
 # betas = ['beta2.7', 'beta2.8']
 # betas = ['beta2.5', 'beta2.6']
 # betas = ['/']
@@ -85,15 +85,15 @@ smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
 # smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP0_APE_alpha=0.5']
 # smeared = 'HYP1_alpha=1_0.5_0.5_APE_alpha=0.5'
-matrix_type_wilson_array = ['monopole',
-                            'monopoless', 'photon', 'offdiagonal']
+# matrix_type_wilson_array = ['monopole',
+#                             'monopoless', 'photon', 'offdiagonal']
 # matrix_type_wilson_array = ['original']
-# matrix_type_wilson_array = ['abelian']
+matrix_type_wilson_array = ['abelian']
 # matrix_type_wilson_array = ['original', 'monopole', 'monopoless']
 wilson_loop_type = 'wilson_loop'
 potential_type = 'potential'
-additional_parameters = 'steps_500/copies=3/compensate_1'
-# additional_parameters = 'steps_500/copies=3'
+# additional_parameters = 'steps_500/copies=3/compensate_1'
+additional_parameters = 'steps_500/copies=3'
 # additional_parameters = '/'
 # additional_parameters = 'compensate_1'
 # wilson_loop_type = 'wilson_loop_adjoint'
