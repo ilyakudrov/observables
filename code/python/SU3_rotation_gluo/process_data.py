@@ -349,7 +349,7 @@ for mode in modes:
 
     print("execution time = %s" % (end - start))
 
-    path_output = f"../../../result/SU3_gluodynamics/{data_version}/{Nt_T}x{Nz}x{Ns}^2/columns_{data_columns}"
+    path_output = f"../../../result/SU3_gluodynamics/{data_version}/{Nt_T}_{Nt_0}x{Nz}x{Ns}^2/columns_{data_columns}"
     try:
         os.makedirs(path_output)
     except:
