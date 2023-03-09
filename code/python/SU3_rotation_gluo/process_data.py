@@ -10,6 +10,7 @@ import itertools
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", "..", ".."))
 import statistics_python.src.statistics_observables as stat
+import autocorr
 
 
 class DataRotation:
@@ -291,28 +292,31 @@ def make_paths(path, betas, chains_T, chains_0, file_name):
     return paths
 
 
-Nt_T = 3
-Nt_0 = 8
-Ns = 11
-Nz = 10
-# Nt3
-betas = ['3.961']
-# Nt4
-# betas = ['3.88', '4.04', '4.12', '4.20', '4.26',
-#         '4.36', '4.52', '4.68', '4.84', '5.00']
-# betas = ['3.88']
-# Nt5
-#betas = ['4.00', '4.166', '4.253', '4.341', '4.407', '4.517', '4.69', '4.859']
-# betas = ['4.00']
-# Nt6
-#betas = ['4.10', '4.279', '4.374', '4.468', '4.539', '4.656', '4.838', '5.0']
+Nt_T = int(sys.argv[1])
+Nt_0 = int(sys.argv[2])
+Ns = int(sys.argv[3])
+Nz = int(sys.argv[4])
+
+betas = []
+if Nt_T == 3:
+    betas = ['3.961']
+elif Nt_T == 4:
+    betas = ['3.88', '4.04', '4.12', '4.20', '4.26',
+             '4.36', '4.52', '4.68', '4.84', '5.00']
+elif Nt_T == 5:
+    betas = ['4.00', '4.166', '4.253', '4.341',
+             '4.407', '4.517', '4.69', '4.859']
+elif Nt_T == 6:
+    betas = ['4.10', '4.279', '4.374', '4.468',
+             '4.539', '4.656', '4.838', '5.0']
 
 data_version = 'new'
 # path = f'/home/clusters/rrcmpi/kudrov/SU3_gluodynamics_rotation/results/{data_version}/logs'
 path = f'/home/ilya/soft/lattice/observables/data/SU3_gluodynamics/{data_version}'
 chains = []
-for i in range(2):
-    chains.append('run3001' + '{:03d}'.format(i))
+for i in range(17):
+    for j in range(17):
+        chains.append('run3' + '{:03d}'.format(i) + '{:03d}'.format(j))
 chains_T = chains
 chains_0 = chains
 
@@ -324,14 +328,14 @@ print(data.data)
 
 start = time.time()
 
-# bins = autocorr.int_log_range(1, 10000, 1.05)
-bins = [1000]
+bins = autocorr.int_log_range(10, 10000, 1.2)
+# bins = [1000]
 
-modes = ['common', 'non-zero_temperature', 'zero_temperature']
-# modes = ['common']
+# modes = ['common', 'non-zero_temperature', 'zero_temperature']
+modes = ['common']
 # modes = ['common', 'non-zero_temperature']
-# binning = True
-binning = False
+binning = True
+# binning = False
 
 for mode in modes:
     data_bins = []
@@ -349,7 +353,7 @@ for mode in modes:
 
     print("execution time = %s" % (end - start))
 
-    path_output = f"../../../result/SU3_gluodynamics/{data_version}/{Nt_T}_{Nt_0}x{Nz}x{Ns}^2/columns_{data_columns}"
+    path_output = f"../../../result/SU3_gluodynamics/{data_version}/{Nt_T}({Nt_0})x{Nz}x{Ns}^2/columns_{data_columns}"
     try:
         os.makedirs(path_output)
     except:
