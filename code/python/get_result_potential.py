@@ -114,22 +114,22 @@ def get_bin_borders(data_size, bin_size):
 
 
 axis = 'on-axis'
-# conf_type = "gluodynamics"
-conf_type = "qc2dstag"
+conf_type = "gluodynamics"
+# conf_type = "qc2dstag"
 # conf_type = "QCD/140MeV"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
 # conf_sizes = ["40^4", "32^4"]
-conf_sizes = ["40^4"]
+conf_sizes = ["36^4"]
 # conf_sizes = ["32^4"]
 # conf_sizes = ["48^4"]
 # conf_sizes = ["40^4"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
-theory_type = 'su2'
-# betas = ['beta6.2']
+theory_type = 'su3'
+betas = ['beta6.3']
 # betas = ['beta2.7', 'beta2.8']
 # betas = ['beta2.5', 'beta2.6']
-betas = ['/']
+# betas = ['/']
 # smeared = 'smeared'
 # smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
 #                  'HYP1_alpha=1_1_0.5_APE_alpha=0.5']
@@ -140,17 +140,26 @@ smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
 # matrix_type_array = ['monopole',
 #                      'monopoless', 'photon', 'offdiagonal']
 # matrix_type_array = ['original']
-# matrix_type_array = ['monopoless']
+matrix_type_array = ['abelian']
 # matrix_type_array = ['abelian']
-matrix_type_array = ['original', 'monopole',
-                     'monopoless', 'photon',
-                     'offdiagonal', 'abelian']
+# matrix_type_array = ['monopole', 'original',
+#                      'monopoless', 'photon',
+#                      'offdiagonal', 'abelian']
 wilson_loop_type = 'wilson_loop'
 potential_type = 'fundamental'
-# additional_parameters = 'steps_500/copies=3/compensate_1'
-# additional_parameters = 'steps_500/copies=3'
-additional_parameters = '/'
-# additional_parameters = 'compensate_1'
+# additional_parameters_arr = ['steps_500/copies=3/compensate_1', 'steps_1000/copies=3/compensate_1',
+                            #  'steps_2000/copies=3/compensate_1', 'steps_4000/copies=3/compensate_1', 'steps_8000/copies=3/compensate_1']
+additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
+                             'steps_2000/copies=3', 'steps_4000/copies=3', 'steps_8000/copies=3']
+# additional_parameters_arr = ['steps_500/copies=3']
+# additional_parameters_arr = ['T_step=0.0001', 'T_step=0.0002', 'T_step=0.0004',
+#                              'T_step=0.0008', 'T_step=0.001', 'T_step=0.002',
+#                              'T_step=0.004', 'T_step=0.008', 'T_step=5e-05']
+# additional_parameters_arr = ['T_step=0.001']
+# additional_parameters_arr = ['T_step=0.0001', 'T_step=0.0002',
+#                              'T_step=0.0004', 'T_step=0.0008', 'T_step=0.0016', 'T_step=0.0032']
+# additional_parameters_arr = ['/']
+
 # wilson_loop_type = 'wilson_loop_adjoint'
 # potential_type = 'potential_adjoint'
 
@@ -175,19 +184,21 @@ elif calculation_type == 'no_smearing':
 
 conf_max = 5000
 # mu1 = ['mu0.00']
-# mu1 = ['/']
-# chains = ["/"]
-mu1 = ['mu0.05',
-       'mu0.20', 'mu0.25',
-       'mu0.30', 'mu0.35', 'mu0.45']
-chains = ['s0', 's1', 's2', 's3',
-          's4', 's5', 's6', 's7', 's8']
+mu1 = ['/']
+chains = ["/"]
+# mu1 = ['mu0.05',
+#        'mu0.20', 'mu0.25',
+#        'mu0.30', 'mu0.35', 'mu0.45']
+# mu1 = ['mu0.40']
+# chains = ['s0', 's1', 's2', 's3',
+#           's4', 's5', 's6', 's7', 's8']
 
 # adjoint_fix = True
 adjoint_fix = False
 
-iter_arrays = [matrix_type_array, smeared_array, betas, conf_sizes, mu1]
-for matrix_type, smeared, beta, conf_size, mu in itertools.product(*iter_arrays):
+iter_arrays = [matrix_type_array, smeared_array,
+               betas, conf_sizes, mu1, additional_parameters_arr]
+for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertools.product(*iter_arrays):
     print(matrix_type, conf_size, mu, beta, smeared)
     data = []
     for chain in chains:
@@ -208,6 +219,8 @@ for matrix_type, smeared, beta, conf_size, mu in itertools.product(*iter_arrays)
     elif len(data) != 0:
         df = pd.concat(data)
         start = time.time()
+
+        # print(df)
 
         if is_binning:
             df1 = []
