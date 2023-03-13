@@ -43,6 +43,8 @@ def field_numba(x):
     n = x.shape[1]
     y = np.zeros(n)
     for i in range(n):
+        if x[1][i] == 0:
+            print("zero", i)
         y[i] = x[0][i] / x[1][i] - x[2][i]
     return y
 
@@ -61,6 +63,8 @@ def action_numba(x):
     n = x.shape[1]
     y = np.zeros(n)
     for i in range(n):
+        if x[2][i] == 0:
+            print("zero", i)
         y[i] = (x[0][i] + x[1][i]) / x[2][i] - x[3][i] - x[4][i]
     return y
 
@@ -90,38 +94,37 @@ def fix_data_tr(x):
     return x
 
 
-conf_type = "qc2dstag"
-# conf_type = "gluodynamics"
+# conf_type = "qc2dstag"
+conf_type = "gluodynamics"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
-theory_type = 'su2'
+theory_type = 'su3'
 flux_coord = 'd'
 # flux_coord = 'x_tr'
-direction = 'longitudinal'
+direction = 'transversal'
 # direction = '_tr'
 shift = False
 # shift = True
 fix_tr = False
 # fix_tr = True
-smearing_arr = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
-                'HYP1_alpha=1_1_0.5_APE_alpha=0.5']
+smearing_arr = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smearing_arr = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smearing = '/'
 
-betas = ['/']
-# betas = ['beta6.2']
+# betas = ['/']
+betas = ['beta6.2']
 decomposition_plaket_arr = ['original']
 decomposition_wilson_arr = ['original']
-conf_sizes = ["40^4"]
+conf_sizes = ["32^4"]
 # mu_arr = ['mu0.00']
 # mu_arr = ['mu0.05', 'mu0.20', 'mu0.25', 'mu0.30',
 #           'mu0.33', 'mu0.35', 'mu0.40', 'mu0.45']
-mu_arr = ['mu0.40', 'mu0.45']
-# mu_arr = ['/']
+# mu_arr = ['mu0.40', 'mu0.45']
+mu_arr = ['/']
 conf_max = 5000
 additional_parameters_arr = ['/']
-# chains = ['/']
-chains = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
+chains = ['/']
+# chains = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
 
 
 iter_arrays = [betas, decomposition_plaket_arr, decomposition_wilson_arr,
@@ -153,6 +156,8 @@ for beta, decomposition_plaket, decomposition_wilson, conf_size, mu, additional_
 
     df = pd.concat(df, axis=1)
     df = df.loc[:, ~df.columns.duplicated()]
+
+    df = df[(df['T'] <= 16) & (df['R'] <= 16) & (df['d'] <= 16)]
 
     if fix_tr:
         a = np.array(df['x_tr'] == 0) + 1

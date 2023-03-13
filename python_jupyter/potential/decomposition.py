@@ -5,8 +5,8 @@ import numpy as np
 from scipy.optimize import curve_fit
 import pandas as pd
 
-import python_jupyter.potential.plot_func as plot_func
-import python_jupyter.potential.reading_data as reading_data
+import plots
+import potential_data
 
 
 def plot_relative_variation_potential(data):
@@ -28,12 +28,12 @@ def plot_relative_variation_potential(data):
     plt.axhline(y=0, color='k', linestyle='-')
     # plt.show()
 
-    plot_func.save_image(
+    plots.save_image(
         f'../images/potential/relative_variation/vitaliy', f'relative_variation', fg)
 
 
 def relative_variation_potential(paths):
-    data = reading_data.read_data_potential(paths)
+    data = potential_data.read_data_potential(paths)
 
     data = data[data['potential_su2'] != 0.0]
 
@@ -212,7 +212,7 @@ def get_r0(beta):
 
 
 def potential_decomposition(paths, image_path, image_name, beta, y_lims, fit_original, r0, fit_range, remove_from_plot, black_colors):
-    data = reading_data.read_data_potential1(paths)
+    data = potential_data.read_data_potential1(paths)
     data1 = []
     for type, path in paths.items():
         if 'T' in path:
@@ -299,7 +299,7 @@ def potential_decomposition(paths, image_path, image_name, beta, y_lims, fit_ori
                          y='aV(r)_' + terms[i], color=colors[i])
 
     plt.show()
-    plot_func.save_image(image_path, image_name, fg)
+    plots.save_image(image_path, image_name, fg)
 
 
 def plot_together(data):
@@ -322,7 +322,7 @@ def plot_together(data):
 
 
 def potentials_together(paths, sigma, r_max):
-    data = reading_data.read_data_potentials_together(paths, sigma)
+    data = potential_data.read_data_potentials_together(paths, sigma)
 
     data = data[data['r/a'] <= r_max]
 
@@ -330,7 +330,7 @@ def potentials_together(paths, sigma, r_max):
 
 
 def potential_decomposition_vitaly(path, image_path, image_name, coefs, terms, y_lims, beta):
-    data = reading_data.read_vitaly_potential(path)
+    data = potential_data.read_vitaly_potential(path)
 
     terms.append(f'{terms[1]}+{terms[2]}')
     data = find_sum(data, terms[1], terms[2], terms[3])
@@ -366,13 +366,13 @@ def potential_decomposition_vitaly(path, image_path, image_name, coefs, terms, y
                          y='aV(r)_' + terms[i], color=colors[i])
 
     plt.show()
-    plot_func.save_image(image_path, image_name, fg)
+    plots.save_image(image_path, image_name, fg)
 
 
 def potential_decomposition_vitaly1(paths, path, image_path, image_name, coefs, terms, y_lims, beta, r_max):
     data = []
-    data.append(reading_data.read_vitaly_potential(path))
-    data1 = reading_data.read_data_potential(paths)
+    data.append(potential_data.read_vitaly_potential(path))
+    data1 = potential_data.read_data_potential(paths)
     for dict in paths:
         if 'T' in dict:
             data.append(data1[(data1['T'] == dict['T']) & (data1['r/a'] <= r_max)
@@ -423,13 +423,13 @@ def potential_decomposition_vitaly1(paths, path, image_path, image_name, coefs, 
                          y='aV(r)_' + terms[i], color=colors[i])
 
     plt.show()
-    plot_func.save_image(image_path, image_name, fg)
+    plots.save_image(image_path, image_name, fg)
 
 
 def potential_decomposition_general(paths, path, image_path, image_name, fit_coefs, to_fit, to_remove, terms, y_lims, beta, r_max):
     data = []
-    data.append(reading_data.read_vitaly_potential(path))
-    data1 = reading_data.read_data_potential(paths)
+    data.append(potential_data.read_vitaly_potential(path))
+    data1 = potential_data.read_data_potential(paths)
     for dict in paths:
         if 'T' in dict:
             data.append(data1[(data1['T'] == dict['T']) & (data1['r/a'] <= r_max)
@@ -494,7 +494,7 @@ def potential_decomposition_general(paths, path, image_path, image_name, fit_coe
         color_num += 1
 
     plt.show()
-    plot_func.save_image(image_path, image_name, fg)
+    plots.save_image(image_path, image_name, fg)
 
 
 def plot_potential_fitted_single(data, y_lims, term, image_path, image_name):
@@ -524,7 +524,7 @@ def fit_single(data, term, fit_range):
 
 
 def potential_fit_single(path, term, fit_range, r0, y_lims, image_path, image_name):
-    data = reading_data.read_data_single(path)
+    data = potential_data.read_data_single(path)
     if 'T' in path:
         data = data[data['T'] == path['T']].reset_index(
         )[['r/a', 'aV(r)_' + path['name'], 'err_' + path['name']]]
@@ -550,7 +550,7 @@ def potential_fit_single(path, term, fit_range, r0, y_lims, image_path, image_na
     seaborn.lineplot(data=data_fits, x='r/a', y='aV(r)_' + term)
 
     plt.show()
-    plot_func.save_image(image_path, image_name, fg)
+    plots.save_image(image_path, image_name, fg)
 
 
 def potentials_fit(paths, term, fit_range, r0, y_lims, image_path, image_name):
