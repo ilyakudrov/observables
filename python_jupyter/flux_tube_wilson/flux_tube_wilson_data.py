@@ -151,20 +151,15 @@ def read_data_beta():
     data[-1] = data[-1].drop(['T'], axis=1).reset_index()
 
 
-def get_flux_data(paths, flux_coord, sigma):
+def get_flux_data(paths):
     data = []
-    for conf_info in paths:
-        # print(conf_info)
-        data.append(read_data_qc2dstag_decomposition(
-            conf_info[0], conf_info[1], flux_coord, sigma))
-        data[-1]['type'] = conf_info[2]
+    for path in paths:
+        data.append(pd.read_csv(path['path']))
+        data[-1]['label'] = path['label']
+        for key, val in path['constraints'].items():
+            data[-1][key] = val
 
-    # print(data)
     data = pd.concat(data)
-
-    data = flux_tube_wilson.join_back(
-        data, flux_coord, conf_info[1].keys(), ['type'])
-
     return data
 
 

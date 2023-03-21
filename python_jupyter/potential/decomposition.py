@@ -6,30 +6,9 @@ from scipy.optimize import curve_fit
 import pandas as pd
 
 import plots
+import scaler
+import fit
 import potential_data
-
-
-def plot_relative_variation_potential(data):
-    # T = data['T'].iloc[0]
-    # sigma = data['sigma'].iloc[0]
-    fg = seaborn.FacetGrid(data=data, hue='beta', height=5, aspect=1.2)
-    fg.fig.suptitle(f'relative variation')
-    fg.map(plt.errorbar, 'R', 'potential_diff', 'err_diff', marker="o", fmt='', linestyle=''
-           ).add_legend()
-    fg.ax.set_xlabel(r"r$\sqrt{\sigma}$")
-    fg.ax.set_ylabel(r"$\Delta$")
-    plt.xlim((0, 2.5))
-    plt.ylim((-0.3, 0.3))
-    fg.ax.spines['right'].set_visible(True)
-    fg.ax.spines['top'].set_visible(True)
-    fg.ax.minorticks_on()
-    fg.ax.tick_params(which='both', bottom=True,
-                      top=True, left=True, right=True)
-    plt.axhline(y=0, color='k', linestyle='-')
-    # plt.show()
-
-    plots.save_image(
-        f'../images/potential/relative_variation/vitaliy', f'relative_variation', fg)
 
 
 def relative_variation_potential(paths):
@@ -48,25 +27,7 @@ def relative_variation_potential(paths):
 
     data['R'] = data.apply(lambda x: x['R'] * x['sigma'], axis=1)
 
-    plot_relative_variation_potential(data)
-
-
-def plot_potential_decomposition(data, y_lims, ls_arr, marker_arr, fillstyle_arr, colors, image_path, image_name):
-    fg = seaborn.FacetGrid(data=data, hue='matrix_type', height=5, aspect=1.4, legend_out=False,
-                           hue_kws={"ls": ls_arr, "marker": marker_arr,
-                                    "fillstyle": fillstyle_arr, "color": colors})
-    map = fg.map(plt.errorbar, 'r/a', 'aV(r)', 'err', ms=8,
-                 capsize=8, lw=0.5).add_legend(title='')
-    fg.ax.set_xlabel(r"R$/r_{0}$")
-    fg.ax.set_ylabel(r"$r_{0}V(R)$")
-    fg.ax.spines['right'].set_visible(True)
-    fg.ax.spines['top'].set_visible(True)
-    fg.ax.minorticks_on()
-    fg.ax.tick_params(which='both', bottom=True,
-                      top=True, left=True, right=True)
-    fg.ax.set_ylim(y_lims[0], y_lims[1])
-
-    return fg
+    plots.plot_relative_variation_potential(data)
 
 
 def join_back(data, matrix_types):
@@ -90,98 +51,6 @@ def find_sum(data, term1, term2, sum):
     return data
 
 
-def func_exponent(x, a, b, c):
-    return a + b * np.exp(-x * c)
-
-
-def func_quark_potential(x, c, alpha, sigma):
-    return c + alpha * np.power(x, -1) + sigma * x
-
-
-def func_coloumb(x, c, alpha):
-    return c + alpha * np.power(x, -1)
-
-
-def func_linear(x, c, sigma):
-    return c + sigma * x
-
-
-def fit_potential(data, fit_function, fit_range, fit_name):
-    r = data['r/a'].iloc[0]
-    data = data[(data['T'] >= fit_range[0]) & (data['T'] <= fit_range[1])]
-    y = data['aV(r)_' + fit_name]
-    y_err = data['err_' + fit_name]
-    x = data['T']
-    try:
-        popt, pcov = curve_fit(fit_function, x, y, sigma=y_err)
-        val = popt[0]
-        err = np.sqrt(np.diag(pcov)[0])
-    except:
-        print('potential fit did not converge at r =', r)
-        val = data.loc[data['T'] == 5, 'aV(r)_' + fit_name].iloc[0]
-        err = data.loc[data['T'] == 5, 'err_' + fit_name].iloc[0]
-    return pd.DataFrame([[val, err]], columns=['aV(r)_' + fit_name, 'err_' + fit_name])
-
-
-def get_potential_fit(data, fit_func, fit_range, fit_name):
-    return data.groupby(['r/a']).apply(fit_potential, fit_func, fit_range, fit_name).reset_index('r/a').reset_index()
-
-
-def fit_string(data, fit_range, fit_name):
-    data = data[(data['r/a'] >= fit_range[0]) & (data['r/a'] <= fit_range[1])]
-    y = data['aV(r)_' + fit_name]
-    y_err = data['err_' + fit_name]
-    x = data['r/a'].to_numpy(dtype=np.float64)
-    popt, pcov = curve_fit(func_quark_potential, x, y, sigma=y_err)
-    return popt
-
-
-def fit_consts(data, coloumb_name, string_name, alpha, sigma):
-    y_coloumb = data['aV(r)_' + coloumb_name]
-    y_string = data['aV(r)_' + string_name]
-    x = data['r/a'].to_numpy(dtype=np.float64)
-    c_coloumb, err_coloumb = curve_fit(
-        lambda x, c: c + alpha * np.power(x, -1), x, y_coloumb)
-    c_string, err_string = curve_fit(lambda x, c: c + sigma * x, x, y_string)
-    return c_coloumb, c_string
-
-
-def make_fit_original(data, orig_pot_name, coloumb_name, string_name, fit_range):
-    c, alpha, sigma = fit_string(data, fit_range, orig_pot_name)
-    c_coloumb, c_string = fit_consts(
-        data, coloumb_name, string_name, alpha, sigma)
-    x_fit = np.arange(data['r/a'].min(), data['r/a'].max(), 0.01)
-    y_coloumb = func_coloumb(x_fit, c_coloumb, alpha)
-    y_string = func_linear(x_fit, c_string, sigma)
-    y_original = func_quark_potential(x_fit, c, alpha, sigma)
-    return pd.DataFrame(np.array([x_fit, y_coloumb, y_string, y_original]).T,
-                        columns=['r/a', 'aV(r)_' + coloumb_name,
-                                 'aV(r)_' + string_name, 'aV(r)_' + orig_pot_name])
-
-
-def make_fit_separate(data, terms, fit_range, r0):
-    x_fit = np.arange(data['r/a'].min(), data['r/a'].max(), 0.01)
-    data = data[(data['r/a'] >= fit_range[0]) &
-                (data['r/a'] <= fit_range[1])].reset_index()
-    data_fits = []
-    columns = []
-    x = data['r/a'].to_numpy(dtype=np.float64)
-    data_fits.append(x_fit)
-    columns.append('r/a')
-    for term in terms:
-        y = data['aV(r)_' + term]
-        y_err = data['err_' + term]
-        popt, pcov = curve_fit(func_quark_potential, x, y, sigma=y_err)
-        perr = np.sqrt(np.diag(pcov))
-        chi_sq = chi_square(x, y, popt[0], popt[1], popt[2])
-        # print('aV(r)_' + term, popt[0] / r0, perr[0] / r0,
-        #                         popt[1], perr[1], popt[2] / r0**2,
-        #                         perr[2] / r0**2, 'chi_sq =', chi_sq)
-        data_fits.append(func_quark_potential(x_fit, *popt))
-        columns.append(f'aV(r)_' + term)
-    return pd.DataFrame(np.array(data_fits).T, columns=columns)
-
-
 def get_terms(paths):
     terms = []
     for key, value in paths.items():
@@ -197,136 +66,14 @@ def get_terms(paths):
     return terms
 
 
-def chi_square(x, y, c, alpha, sigma):
-    chi_sq = 0
-    for i in range(len(x)):
-        expected = func_quark_potential(x[i], c, alpha, sigma)
-        chi_sq += (expected - y[i])**2 / expected
-    return chi_sq
-
-# find a/r_0 for 5.7 <= beta <= 6.92
-
-
-def get_r0(beta):
-    return math.exp(-1.6804 - 1.7331 * (beta - 6) + 0.7849 * (beta - 6)**2 - 0.4428 * (beta - 6)**3)
-
-
 def potential_decomposition(paths, image_path, image_name, beta, y_lims, fit_original, r0, fit_range, remove_from_plot, black_colors):
-    data = potential_data.read_data_potential1(paths)
-    data1 = []
-    for type, path in paths.items():
-        if 'T' in path:
-            data1.append(data[data['T'] == path['T']].reset_index()[
-                         ['r/a', 'aV(r)_' + path['name'], 'err_' + path['name']]])
-        else:
-            data1.append(get_potential_fit(
-                data, func_exponent, (2, 8), path['name']))
-
-    data = pd.concat(data1, axis=1)
-    data = data.loc[:, ~data.columns.duplicated()]
-
-    terms = get_terms(paths)
-    terms_fit = list(terms)
-
-    data_fits = []
-    if fit_original:
-        if 'original' in paths and 'monopole' in paths and 'monopoless' in paths:
-            data_fits.append(make_fit_original(
-                data, paths['original']['name'], paths['monopoless']['name'], paths['monopole']['name'], fit_range))
-            for term in [paths['original']['name'], paths['monopoless']['name'], paths['monopole']['name']]:
-                try:
-                    terms_fit.remove(term)
-                except:
-                    pass
-        if 'original' in paths and 'abelian' in paths and 'offdiagonal' in paths:
-            data_fits.append(make_fit_original(
-                data, paths['original']['name'], paths['offdiagonal']['name'], paths['abelian']['name'], fit_range))
-            for term in [paths['original']['name'], paths['offdiagonal']['name'], paths['abelian']['name']]:
-                try:
-                    terms_fit.remove(term)
-                except:
-                    pass
-
-    if 'monopole' in paths and 'monopoless' in paths:
-        monopole_name = paths['monopole']['name']
-        monopoless_name = paths['monopoless']['name']
-        sum_name = f'{monopole_name}+{monopoless_name}'
-        data = find_sum(data, paths['monopole']['name'],
-                        paths['monopoless']['name'], sum_name)
-
-    if 'abelian' in paths and 'offdiagonal' in paths:
-        abelian_name = paths['abelian']['name']
-        offdiagonal_name = paths['offdiagonal']['name']
-        sum_name = f'{abelian_name}+{offdiagonal_name}'
-        data = find_sum(data, paths['abelian']['name'],
-                        paths['offdiagonal']['name'], sum_name)
-
-    data_fits.append(make_fit_separate(data, terms_fit, fit_range, r0))
-
-    data_fits = pd.concat(data_fits, axis=1)
-    data_fits = data_fits.loc[:, ~data_fits.columns.duplicated()]
-
-    data['r/a'] = data['r/a'] * r0
-    for term in terms:
-        data[f'aV(r)_' + term] = data[f'aV(r)_' + term] / r0
-        data[f'err_' + term] = data[f'err_' + term] / r0
-
-    data_fits['r/a'] = data_fits['r/a'] * r0
-    for term in terms:
-        data_fits['aV(r)_' + term] = data_fits['aV(r)_' + term] / r0
-
-    for term in remove_from_plot:
-        terms.remove(paths[term]['name'])
-        data = data.drop(f'aV(r)_' + paths[term]['name'], axis=1)
-        data = data.drop(f'err_' + paths[term]['name'], axis=1)
-
-    data = join_back(data, terms)
-
-    ls_arr = ['', '', '', '', '', '', '']
-    marker_arr = ['o', 'v', 'o', '^', 's', 's', 'D']
-    fillstyle_arr = ['full', 'full', 'none', 'full', 'full', 'none', 'none']
-    if black_colors:
-        colors = ['black', 'black', 'black',
-                  'black', 'black', 'black', 'black']
-    else:
-        colors = ['mediumblue', 'orange', 'g', 'r',
-                  'rebeccapurple', 'saddlebrown', 'olive']
-    fg = plot_potential_decomposition(
-        data, y_lims, ls_arr, marker_arr, fillstyle_arr, colors, image_path, image_name)
-
-    for i in range(len(terms)):
-        seaborn.lineplot(data=data_fits, x='r/a',
-                         y='aV(r)_' + terms[i], color=colors[i])
-
-    plt.show()
-    plots.save_image(image_path, image_name, fg)
-
-
-def plot_together(data):
-    fg = seaborn.FacetGrid(data=data, hue='type', height=5,
-                           aspect=1.4, legend_out=False)
-    fg.fig.suptitle(f'potentials together')
-    fg.map(plt.errorbar, 'r/a', 'aV(r)', 'err', mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls='-'
-           ).add_legend()
-    # plt.legend(loc='upper left')
-    fg.ax.set_xlabel(r"R$\sqrt{\sigma}$")
-    fg.ax.set_ylabel(r"V(r)/$\sigma$")
-    fg.ax.spines['right'].set_visible(True)
-    fg.ax.spines['top'].set_visible(True)
-    fg.ax.minorticks_on()
-    fg.ax.tick_params(which='both', bottom=True,
-                      top=True, left=True, right=True)
-    plt.grid(dash_capstyle='round')
-
-    plt.show()
-
-
-def potentials_together(paths, sigma, r_max):
-    data = potential_data.read_data_potentials_together(paths, sigma)
-
-    data = data[data['r/a'] <= r_max]
-
-    plot_together(data)
+    data_decomposition = potential_data.DataDecomposition(paths)
+    data_decomposition.get_single_T()
+    data_decomposition.scale_by_r0(r0)
+    fit_params = data_decomposition.make_fits(fit_original, fit_range)
+    print(fit_params)
+    data_decomposition.remove_from_plot(remove_from_plot)
+    data_decomposition.plot(black_colors, y_lims, image_path, image_name)
 
 
 def potential_decomposition_vitaly(path, image_path, image_name, coefs, terms, y_lims, beta):
@@ -335,7 +82,7 @@ def potential_decomposition_vitaly(path, image_path, image_name, coefs, terms, y
     terms.append(f'{terms[1]}+{terms[2]}')
     data = find_sum(data, terms[1], terms[2], terms[3])
 
-    r0 = get_r0(beta)
+    r0 = scaler.get_r0(beta)
     data['r/a'] = data['r/a'] * r0
     for term in terms:
         data[f'aV(r)_' + term] = data[f'aV(r)_' + term] / r0
@@ -347,7 +94,7 @@ def potential_decomposition_vitaly(path, image_path, image_name, coefs, terms, y
     marker_arr = ['o', 'v', 'o', '^']
     fillstyle_arr = ['full', 'full', 'none', 'full']
     colors = ['mediumblue', 'orange', 'g', 'r']
-    fg = plot_potential_decomposition(
+    fg = plots.plot_potential_decomposition(
         data, y_lims, ls_arr, marker_arr, fillstyle_arr, colors, image_path, image_name)
 
     data_fits = []
@@ -356,7 +103,7 @@ def potential_decomposition_vitaly(path, image_path, image_name, coefs, terms, y
     data_fits.append(x_fit)
     columns.append('r/a')
     for term in terms:
-        data_fits.append(func_quark_potential(x_fit, *coefs[term]))
+        data_fits.append(fit.func_quark_potential(x_fit, *coefs[term]))
         columns.append(f'aV(r)_' + term)
     data_fits = pd.DataFrame(np.array(data_fits).T, columns=columns)
 
@@ -387,7 +134,7 @@ def potential_decomposition_vitaly1(paths, path, image_path, image_name, coefs, 
     data = find_sum(data, terms[1], terms[2], terms[3])
     data = find_sum(data, terms[4], terms[5], terms[6])
 
-    r0 = get_r0(beta)
+    r0 = scaler.get_r0(beta)
     data['r/a'] = data['r/a'] * r0
     for term in terms:
         data[f'aV(r)_' + term] = data[f'aV(r)_' + term] / r0
@@ -404,7 +151,7 @@ def potential_decomposition_vitaly1(paths, path, image_path, image_name, coefs, 
     marker_arr = ['o', 'v', 'o', '^', 's']
     fillstyle_arr = ['full', 'full', 'none', 'full', 'full']
     colors = ['mediumblue', 'orange', 'g', 'r', 'rebeccapurple']
-    fg = plot_potential_decomposition(
+    fg = plots.plot_potential_decomposition(
         data, y_lims, ls_arr, marker_arr, fillstyle_arr, colors, image_path, image_name)
 
     data_fits = []
@@ -413,7 +160,7 @@ def potential_decomposition_vitaly1(paths, path, image_path, image_name, coefs, 
     data_fits.append(x_fit)
     columns.append('r/a')
     for term in terms[:-1]:
-        data_fits.append(func_quark_potential(x_fit, *coefs[term]))
+        data_fits.append(fit.func_quark_potential(x_fit, *coefs[term]))
         columns.append(f'aV(r)_' + term)
     data_fits = pd.DataFrame(np.array(data_fits).T, columns=columns)
 
@@ -444,7 +191,7 @@ def potential_decomposition_general(paths, path, image_path, image_name, fit_coe
     data = find_sum(data, terms[1], terms[2], terms[3])
     data = find_sum(data, terms[4], terms[5], terms[6])
 
-    r0 = get_r0(beta)
+    r0 = scaler.get_r0(beta)
     data['r/a'] = data['r/a'] * r0
     for term in terms:
         data[f'aV(r)_' + term] = data[f'aV(r)_' + term] / r0
@@ -456,14 +203,14 @@ def potential_decomposition_general(paths, path, image_path, image_name, fit_coe
     data_fits.append(x_fit)
     columns.append('r/a')
     for term in fit_coefs:
-        data_fits.append(func_quark_potential(x_fit, *fit_coefs[term]))
+        data_fits.append(fit.func_quark_potential(x_fit, *fit_coefs[term]))
         columns.append(f'aV(r)_' + term)
     x = x = data['r/a']
     for term in to_fit:
         y = data['aV(r)_' + term]
         y_err = data['err_' + term]
-        popt, pcov = curve_fit(func_quark_potential, x, y, sigma=y_err)
-        data_fits.append(func_quark_potential(x_fit, *popt))
+        popt, pcov = curve_fit(fit.func_quark_potential, x, y, sigma=y_err)
+        data_fits.append(fit.func_quark_potential(x_fit, *popt))
         columns.append(f'aV(r)_' + term)
     data_fits = pd.DataFrame(np.array(data_fits).T, columns=columns)
 
@@ -478,7 +225,7 @@ def potential_decomposition_general(paths, path, image_path, image_name, fit_coe
     fillstyle_arr = ['full', 'full', 'none', 'full', 'full', 'none', 'none']
     colors = ['mediumblue', 'orange', 'g', 'r',
               'rebeccapurple', 'saddlebrown', 'olive']
-    fg = plot_potential_decomposition(
+    fg = plots.plot_potential_decomposition(
         data, y_lims, ls_arr, marker_arr, fillstyle_arr, colors, image_path, image_name)
 
     colors = ['mediumblue', 'orange', 'g', 'r',
@@ -497,57 +244,174 @@ def potential_decomposition_general(paths, path, image_path, image_name, fit_coe
     plots.save_image(image_path, image_name, fg)
 
 
-def plot_potential_fitted_single(data, y_lims, term, image_path, image_name):
-    fg = seaborn.FacetGrid(data=data, height=5, aspect=1.4, legend_out=False)
-    map = fg.map(plt.errorbar, 'r/a', 'aV(r)_' + term, 'err_' +
-                 term, ms=8, capsize=8, lw=0.5).add_legend(title='potential')
-    fg.ax.set_xlabel(r"R$/r_{0}$")
-    fg.ax.set_ylabel(r"$r_{0}V(R)$")
-    fg.ax.spines['right'].set_visible(True)
-    fg.ax.spines['top'].set_visible(True)
-    fg.ax.minorticks_on()
-    fg.ax.tick_params(which='both', bottom=True,
-                      top=True, left=True, right=True)
-    fg.ax.set_ylim(y_lims[0], y_lims[1])
-
-    return fg
-
-
-def fit_single(data, term, fit_range):
-    data = data[(data['r/a'] >= fit_range[0]) &
-                (data['r/a'] <= fit_range[1])].reset_index()
-    x = data['r/a'].to_numpy(dtype=np.float64)
-    y = data['aV(r)_' + term]
-    y_err = data['err_' + term]
-    popt, pcov = curve_fit(func_quark_potential, x, y, sigma=y_err)
-    return popt, pcov
-
-
 def potential_fit_single(path, term, fit_range, r0, y_lims, image_path, image_name):
     data = potential_data.read_data_single(path)
     if 'T' in path:
         data = data[data['T'] == path['T']].reset_index(
         )[['r/a', 'aV(r)_' + path['name'], 'err_' + path['name']]]
     else:
-        data = get_potential_fit(data, func_exponent, (3, 14), path['name'])
+        data = fit.get_potential_fit(
+            data, fit.func_exponent, (3, 14), path['name'])
 
-    popt, pcov = fit_single(data, term, fit_range)
+    popt, pcov = fit.fit_single(data, term, fit_range)
     perr = np.sqrt(np.diag(pcov))
     x = data['r/a'].to_numpy(dtype=np.float64)
     y = data['aV(r)_' + term]
-    chi_sq = chi_square(x, y, popt[0], popt[1], popt[2])
+    chi_sq = fit.chi_square(x, y, popt[0], popt[1], popt[2])
     print('aV(r)_' + term, popt[0], perr[0],
           popt[1], perr[1], popt[2],
           perr[2], 'chi_sq =', chi_sq)
     x_fit = np.arange(data['r/a'].min(), data['r/a'].max(), 0.01)
-    y_fit = func_quark_potential(x_fit, *popt)
+    y_fit = fit.func_quark_potential(x_fit, *popt)
 
     data_fits = pd.DataFrame(np.array([x_fit, y_fit]).T, columns=[
                              'r/a', f'aV(r)_' + term])
 
-    fg = plot_potential_fitted_single(
+    fg = plots.plot_potential_fitted_single(
         data, y_lims, term, image_path, image_name)
     seaborn.lineplot(data=data_fits, x='r/a', y='aV(r)_' + term)
+
+    plt.show()
+    plots.save_image(image_path, image_name, fg)
+
+
+def make_fit_separate_shift(data, terms, fit_range, r0):
+    x_fit = np.arange(data['r/a'].min(), data['r/a'].max(), 0.01)
+    data1 = data[(data['r/a'] >= fit_range[0]) &
+                 (data['r/a'] <= fit_range[1])].reset_index()
+    data_fits = []
+    columns = []
+    x = data1['r/a'].to_numpy(dtype=np.float64)
+    data_fits.append(x_fit)
+    columns.append('r/a')
+    for term in terms:
+        y = data1['aV(r)_' + term]
+        y_err = data1['err_' + term]
+        popt, pcov = curve_fit(fit.func_quark_potential, x, y, sigma=y_err)
+        perr = np.sqrt(np.diag(pcov))
+        chi_sq = fit.chi_square(x, y, popt[0], popt[1], popt[2])
+        # print('aV(r)_' + term, popt[0] / r0, perr[0] / r0,
+        #                         popt[1], perr[1], popt[2] / r0**2,
+        #                         perr[2] / r0**2, 'chi_sq =', chi_sq)
+        shift = fit.func_quark_potential(0.5 / r0, *popt)
+        data['aV(r)_' + term] = data['aV(r)_' + term] - shift
+        data_fits.append(fit.func_quark_potential(x_fit, *popt) - shift)
+        popt_tmp = popt
+        popt_tmp[0] = popt_tmp[0] - shift
+        print(term, popt_tmp)
+        print(perr)
+        columns.append(f'aV(r)_' + term)
+    return pd.DataFrame(np.array(data_fits).T, columns=columns), data
+
+
+def get_potential_beta_shift(paths, fit_original, r0, fit_range, remove_from_plot):
+    data = potential_data.read_data_potential1(paths)
+    data1 = []
+    for type, path in paths.items():
+        if 'T' in path:
+            data1.append(data[data['T'] == path['T']].reset_index()[
+                         ['r/a', 'aV(r)_' + path['name'], 'err_' + path['name']]])
+        else:
+            data1.append(fit.get_potential_fit(
+                data, fit.func_exponent, (2, 8), path['name']))
+
+    data = pd.concat(data1, axis=1)
+    data = data.loc[:, ~data.columns.duplicated()]
+
+    terms = get_terms(paths)
+    terms_fit = list(terms)
+
+    data_fits = []
+    if fit_original:
+        if 'original' in paths and 'monopole' in paths and 'monopoless' in paths:
+            data_fits.append(fit.make_fit_original(
+                data, paths['original']['name'], paths['monopoless']['name'], paths['monopole']['name'], fit_range))
+            for term in [paths['original']['name'], paths['monopoless']['name'], paths['monopole']['name']]:
+                try:
+                    terms_fit.remove(term)
+                except:
+                    pass
+        if 'original' in paths and 'abelian' in paths and 'offdiagonal' in paths:
+            data_fits.append(fit.make_fit_original(
+                data, paths['original']['name'], paths['offdiagonal']['name'], paths['abelian']['name'], fit_range))
+            for term in [paths['original']['name'], paths['offdiagonal']['name'], paths['abelian']['name']]:
+                try:
+                    terms_fit.remove(term)
+                except:
+                    pass
+
+    if 'monopole' in paths and 'monopoless' in paths:
+        monopole_name = paths['monopole']['name']
+        monopoless_name = paths['monopoless']['name']
+        sum_name = f'{monopole_name}+{monopoless_name}'
+        data = find_sum(data, paths['monopole']['name'],
+                        paths['monopoless']['name'], sum_name)
+
+    if 'abelian' in paths and 'offdiagonal' in paths:
+        abelian_name = paths['abelian']['name']
+        offdiagonal_name = paths['offdiagonal']['name']
+        sum_name = f'{abelian_name}+{offdiagonal_name}'
+        data = find_sum(data, paths['abelian']['name'],
+                        paths['offdiagonal']['name'], sum_name)
+
+    d_fit, data = make_fit_separate_shift(data, terms_fit, fit_range, r0)
+    data_fits.append(d_fit)
+
+    data_fits = pd.concat(data_fits, axis=1)
+    data_fits = data_fits.loc[:, ~data_fits.columns.duplicated()]
+
+    data['r/a'] = data['r/a'] * r0
+    for term in terms:
+        data[f'aV(r)_' + term] = data[f'aV(r)_' + term] / r0
+        data[f'err_' + term] = data[f'err_' + term] / r0
+
+    data_fits['r/a'] = data_fits['r/a'] * r0
+    for term in terms:
+        data_fits['aV(r)_' + term] = data_fits['aV(r)_' + term] / r0
+
+    for term in remove_from_plot:
+        terms.remove(paths[term]['name'])
+        data = data.drop(f'aV(r)_' + paths[term]['name'], axis=1)
+        data = data.drop(f'err_' + paths[term]['name'], axis=1)
+
+    data = join_back(data, terms)
+
+    return data, data_fits
+
+
+def potential_together_shifted(paths, image_path, image_name, y_lims, fit_original, remove_from_plot, black_colors, term, title):
+    data = []
+    data_fits = []
+    for path in paths:
+        beta = path['beta']
+        r0 = scaler.get_r0(beta)
+        print(1 / r0)
+        d, d_fit = get_potential_beta_shift(
+            path['data'], fit_original, r0, path['fit_range'], remove_from_plot)
+        data.append(d)
+        data_fits.append(d_fit)
+        data[-1]['matrix_type'] = r"$\beta$" + f'={beta}'
+        data_fits[-1]['matrix_type'] = f'beta{beta}'
+
+    data = pd.concat(data)
+    # print(data)
+    # print(data_fits)
+
+    ls_arr = ['', '', '', '', '', '', '']
+    marker_arr = ['o', 'v', 'o', '^', 's', 's', 'D']
+    fillstyle_arr = ['full', 'full', 'none', 'full', 'full', 'none', 'none']
+    if black_colors:
+        colors = ['black', 'black', 'black',
+                  'black', 'black', 'black', 'black']
+    else:
+        colors = ['mediumblue', 'orange', 'g', 'r',
+                  'rebeccapurple', 'saddlebrown', 'olive']
+    fg = plots.plot_potential_decomposition(
+        data, y_lims, ls_arr, marker_arr, fillstyle_arr, colors, image_path, image_name, title)
+
+    for i in range(len(data_fits)):
+        seaborn.lineplot(data=data_fits[i], x='r/a',
+                         y='aV(r)_' + term, color=colors[i])
 
     plt.show()
     plots.save_image(image_path, image_name, fg)

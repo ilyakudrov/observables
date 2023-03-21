@@ -107,18 +107,23 @@ shift = False
 # shift = True
 fix_tr = False
 # fix_tr = True
+# smearing_arr = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5',
+#                 'HYP2_alpha=1_1_0.5_APE_alpha=0.5',
+#                 'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
 smearing_arr = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
-# smearing_arr = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smearing = '/'
 
 # betas = ['/']
 betas = ['beta6.2']
 decomposition_plaket_arr = ['original']
 decomposition_wilson_arr = ['original']
+# conf_sizes = ["40^4"]
 conf_sizes = ["32^4"]
 # mu_arr = ['mu0.00']
 # mu_arr = ['mu0.05', 'mu0.20', 'mu0.25', 'mu0.30',
 #           'mu0.33', 'mu0.35', 'mu0.40', 'mu0.45']
+# mu_arr = ['mu0.20', 'mu0.30',
+#           'mu0.35', 'mu0.40', 'mu0.45']
 # mu_arr = ['mu0.40', 'mu0.45']
 mu_arr = ['/']
 conf_max = 5000
@@ -157,7 +162,7 @@ for beta, decomposition_plaket, decomposition_wilson, conf_size, mu, additional_
     df = pd.concat(df, axis=1)
     df = df.loc[:, ~df.columns.duplicated()]
 
-    df = df[(df['T'] <= 16) & (df['R'] <= 16) & (df['d'] <= 16)]
+    # df = df[(df['T'] <= 16) & (df['R'] <= 16) & (df['d'] <= 16)]
 
     if fix_tr:
         a = np.array(df['x_tr'] == 0) + 1

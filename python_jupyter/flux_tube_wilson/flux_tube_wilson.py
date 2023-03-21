@@ -29,18 +29,8 @@ def find_sum(data):
     return data
 
 
-def flux(paths, flux_coord, image_path, plot_function, sigma):
-    data = flux_data.get_flux_data(paths, flux_coord, sigma)
-
-    # if flux_coord == 'x_tr':
-    #     data = data[data['x_tr'] <= 10 * math.sqrt(sigma)]
-    #     data = data[data['x_tr'] >= -10 * math.sqrt(sigma)]
-
-    # if flux_coord == 'd':
-    #     data = data[data['d'] <= 3 * math.sqrt(sigma)]
-    #     data = data[data['d'] >= -3 * math.sqrt(sigma)]
-
-    # data = data[data['R'] == 8]
+def flux(paths, flux_coord, image_path, plot_function):
+    data = flux_data.get_flux_data(paths)
 
     data.groupby(['R', 'field_type']).apply(
         plot_function, flux_coord, image_path)
