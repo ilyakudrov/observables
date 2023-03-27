@@ -12,7 +12,7 @@ def save_image(image_path, image_name, fg):
         pass
 
     output_path = f'{image_path}/{image_name}'
-    fg.savefig(output_path, dpi=400)
+    fg.savefig(output_path, dpi=400, facecolor='white')
 
 
 def plot_action(data, flux_coord, image_path):
@@ -54,14 +54,14 @@ def plot_action_long(direction, path, params, flux_coord, image_path, sigma):
         plot_action, flux_coord, image_path)
 
 
-def plot_flux(data, flux_coord, image_path):
+def plot_flux(data, flux_coord, hue, image_path, field_type, show_plot):
     R = data['R'].iloc[0]
-    field_type = data['field_type'].iloc[0]
+    # field_type = data['field_type'].iloc[0]
     print('R = ', R)
-    fg = seaborn.FacetGrid(data=data, hue='type', height=5,
+    fg = seaborn.FacetGrid(data=data, hue=hue, height=5,
                            aspect=1.61, legend_out=False)
     fg.fig.suptitle(f'{field_type}, R = {R}')
-    fg.map(plt.errorbar, flux_coord, 'field', 'err', mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls='-'
+    fg.map(plt.errorbar, flux_coord, f'field_{field_type}', f'err_{field_type}', mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls='-'
            ).add_legend()
 
     # fg.ax.set_xlabel(r"R$\sqrt{\sigma}$")
@@ -92,9 +92,12 @@ def plot_flux(data, flux_coord, image_path):
     # fg.ax.set_xlabel(r"$x_{\perp}$")
     # fg.ax.set_ylabel("A")
 
-    plt.show()
+    if show_plot:
+        plt.show()
     save_image(f'{image_path}',
-               f'flux_tube_{field_type}_{flux_coord}_R={R}', fg)
+               f'flux_tube_{field_type}_R={R}', fg)
+    if not show_plot:
+        plt.close()
 
 
 def plot_flux_R(data, flux_coord, image_path):

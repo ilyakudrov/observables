@@ -8,91 +8,7 @@ import flux_tube_wilson
 # functions for reading data files
 
 
-def get_size(str):
-    str_tmp = str[str.find('=') + 1:].strip()
-    time_size = int(str_tmp[0])
-    str_tmp = str_tmp[str_tmp.find('=') + 1:].strip()
-    space_size = int(str_tmp[0])
-
-    return time_size, space_size
-
-
-def remove_spaces(line):
-    line_tmp = line.strip()
-    result = ''
-    while line_tmp.find(' ') != -1:
-        result += line_tmp[0:line_tmp.find(' ')] + ','
-        line_tmp = line_tmp[line_tmp.find(' '):]
-        line_tmp = line_tmp.lstrip()
-
-    result += line_tmp
-
-    return result
-
-
-def remove_spaces_and_first_number(line):
-    line_tmp = line.strip()
-    line_tmp = line_tmp[1:]
-    line_tmp = line_tmp.lstrip()
-    result = ''
-    while line_tmp.find(' ') != -1:
-        result += line_tmp[0:line_tmp.find(' ')] + ','
-        line_tmp = line_tmp[line_tmp.find(' '):]
-        line_tmp = line_tmp.lstrip()
-
-    result += line_tmp
-
-    return result
-
-
-def read_file_vitaliy(file_path, func, field_type, field_coord):
-    if(os.path.isfile(file_path)):
-        df = []
-        with open(file_path, 'r') as f:
-            lines = f.readlines()
-
-            data = []
-            for i in range(len(lines)):
-                line = lines[i].strip()
-                if len(line) != 0:
-                    if (line)[0] == '#':
-                        if len(data) > 0:
-                            df.append(pd.read_csv(io.StringIO('\n'.join(data)), names=[
-                                      field_coord, f"field_action_{field_type}", f"err_action_{field_type}"], engine='python'))
-                            # df[-1]['T'] = sizes[0]
-                            df[-1]['R'] = sizes[1]
-                            df[-1][field_coord] = df[-1][field_coord] - \
-                                (4 + sizes[1] / 2)
-                        data = []
-                        sizes = get_size(line)
-
-                    else:
-                        data.append(func(lines[i]))
-
-            df.append(pd.read_csv(io.StringIO('\n'.join(data)), names=[
-                      field_coord, f"field_action_{field_type}", f"err_action_{field_type}"], engine='python'))
-            # df[-1]['T'] = sizes[0]
-            df[-1]['R'] = sizes[1]
-            df[-1][field_coord] = df[-1][field_coord] - (4 + sizes[1] / 2)
-
-            df = pd.concat(df)
-
-            return df
-
-
-def concat_betas(betas, name, func):
-    data = []
-    for beta in betas:
-        data.append(read_file_vitaliy(beta[0], name, func))
-        data[-1]['beta'] = beta[0]
-        data[-1]['field'] = data[-1]['field'] / beta[1]**2
-        data[-1]['err'] = data[-1]['err'] / beta[1]**2
-        data[-1]['d'] = data[-1]['d'] * math.sqrt(beta[1])
-
-    return pd.concat(data)
-
-
-def read_data_qc2dstag_decomposition(path, params, flux_coord, sigma):
+def read_data_decomposition(path, params, flux_coord, sigma):
     data = []
     for key, value in params.items():
         # print(value)
@@ -156,8 +72,10 @@ def get_flux_data(paths):
     for path in paths:
         data.append(pd.read_csv(path['path']))
         data[-1]['label'] = path['label']
-        for key, val in path['constraints'].items():
-            data[-1][key] = val
+        if 'constraints' in path:
+            for key, val in path['constraints'].items():
+                data[-1] = data[-1][(data[-1][key] >= val[0])
+                                    & (data[-1][key] <= val[1])]
 
     data = pd.concat(data)
     return data
@@ -167,7 +85,7 @@ def get_flux_data_decomposition(paths, flux_coord, sigma):
     data = []
     for conf_info in paths:
         # print(conf_info)
-        data.append(read_data_qc2dstag_decomposition(
+        data.append(read_data_decomposition(
             conf_info[0], conf_info[1], flux_coord, sigma))
         data[-1]['type'] = conf_info[2]
 
