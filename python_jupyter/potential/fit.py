@@ -61,6 +61,7 @@ def fit_consts(data, coloumb_name, string_name, alpha, sigma):
 
 
 def make_fit_original(data, orig_pot_name, coloumb_name, string_name, fit_range):
+    print(data)
     popt, pcov = fit_string(data, fit_range, orig_pot_name)
     perr = np.sqrt(np.diag(pcov))
     c_coloumb, err_coloumb, c_string, err_string = fit_consts(

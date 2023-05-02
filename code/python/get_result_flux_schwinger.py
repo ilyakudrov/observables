@@ -4,112 +4,163 @@ import numpy as np
 import math
 import sys
 import os.path
+import itertools
 from numba import njit
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", ".."))
 import statistics_python.src.statistics_observables as stat
 
-conf_type = "qc2dstag"
 
+def get_flux(data):
+    x = data[['correlator_schwinger',
+              'correlator_wilson', 'wilson_loop']].to_numpy()
+    # x = data['correlator_schwinger'].to_numpy()
+    # print(x)
+    x = np.transpose(x)
+    # print(x)
 
-def get_field(data, df1):
-    x = data[['wilson-schwinger-plaket-correlator',
-              'wilson-plaket-correlator', 'wilson-loop']].to_numpy()
+    field_electric, err_electric = stat.jackknife_var_numba(x, field_numba)
+    # field_electric, err_electric = stat.jackknife_var_numba(np.array([x]), trivial)
 
-    field, err = jackknife_var(x, field_electric)
-
-    new_row = {'field': field, 'err': math.sqrt(err)}
-
-    df1 = df1.append(new_row, ignore_index=True)
-
-    return df1
+    return pd.Series([field_electric, err_electric],
+                     index=['field_electric', 'err_electric'])
 
 
 @njit
-def electric_field_numba(x):
+def field_numba(x):
     n = x.shape[1]
     y = np.zeros(n)
     for i in range(n):
-        y[i] = x[0][i] / x[1][i] - x[2][i]
+        y[i] = (x[0][i] - x[1][i]) / x[2][i]
     return y
 
 
-def field_electric(x):
-    a = x.mean(axis=0)
-    return a[0] / a[1] - a[2]
+@njit
+def energy_numba(x):
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = (x[0][i] - x[1][i]) / x[2][i] - x[3][i] + x[4][i]
+    return y
 
 
-def jackknife(x, func):
-    n = len(x)
-    idx = np.arange(n)
-    return sum(func(x[idx != i]) for i in range(n)) / float(n)
+@njit
+def action_numba(x):
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = (x[0][i] + x[1][i]) / x[2][i] - x[3][i] - x[4][i]
+    return y
 
 
-def jackknife_var(x, func):
-    n = len(x)
-    idx = np.arange(n)
-    j_est = jackknife(x, func)
-    return j_est, (n - 1) / (n + 0.0) * sum((func(x[idx != i]) - j_est)**2.0
-                                            for i in range(n))
+@njit
+def trivial(x):
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = x[0][i]
+    return y
 
 
-# T1 = [8, 10, 12]
-# R1 = [8, 10, 12, 14, 16, 18]
-T1 = [8]
-R1 = [8]
+def average_d(data, flux_coord):
+    data[flux_coord] = data[flux_coord].apply(lambda x: abs(x))
+    data = data.groupby(['R', 'T', flux_coord, 'conf']
+                        ).agg(np.mean).reset_index()
+    data_concat = []
+    data_concat.append(data)
+    data_negative = pd.DataFrame(data)
+    data_negative = data_negative[data_negative[flux_coord] != 0]
+    data_negative[flux_coord] = -data_negative[flux_coord]
+    data_concat.append(data_negative)
+    data = pd.concat(data_concat)
+    return data
+
+
+def fix_data_tr(x):
+    if x.name[3] == 0:
+        return x / 2
+    return x
+
 
 conf_type = "qc2dstag"
+# conf_type = "gluodynamics"
+# conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
-# conf_sizes = ["40^4", "32^4"]
-conf_sizes = ["32^4"]
-# conf_sizes = ["40^4"]
+theory_type = 'su2'
+flux_coord = 'd'
+# flux_coord = 'x_tr'
+direction = 'longitudinal'
+# direction = 'transversal'
+# direction = '_tr'
+shift = False
+# shift = True
+fix_tr = False
+# fix_tr = True
+smearing_arr = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
+                'HYP1_alpha=1_1_0.5_APE_alpha=0.5',
+                'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
+# smearing_arr = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
+# smearing = '/'
 
-for monopole in ['/', 'monopoless', 'monopole']:
-    # for monopole in ['/']:
-    # for monopole in ['monopole']:
-    for conf_size in conf_sizes:
-        if conf_size == '40^4':
-            conf_max = 700
-            # mu1 = ['0.05', '0.35', '0.45']
-            mu1 = ['0.05']
-            chains = {"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"}
-        elif conf_size == '32^4':
-            conf_max = 2800
-            mu1 = ['0.00']
-            chains = {"/"}
-        for mu in mu1:
-            data = []
-            for chain in chains:
-                for T in T1:
-                    for R in R1:
-                        for i in range(0, conf_max):
-                            # file_path = f"../../data/flux_tube/qc2dstag/{conf_size}/HYP_APE/mu{mu}/s{chain}/T={T}/R={R}/electric_{i:04}"
-                            # file_path = f"../../data/flux_tube/qc2dstag/{conf_size}/HYP_APE/mu{mu}/T={T}/R={R}/electric_{i:04}"
-                            file_path = f"../../data/flux_tube_schwinger/{monopole}/qc2dstag/{conf_size}/mu{mu}/{chain}/T={T}/R={R}/electric_{i:04}"
-                            if(os.path.isfile(file_path)):
-                                data.append(pd.read_csv(file_path))
-                                data[-1]["R"] = R
-                                data[-1]["T"] = T
-                                # data[-1]['d'] = data[-1]['d'].transform(
-                                #     lambda x: x - R/2)
+betas = ['/']
+# betas = ['beta2.5']
+decomposition_plaket_arr = ['original']
+decomposition_wilson_arr = ['original']
+conf_sizes = ["40^4"]
+# conf_sizes = ["32^4"]
+mu_arr = ['mu0.00']
+# mu_arr = ['mu0.05', 'mu0.20', 'mu0.25', 'mu0.30',
+#           'mu0.33', 'mu0.35', 'mu0.40', 'mu0.45']
+# mu_arr = ['mu0.20', 'mu0.30',
+#           'mu0.35', 'mu0.40', 'mu0.45']
+# mu_arr = ['mu0.40', 'mu0.45']
+# mu_arr = ['/']
+conf_max = 5000
+additional_parameters_arr = ['/']
+chains = ['/']
+# chains = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
 
-            df = pd.concat(data)
 
-            df1 = pd.DataFrame(columns=['field', 'err'])
+iter_arrays = [betas, decomposition_plaket_arr, decomposition_wilson_arr,
+               conf_sizes, mu_arr, additional_parameters_arr, smearing_arr]
+for beta, decomposition_plaket, decomposition_wilson, conf_size, mu, additional_parameters, smearing in itertools.product(*iter_arrays):
+    print(decomposition_plaket, decomposition_wilson, conf_size, mu, beta)
+    data_electric = []
+    data_magnetic = []
+    for chain in chains:
+        for i in range(conf_max + 1):
+            file_path_electric = f'../../data/flux_tube_schwinger/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{decomposition_plaket}-{decomposition_wilson}/{smearing}/{chain}/{direction}/electric_{i:04}'
+            # file_path_magnetic = f'../../data/flux_tube_wilson/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{decomposition_plaket}-{decomposition_wilson}/{smearing}/{chain}/{direction}/magnetic_{i:04}'
+            # print(file_path_electric)
+            # if(os.path.isfile(file_path_electric) & os.path.isfile(file_path_magnetic)):
+            if(os.path.isfile(file_path_electric)):
+                data_electric.append(pd.read_csv(file_path_electric))
+                data_electric[-1]['conf'] = i
+                # data_magnetic.append(pd.read_csv(file_path_magnetic, header=0, names=[
+                #                      'T', 'R', flux_coord, 'correlator magnetic', 'wilson loop', 'plaket magnetic']))
+                # data_magnetic[-1]['conf'] = i
 
-            df1 = df.groupby(['d', 'R', 'T']).apply(
-                get_field, df1).reset_index()
+    # df = [pd.concat(data_electric), pd.concat(data_magnetic)]
+    df = pd.concat(data_electric)
 
-            df1 = df1[['d', 'R', 'T', 'field', 'err']]
+    # df = pd.concat(df, axis=1)
+    # df = df.loc[:, ~df.columns.duplicated()]
 
-            # print(df1)
+    df['correlator_wilson'] = df['correlator_wilson'] / 2
 
-            path_output = f"../../result/flux_tube_schwinger/{monopole}/qc2dstag/{conf_size}"
+    # df = df[(df['T'] <= 16) & (df['R'] <= 16) & (df['d'] <= 16)]
 
-            try:
-                os.makedirs(path_output)
-            except:
-                pass
+    # df = average_d(df, flux_coord)
 
-            df1.to_csv(
-                f"{path_output}/flux_tube_electric_mu={mu}.csv", index=False)
+    df = df.groupby(['T', 'R', flux_coord]).apply(
+        get_flux).reset_index()
+
+    path_output = f"../../result/flux_tube_schwinger/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smearing}/{direction}"
+
+    try:
+        os.makedirs(path_output)
+    except:
+        pass
+
+    df.to_csv(
+        f"{path_output}/flux_tube_{decomposition_plaket}-{decomposition_wilson}.csv", index=False)

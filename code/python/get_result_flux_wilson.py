@@ -43,8 +43,6 @@ def field_numba(x):
     n = x.shape[1]
     y = np.zeros(n)
     for i in range(n):
-        if x[1][i] == 0:
-            print("zero", i)
         y[i] = x[0][i] / x[1][i] - x[2][i]
     return y
 
@@ -63,15 +61,17 @@ def action_numba(x):
     n = x.shape[1]
     y = np.zeros(n)
     for i in range(n):
-        if x[2][i] == 0:
-            print("zero", i)
         y[i] = (x[0][i] + x[1][i]) / x[2][i] - x[3][i] - x[4][i]
     return y
 
 
+@njit
 def trivial(x):
-    a = x.mean(axis=0)
-    return a[0]
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = x[0][i]
+    return y
 
 
 def average_d(data, flux_coord):

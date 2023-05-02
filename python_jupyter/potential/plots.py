@@ -3,6 +3,8 @@ import seaborn
 import matplotlib.pyplot as plt
 from PIL import Image
 
+import potential_data
+
 
 def save_image(image_path, image_name, fg):
     try:
@@ -93,3 +95,39 @@ def plot_potential_fitted_single(data, y_lims, term, image_path, image_name):
     fg.ax.set_ylim(y_lims[0], y_lims[1])
 
     return fg
+
+
+def plot_potential_single(data, hue, image_path, image_name, show_plot):
+    # R = data['r/a'].iloc[0]
+    # field_type = data['field_type'].iloc[0]
+    # print('R = ', R)
+    fg = seaborn.FacetGrid(data=data, hue=hue, height=5,
+                           aspect=1.61, legend_out=False)
+    fg.fig.suptitle(f'potential')
+    fg.map(plt.errorbar, f'r/a', f'aV(r)', 'err', mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls='-'
+           ).add_legend()
+
+    # fg.ax.set_xlabel(r"R$\sqrt{\sigma}$")
+    # fg.ax.set_ylabel(r"V(r)/$\sigma$")
+    fg.ax.spines['right'].set_visible(True)
+    fg.ax.spines['top'].set_visible(True)
+    fg.ax.minorticks_on()
+    fg.ax.tick_params(which='both', bottom=True,
+                      top=True, left=True, right=True)
+    plt.grid(dash_capstyle='round')
+
+    if show_plot:
+        plt.show()
+    save_image(f'{image_path}',
+               f'{image_name}', fg)
+    if not show_plot:
+        plt.close()
+
+
+def make_plots_single(paths, hue, groupby, image_path, image_name, show_plot):
+    data = potential_data.get_potantial_data(paths)
+    if groupby:
+        data.groupby(groupby).apply(
+            plot_potential_single, hue, image_path, image_name, show_plot)
+    else:
+        plot_potential_single(data, hue, image_path, image_name, show_plot)

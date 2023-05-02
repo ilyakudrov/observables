@@ -1,3 +1,4 @@
+from astropy.stats import jackknife_resampling, jackknife_stats, bootstrap
 from numba import njit
 import sys
 import math
@@ -6,10 +7,10 @@ import numpy as np
 import os.path
 import pandas as pd
 import itertools
+
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", ".."))
 import statistics_python.src.statistics_observables as stat
-from astropy.stats import jackknife_resampling, jackknife_stats, bootstrap
 
 
 def get_potential(data):
@@ -62,7 +63,7 @@ def potential_numba(x):
     y = np.zeros(n)
     for i in range(n):
         fraction = x[0][i] / x[1][i]
-        if(fraction >= 0):
+        if (fraction >= 0):
             y[i] = math.log(fraction)
         else:
             y[i] = 0
@@ -72,7 +73,7 @@ def potential_numba(x):
 def potential(x):
     a = np.mean(x, axis=1)
     fraction = a[0] / a[1]
-    if(fraction >= 0):
+    if (fraction >= 0):
         return math.log(fraction)
     else:
         return 0
@@ -114,34 +115,34 @@ def get_bin_borders(data_size, bin_size):
 
 
 axis = 'on-axis'
-# conf_type = "gluodynamics"
-conf_type = "qc2dstag"
+conf_type = "gluodynamics"
+# conf_type = "qc2dstag"
 # conf_type = "QCD/140MeV"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
 # conf_sizes = ["40^4", "32^4"]
-conf_sizes = ["40^4"]
+conf_sizes = ["32^3x64"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
-theory_type = 'su2'
-# betas = ['beta6.3']
+theory_type = 'su3'
+betas = ['beta6.2']
 # betas = ['beta2.7', 'beta2.8']
-betas = ['/']
-# smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
-#                  'HYP1_alpha=1_1_0.5_APE_alpha=0.5']
+# betas = ['/']
+smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
+                 'HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP2_alpha=1_1_0.5_APE_alpha=0.5',
 #                  'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
-smeared_array = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
+# smeared_array = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP0_APE_alpha=0.5']
 # matrix_type_array = ['monopole',
 #                      'monopoless', 'photon', 'offdiagonal']
-# matrix_type_array = ['original']
+matrix_type_array = ['original']
 # matrix_type_array = ['abelian']
-matrix_type_array = ['monopole', 'original',
-                     'monopoless', 'photon',
-                     'offdiagonal', 'abelian']
-wilson_loop_type = 'wilson_loop'
-# representation = 'fundamental'
-representation = 'adjoint'
+# matrix_type_array = ['monopole',
+#                      'monopoless', 'photon',
+#                      'offdiagonal', 'abelian']
+operator_type = 'wilson_loop'
+representation = 'fundamental'
+# representation = 'adjoint'
 # additional_parameters_arr = ['steps_500/copies=3/compensate_1', 'steps_1000/copies=3/compensate_1',
 #  'steps_2000/copies=3/compensate_1', 'steps_4000/copies=3/compensate_1', 'steps_8000/copies=3/compensate_1']
 # additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
@@ -154,6 +155,17 @@ representation = 'adjoint'
 # additional_parameters_arr = ['T_step=0.0002']
 # additional_parameters_arr = ['T_step=0.0001', 'T_step=0.0002',
 #                              'T_step=0.0004', 'T_step=0.0008', 'T_step=0.0016', 'T_step=0.0032']
+# additional_parameters_arr = ['steps_25/copies=4', 'steps_50/copies=4',
+#                              'steps_100/copies=4', 'steps_200/copies=4',
+#                              'steps_1000/copies=4', 'steps_2000/copies=4']
+# additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
+#                              'steps_2000/copies=3', 'steps_4000/copies=3',
+#                              'steps_8000/copies=3']
+# additional_parameters_arr = ['steps_500/copies=3/compensate_1', 'steps_1000/copies=3/compensate_1',
+#                              'steps_2000/copies=3/compensate_1', 'steps_4000/copies=3/compensate_1',
+#                              'steps_8000/copies=3/compensate_1']
+# additional_parameters_arr = ['steps_500/copies=3/compensate_1']
+# additional_parameters_arr = ['steps_500/copies=3']
 additional_parameters_arr = ['/']
 
 is_binning = False
@@ -173,18 +185,19 @@ elif calculation_type == 'no_smearing':
     CSV_names = ["T", "r/a", "wilson_loop"]
     dtype = {"T": np.int32, "r/a": np.int32, "wilson_loop": np.float64}
     names_out = ['T', 'r/a', 'aV(r)', 'err']
-    dir_name = 'potential'
+    dir_name = ''
 
 conf_max = 5000
 # mu1 = ['mu0.00']
-# mu1 = ['/']
-chains = ["/"]
+mu1 = ['/']
+# chains = ["/"]
 # mu1 = ['mu0.05',
 #        'mu0.20', 'mu0.25',
 #        'mu0.30', 'mu0.35', 'mu0.45']
-mu1 = ['mu0.40']
-chains = ['s0', 's1', 's2', 's3',
-          's4', 's5', 's6', 's7', 's8']
+# mu1 = ['mu0.40']
+chains = ['s1', 's2']
+# chains = ['s0', 's1', 's2', 's3',
+#           's4', 's5', 's6', 's7', 's8']
 
 # adjoint_fix = True
 adjoint_fix = False
@@ -196,10 +209,10 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     data = []
     for chain in chains:
         for i in range(0, conf_max + 1):
-            # file_path = f'../../data/smearing/{wilson_loop_type}/{representation}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
-            file_path = f'../../data/{wilson_loop_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
+            # file_path = f'../../data/smearing/{operator_type}/{representation}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
+            file_path = f'../../data/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
             # print(file_path)
-            if(os.path.isfile(file_path)):
+            if (os.path.isfile(file_path)):
                 data.append(pd.read_csv(file_path, header=0,
                                         names=CSV_names,
                                         dtype=dtype))
@@ -233,7 +246,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         if is_binning:
             dir_name = dir_name + '/binning'
         df1 = df1[names_out]
-        path_output = f"../../result/{dir_name}/wilson_loop/{representation}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+        path_output = f"../../result/potential/wilson_loop/{representation}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
         try:
             os.makedirs(f'{path_output}/{dir_name}')
         except:

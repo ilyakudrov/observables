@@ -68,6 +68,7 @@ def get_terms(paths):
 
 def potential_decomposition(paths, image_path, image_name, beta, y_lims, fit_original, r0, fit_range, remove_from_plot, black_colors):
     data_decomposition = potential_data.DataDecomposition(paths)
+    print(data_decomposition.data)
     data_decomposition.get_single_T()
     data_decomposition.scale_by_r0(r0)
     fit_params = data_decomposition.make_fits(fit_original, fit_range)
@@ -76,106 +77,8 @@ def potential_decomposition(paths, image_path, image_name, beta, y_lims, fit_ori
     data_decomposition.plot(black_colors, y_lims, image_path, image_name)
 
 
-def potential_decomposition_vitaly(path, image_path, image_name, coefs, terms, y_lims, beta):
-    data = potential_data.read_vitaly_potential(path)
-
-    terms.append(f'{terms[1]}+{terms[2]}')
-    data = find_sum(data, terms[1], terms[2], terms[3])
-
-    r0 = scaler.get_r0(beta)
-    data['r/a'] = data['r/a'] * r0
-    for term in terms:
-        data[f'aV(r)_' + term] = data[f'aV(r)_' + term] / r0
-        data[f'err_' + term] = data[f'err_' + term] / r0
-
-    data = join_back(data, [terms[0], terms[1], terms[2], terms[3]])
-
-    ls_arr = ['', '', '', '']
-    marker_arr = ['o', 'v', 'o', '^']
-    fillstyle_arr = ['full', 'full', 'none', 'full']
-    colors = ['mediumblue', 'orange', 'g', 'r']
-    fg = plots.plot_potential_decomposition(
-        data, y_lims, ls_arr, marker_arr, fillstyle_arr, colors, image_path, image_name)
-
-    data_fits = []
-    columns = []
-    x_fit = np.arange(data['r/a'].min(), data['r/a'].max(), 0.01)
-    data_fits.append(x_fit)
-    columns.append('r/a')
-    for term in terms:
-        data_fits.append(fit.func_quark_potential(x_fit, *coefs[term]))
-        columns.append(f'aV(r)_' + term)
-    data_fits = pd.DataFrame(np.array(data_fits).T, columns=columns)
-
-    colors = ['mediumblue', 'orange', 'g', 'r']
-    for i in range(len(terms)):
-        seaborn.lineplot(data=data_fits, x='r/a',
-                         y='aV(r)_' + terms[i], color=colors[i])
-
-    plt.show()
-    plots.save_image(image_path, image_name, fg)
-
-
-def potential_decomposition_vitaly1(paths, path, image_path, image_name, coefs, terms, y_lims, beta, r_max):
-    data = []
-    data.append(potential_data.read_vitaly_potential(path))
-    data1 = potential_data.read_data_potential(paths)
-    for dict in paths:
-        if 'T' in dict:
-            data.append(data1[(data1['T'] == dict['T']) & (data1['r/a'] <= r_max)
-                              ].reset_index()[['r/a', 'aV(r)_' + dict['name'], 'err_' + dict['name']]])
-    data = pd.concat(data, axis=1)
-    data = data.loc[:, ~data.columns.duplicated()]
-
-    terms.append(f'{terms[1]}+{terms[2]}')
-    for i in paths:
-        terms.append(i['name'])
-    terms.append(f'{terms[4]}+{terms[5]}')
-    data = find_sum(data, terms[1], terms[2], terms[3])
-    data = find_sum(data, terms[4], terms[5], terms[6])
-
-    r0 = scaler.get_r0(beta)
-    data['r/a'] = data['r/a'] * r0
-    for term in terms:
-        data[f'aV(r)_' + term] = data[f'aV(r)_' + term] / r0
-        data[f'err_' + term] = data[f'err_' + term] / r0
-
-    data = data.drop(f'aV(r)_{terms[4]}', axis=1)
-    data = data.drop(f'err_{terms[4]}', axis=1)
-    data = data.drop(f'aV(r)_{terms[5]}', axis=1)
-    data = data.drop(f'err_{terms[5]}', axis=1)
-    terms = [terms[0], terms[1], terms[2], terms[3], terms[6]]
-    data = join_back(data, terms)
-
-    ls_arr = ['', '', '', '', '']
-    marker_arr = ['o', 'v', 'o', '^', 's']
-    fillstyle_arr = ['full', 'full', 'none', 'full', 'full']
-    colors = ['mediumblue', 'orange', 'g', 'r', 'rebeccapurple']
-    fg = plots.plot_potential_decomposition(
-        data, y_lims, ls_arr, marker_arr, fillstyle_arr, colors, image_path, image_name)
-
-    data_fits = []
-    columns = []
-    x_fit = np.arange(data['r/a'].min(), data['r/a'].max(), 0.01)
-    data_fits.append(x_fit)
-    columns.append('r/a')
-    for term in terms[:-1]:
-        data_fits.append(fit.func_quark_potential(x_fit, *coefs[term]))
-        columns.append(f'aV(r)_' + term)
-    data_fits = pd.DataFrame(np.array(data_fits).T, columns=columns)
-
-    colors = ['mediumblue', 'orange', 'g', 'r']
-    for i in range(len(terms[:-1])):
-        seaborn.lineplot(data=data_fits, x='r/a',
-                         y='aV(r)_' + terms[i], color=colors[i])
-
-    plt.show()
-    plots.save_image(image_path, image_name, fg)
-
-
 def potential_decomposition_general(paths, path, image_path, image_name, fit_coefs, to_fit, to_remove, terms, y_lims, beta, r_max):
     data = []
-    data.append(potential_data.read_vitaly_potential(path))
     data1 = potential_data.read_data_potential(paths)
     for dict in paths:
         if 'T' in dict:
@@ -305,7 +208,7 @@ def make_fit_separate_shift(data, terms, fit_range, r0):
 
 
 def get_potential_beta_shift(paths, fit_original, r0, fit_range, remove_from_plot):
-    data = potential_data.read_data_potential1(paths)
+    data = potential_data.read_data_potential(paths)
     data1 = []
     for type, path in paths.items():
         if 'T' in path:
@@ -394,7 +297,7 @@ def potential_together_shifted(paths, image_path, image_name, y_lims, fit_origin
         data_fits[-1]['matrix_type'] = f'beta{beta}'
 
     data = pd.concat(data)
-    # print(data)
+    print(data)
     # print(data_fits)
 
     ls_arr = ['', '', '', '', '', '', '']

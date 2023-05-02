@@ -29,12 +29,12 @@ def find_sum(data):
     return data
 
 
-def flux(paths, flux_coord, hue, groupby, image_path, plot_function, show_plot):
+def flux(paths, fields, flux_coord, hue, groupby, image_path, plot_function, show_plot):
     data = flux_data.get_flux_data(paths)
 
     data = data.reset_index(drop=True)
 
-    for type in ['electric', 'magnetic', 'action', 'energy']:
+    for type in fields:
         if groupby:
             data.groupby(groupby).apply(
                 plot_function, flux_coord, hue, image_path, type, show_plot)

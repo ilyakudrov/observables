@@ -36,42 +36,13 @@ def read_data_decomposition(path, params, flux_coord, sigma):
     return data
 
 
-def read_data_beta():
-    data = []
-    # data.append(concat_betas(betas, f'act-lng-prof0{direction}.dat', func))
-    data.append(pd.read_csv(
-        f"../result/flux_tube_wilson/su2_suzuki/24^4/flux_tube_electric_mu=0.00.csv", index_col=None))
-    data[-1] = data[-1].rename(columns={'field': 'field_su2',
-                               'err': 'err_su2'})
-    data[-1]['beta'] = 2.4
-    data[-1] = data[-1][data[-1]['T'] == 4]
-    data[-1] = data[-1][data[-1]['R'] == 6]
-    data[-1] = data[-1].drop(['T'], axis=1).reset_index()
-    # data.append(concat_betas(betas, f'act-lng-prof0{direction}_mon.dat', func))
-    data.append(pd.read_csv(
-        f"../result/flux_tube_wilson/monopole/su2_suzuki/24^4/flux_tube_electric_mu=0.00.csv", index_col=None))
-    data[-1] = data[-1].rename(columns={'field': 'field_mon',
-                               'err': 'err_mon'})
-    data[-1]['beta'] = 2.4
-    data[-1] = data[-1][data[-1]['T'] == 6]
-    data[-1] = data[-1][data[-1]['R'] == 6]
-    data[-1] = data[-1].drop(['T'], axis=1).reset_index()
-    # data.append(concat_betas(betas, f'act-lng-prof0{direction}-off.dat', func))
-    data.append(pd.read_csv(
-        f"../result/flux_tube_wilson/monopoless/su2_suzuki/24^4/flux_tube_electric_mu=0.00.csv", index_col=None))
-    data[-1] = data[-1].rename(
-        columns={'field': 'field_nomon', 'err': 'err_nomon'})
-    data[-1]['beta'] = 2.4
-    data[-1] = data[-1][data[-1]['T'] == 4]
-    data[-1] = data[-1][data[-1]['R'] == 6]
-    data[-1] = data[-1].drop(['T'], axis=1).reset_index()
-
-
 def get_flux_data(paths):
     data = []
     for path in paths:
         data.append(pd.read_csv(path['path']))
-        data[-1]['label'] = path['label']
+        if 'parameters' in path:
+            for key, val in path['parameters'].items():
+                data[-1][key] = val
         if 'constraints' in path:
             for key, val in path['constraints'].items():
                 data[-1] = data[-1][(data[-1][key] >= val[0])

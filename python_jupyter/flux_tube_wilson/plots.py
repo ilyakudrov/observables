@@ -85,7 +85,8 @@ def plot_flux(data, flux_coord, hue, image_path, field_type, show_plot):
     elif flux_coord == 'd':
         coord_sign = r"$x_{\parallel}$"
     else:
-        coord_sign = "wrong flux_coord"
+        coord_sign = flux_coord
+
     fg.ax.set_xlabel(coord_sign + r"$\sqrt{\sigma}$")
     fg.ax.set_ylabel(type_sign + r"/$\sigma^{2}$")
     # plt.ylim((-1, 1))
