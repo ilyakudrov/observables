@@ -89,7 +89,7 @@ conf_type = "qc2dstag"
 theory_type = 'su2'
 flux_coord = 'd'
 # flux_coord = 'x_tr'
-direction = 'longitudinal'
+direction_arr = ['longitudinal', 'transversal']
 # direction = 'transversal'
 # direction = '_tr'
 shift = False
@@ -98,8 +98,9 @@ fix_tr = False
 # fix_tr = True
 smearing_arr = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
                 'HYP1_alpha=1_1_0.5_APE_alpha=0.5',
+                'HYP2_alpha=1_1_0.5_APE_alpha=0.5',
                 'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
-# smearing_arr = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
+# smearing_arr = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
 # smearing = '/'
 
 betas = ['/']
@@ -117,13 +118,14 @@ mu_arr = ['mu0.00']
 # mu_arr = ['/']
 conf_max = 5000
 additional_parameters_arr = ['/']
+
 chains = ['/']
 # chains = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
 
 
 iter_arrays = [betas, decomposition_plaket_arr, decomposition_wilson_arr,
-               conf_sizes, mu_arr, additional_parameters_arr, smearing_arr]
-for beta, decomposition_plaket, decomposition_wilson, conf_size, mu, additional_parameters, smearing in itertools.product(*iter_arrays):
+               conf_sizes, mu_arr, additional_parameters_arr, smearing_arr, direction_arr]
+for beta, decomposition_plaket, decomposition_wilson, conf_size, mu, additional_parameters, smearing, direction in itertools.product(*iter_arrays):
     print(decomposition_plaket, decomposition_wilson, conf_size, mu, beta)
     data_electric = []
     data_magnetic = []
