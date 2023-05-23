@@ -115,18 +115,18 @@ def get_bin_borders(data_size, bin_size):
 
 
 axis = 'on-axis'
-conf_type = "gluodynamics"
-# conf_type = "qc2dstag"
+# conf_type = "gluodynamics"
+conf_type = "qc2dstag"
 # conf_type = "QCD/140MeV"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
-# conf_sizes = ["40^4", "32^4"]
-conf_sizes = ["32^3x64"]
+conf_sizes = ["40^4"]
+# conf_sizes = ["32^3x64"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
-theory_type = 'su3'
-betas = ['beta6.2']
+theory_type = 'su2'
+# betas = ['beta6.2']
 # betas = ['beta2.7', 'beta2.8']
-# betas = ['/']
+betas = ['/']
 smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
                  'HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP2_alpha=1_1_0.5_APE_alpha=0.5',
@@ -188,16 +188,16 @@ elif calculation_type == 'no_smearing':
     dir_name = ''
 
 conf_max = 5000
-# mu1 = ['mu0.00']
-mu1 = ['/']
+mu1 = ['mu0.40']
+# mu1 = ['/']
 # chains = ["/"]
 # mu1 = ['mu0.05',
 #        'mu0.20', 'mu0.25',
 #        'mu0.30', 'mu0.35', 'mu0.45']
 # mu1 = ['mu0.40']
-chains = ['s1', 's2']
-# chains = ['s0', 's1', 's2', 's3',
-#           's4', 's5', 's6', 's7', 's8']
+# chains = ['s1', 's2']
+chains = ['s0', 's1', 's2', 's3',
+          's4', 's5', 's6', 's7', 's8']
 
 # adjoint_fix = True
 adjoint_fix = False

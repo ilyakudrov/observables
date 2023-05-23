@@ -97,14 +97,14 @@ def plot_potential_fitted_single(data, y_lims, term, image_path, image_name):
     return fg
 
 
-def plot_potential_single(data, hue, image_path, image_name, show_plot):
+def plot_potential_single(data, coordinate, hue, image_path, image_name, show_plot):
     # R = data['r/a'].iloc[0]
     # field_type = data['field_type'].iloc[0]
     # print('R = ', R)
     fg = seaborn.FacetGrid(data=data, hue=hue, height=5,
                            aspect=1.61, legend_out=False)
     fg.fig.suptitle(f'potential')
-    fg.map(plt.errorbar, f'r/a', f'aV(r)', 'err', mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls='-'
+    fg.map(plt.errorbar, coordinate, f'aV(r)', 'err', mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls='-'
            ).add_legend()
 
     # fg.ax.set_xlabel(r"R$\sqrt{\sigma}$")
@@ -124,10 +124,10 @@ def plot_potential_single(data, hue, image_path, image_name, show_plot):
         plt.close()
 
 
-def make_plots_single(paths, hue, groupby, image_path, image_name, show_plot):
+def make_plots_single(paths, coordinate, hue, groupby, image_path, image_name, show_plot):
     data = potential_data.get_potantial_data(paths)
     if groupby:
         data.groupby(groupby).apply(
-            plot_potential_single, hue, image_path, image_name, show_plot)
+            plot_potential_single, coordinate, hue, image_path, image_name, show_plot)
     else:
-        plot_potential_single(data, hue, image_path, image_name, show_plot)
+        plot_potential_single(data, coordinate, hue, image_path, image_name, show_plot)
