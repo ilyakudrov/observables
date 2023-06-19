@@ -96,11 +96,11 @@ shift = False
 # shift = True
 fix_tr = False
 # fix_tr = True
-smearing_arr = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
-                'HYP1_alpha=1_1_0.5_APE_alpha=0.5',
-                'HYP2_alpha=1_1_0.5_APE_alpha=0.5',
-                'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
-# smearing_arr = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
+# smearing_arr = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
+#                 'HYP1_alpha=1_1_0.5_APE_alpha=0.5',
+#                 'HYP2_alpha=1_1_0.5_APE_alpha=0.5',
+#                 'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
+smearing_arr = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smearing = '/'
 
 betas = ['/']
@@ -131,12 +131,14 @@ for beta, decomposition_plaket, decomposition_wilson, conf_size, mu, additional_
     data_magnetic = []
     for chain in chains:
         for i in range(conf_max + 1):
-            file_path_electric = f'../../data/flux_tube_schwinger/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{decomposition_plaket}-{decomposition_wilson}/{smearing}/{chain}/{direction}/electric_{i:04}'
+            file_path_electric = f'../../data/flux_tube_schwinger/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{decomposition_plaket}-{decomposition_wilson}/{smearing}/{chain}/{direction}/electric_l_{i:04}'
             # file_path_magnetic = f'../../data/flux_tube_wilson/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{decomposition_plaket}-{decomposition_wilson}/{smearing}/{chain}/{direction}/magnetic_{i:04}'
             # print(file_path_electric)
             # if(os.path.isfile(file_path_electric) & os.path.isfile(file_path_magnetic)):
             if(os.path.isfile(file_path_electric)):
-                data_electric.append(pd.read_csv(file_path_electric))
+                data_tmp = pd.read_csv(file_path_electric)
+                if not data_tmp.empty:
+                    data_electric.append(data_tmp)
                 data_electric[-1]['conf'] = i
                 # data_magnetic.append(pd.read_csv(file_path_magnetic, header=0, names=[
                 #                      'T', 'R', flux_coord, 'correlator magnetic', 'wilson loop', 'plaket magnetic']))

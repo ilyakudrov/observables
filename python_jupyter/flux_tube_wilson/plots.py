@@ -61,7 +61,7 @@ def plot_flux(data, flux_coord, hue, image_path, field_type, show_plot):
     fg = seaborn.FacetGrid(data=data, hue=hue, height=5,
                            aspect=1.61, legend_out=False)
     fg.fig.suptitle(f'{field_type}, R = {R}')
-    fg.map(plt.errorbar, flux_coord, f'field_{field_type}', f'err_{field_type}', mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls='-'
+    fg.map(plt.errorbar, flux_coord, f'flux_tube', f'err', mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls='-'
            ).add_legend()
 
     # fg.ax.set_xlabel(r"R$\sqrt{\sigma}$")
