@@ -14,7 +14,7 @@ def save_image(image_path, image_name, fg):
 
     output_path = f'{image_path}/{image_name}'
     print(output_path)
-    fg.savefig(output_path, dpi=400, facecolor='white')
+    fg.savefig(output_path, dpi=800, facecolor='white')
     # output_path_grey = f'{image_path}/{image_name}_grey'
     # Image.open(f'{output_path}.png').convert('L').save(f'{output_path_grey}.png')
 
@@ -50,10 +50,13 @@ def plot_potential_decomposition(data, y_lims, ls_arr, marker_arr, fillstyle_arr
                  capsize=8, lw=0.5).add_legend(title='')
     # fg.figure.suptitle(title)
     fg.ax.set_title(title, loc='center')
-    fg.ax.set_xlabel(r"R$/r_{0}$")
-    fg.ax.set_ylabel(r"$r_{0}V(R)$")
+    fg.ax.set_xlabel(r"R$/r_{0}$", fontsize=16)
+    fg.ax.set_ylabel(r"$r_{0}V(R)$", fontsize=16)
+    fg.ax.tick_params(axis='both', which='major', labelsize=14)
     fg.ax.spines['right'].set_visible(True)
     fg.ax.spines['top'].set_visible(True)
+    # plt.xlabel('xlabel', fontsize=18)
+    # plt.ylabel('ylabel', fontsize=16)
     fg.ax.minorticks_on()
     fg.ax.tick_params(which='both', bottom=True,
                       top=True, left=True, right=True)

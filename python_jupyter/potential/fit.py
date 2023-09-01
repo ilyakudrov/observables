@@ -42,10 +42,13 @@ def get_potential_fit(data, fit_func, fit_range, fit_name):
 
 
 def fit_string(data, fit_range, fit_name):
+    print(data)
     data = data[(data['r/a'] >= fit_range[0]) & (data['r/a'] <= fit_range[1])]
     y = data['aV(r)_' + fit_name]
     y_err = data['err_' + fit_name]
     x = data['r/a'].to_numpy(dtype=np.float64)
+    print('x', x)
+    print('y', y)
     popt, pcov = curve_fit(func_quark_potential, x, y, sigma=y_err)
     return popt, pcov
 

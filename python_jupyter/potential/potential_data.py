@@ -166,7 +166,7 @@ class DataDecomposition:
         for i in range(len(self.terms)):
             seaborn.lineplot(data=self.data_fits, x='r/a',
                              y='aV(r)_' + self.terms[i], color=colors[i])
-
+        plt.legend(fontsize="14")
         plt.show()
         plots.save_image(image_path, image_name, fg)
 

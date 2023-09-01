@@ -71,7 +71,9 @@ def potential_decomposition(paths, image_path, image_name, beta, y_lims, fit_ori
     print(data_decomposition.data)
     data_decomposition.get_single_T()
     data_decomposition.scale_by_r0(r0)
-    fit_params = data_decomposition.make_fits(fit_original, fit_range)
+    fit_range1 = [i * r0 for i in fit_range]
+    print('fit_range1', fit_range1)
+    fit_params = data_decomposition.make_fits(fit_original, fit_range1)
     print(fit_params)
     data_decomposition.remove_from_plot(remove_from_plot)
     data_decomposition.plot(black_colors, y_lims, image_path, image_name)
