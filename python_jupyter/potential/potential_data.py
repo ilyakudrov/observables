@@ -7,12 +7,31 @@ import matplotlib.pyplot as plt
 import fit
 import plots
 
-# class for data for decomposition of potential
-
-
 class DataDecomposition:
+    """Reads and processes data for a static potential."""
 
     def __init__(self, paths):
+        """Reads data for potentials and initiates data for potentials.
+
+        Args:
+            paths:
+                double dictionary with properties for each
+                potential data set. For example:
+
+                {'original': {'name' : 'SU2', 'path' : f'{path}
+                /HYP1_alpha=1_1_0.5_APE_alpha=0.5/potential
+                /potential_original.csv', 'T' : 8, 'constraints': constraints},
+                'monopole': {'name' : 'monopole', 'path' :
+                f'{path}/HYP1_alpha=1_1_0.5_APE_alpha=0.5/{params}
+                /{compensate}/potential/potential_monopole.csv',
+                'T' : 8, 'constraints': {'r/a': (1, 16)}}}
+
+                name: id to refer to potential
+                path: path to potential data .csv file
+                constraints: (optional) dictionary of ranges of values
+
+                optionaly may contain other key-values to be used by methods
+        """
         data = []
         for type, path in paths.items():
             data.append(pd.read_csv(path['path'], index_col=None))
@@ -35,11 +54,14 @@ class DataDecomposition:
         self.paths = paths
 
     def get_single_T(self):
+        """Extracts dependence of the potential V(r) on a distance r."""
         data1 = []
         for type, path in self.paths.items():
             if 'T' in path:
-                data1.append(self.data[self.data['T'] == path['T']].reset_index()[
-                             ['r/a', 'aV(r)_' + path['name'], 'err_' + path['name']]])
+                data1.append(self.data[self.data['T'] == path['T']]
+                             .reset_index()[['r/a', 'aV(r)_'
+                                             + path['name'], 'err_'
+                                             + path['name']]])
             else:
                 data1.append(fit.get_potential_fit(
                     self.data, fit.func_exponent, (2, 8), path['name']))
@@ -124,20 +146,13 @@ class DataDecomposition:
         return params
 
     def scale_by_r0(self, r0):
+        """multiplies V(r) by r0 and divides r by r0."""
         self.data['r/a'] = self.data['r/a'] * r0
         for key, value in self.paths.items():
             self.data[f'aV(r)_' + value['name']
                       ] = self.data[f'aV(r)_' + value['name']] / r0
             self.data[f'err_' + value['name']
                       ] = self.data[f'err_' + value['name']] / r0
-        # for term in self.terms:
-        #     self.data[f'aV(r)_' + term] = self.data[f'aV(r)_' + term] / r0
-        #     self.data[f'err_' + term] = self.data[f'err_' + term] / r0
-
-        # self.data_fits['r/a'] = self.data_fits['r/a'] * r0
-        # for term in self.terms:
-        #     self.data_fits['aV(r)_' +
-        #                    term] = self.data_fits['aV(r)_' + term] / r0
 
     def remove_from_plot(self, remove_from_plot):
         for term in remove_from_plot:

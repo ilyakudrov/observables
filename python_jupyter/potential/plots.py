@@ -49,9 +49,9 @@ def plot_potential_decomposition(data, y_lims, ls_arr, marker_arr, fillstyle_arr
     map = fg.map(plt.errorbar, 'r/a', 'aV(r)', 'err', ms=8,
                  capsize=8, lw=0.5).add_legend(title='')
     # fg.figure.suptitle(title)
-    fg.ax.set_title(title, loc='center')
-    fg.ax.set_xlabel(r"R$/r_{0}$", fontsize=16)
-    fg.ax.set_ylabel(r"$r_{0}V(R)$", fontsize=16)
+    # fg.ax.set_title(title, loc='center')
+    fg.ax.set_xlabel(r"r$/r_{0}$", fontsize=16)
+    fg.ax.set_ylabel(r"$r_{0}V(r)$", fontsize=16)
     fg.ax.tick_params(axis='both', which='major', labelsize=14)
     fg.ax.spines['right'].set_visible(True)
     fg.ax.spines['top'].set_visible(True)

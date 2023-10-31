@@ -356,16 +356,25 @@ class SymanzikScaleSetter(GluoScaleSetter):
 
         This fit is based on [arXiv:hep-lat/9707023].
         """
-        def f(_beta: float) -> float:
-            """Universal two-oop SU(3) scaling function."""
-            b0 = 11 / (4 * m.pi)**2
-            b1 = 102 / (4 * m.pi)**4
-            return ((6 * b0 / _beta) ** (-b1 / (2 * b0**2))
-                    * m.exp(-_beta / (6 * 2 * b0)))
-        frac = f(beta) / f(4.0)
-        return self._mev_in_tension_units / self._fm_in_MeV * f(beta) * (
-                1 + 0.21005651 * frac**2 + 0.33740354 * frac**4
-                - 0.13137041 * frac**6) / 0.06829413
+        # def f(_beta: float) -> float:
+        #     """Universal two-oop SU(3) scaling function."""
+        #     b0 = 11 / (4 * m.pi)**2
+        #     b1 = 102 / (4 * m.pi)**4
+        #     return ((6 * b0 / _beta) ** (-b1 / (2 * b0**2))
+        #             * m.exp(-_beta / (6 * 2 * b0)))
+        # frac = f(beta) / f(4.0)
+        # return self._mev_in_tension_units / self._fm_in_MeV * f(beta) * (
+        #         1 + 0.21005651 * frac**2 + 0.33740354 * frac**4
+        #         - 0.13137041 * frac**6) / 0.06829413
+        c0 = 0.07296355
+        c2 = 0.54850073
+        c4 = -0.06597973
+        c6 = 0.02551499
+        beta1 = 4.0
+        b0 = 1./((4*np.pi) ** 2) * (11./3 * 3)
+        b1 = 1./((4*np.pi) ** 4) * (34./3 * 3 * 3)
+        frac = ( (6*b0/beta)**(-b1/(2*b0**2)) * np.exp(-beta/(2*b0*6)) ) / ( (6*b0/beta1)**(-b1/(2*b0**2)) * np.exp(-beta1/(2*b0*6)) )
+        return ( (6*b0/beta)**(-b1/(2*b0**2)) * np.exp(-beta/(2*b0*6)) ) * (1 + c2*frac**2 + c4*frac**4 + c6*frac**6)/c0
 
     def get_spacing_in_fm(self, beta: Sequence[float]) -> np.ndarray:
         """See base class.
@@ -375,7 +384,7 @@ class SymanzikScaleSetter(GluoScaleSetter):
         return np.array([self._get_spacing_in_fm(_beta) for _beta in beta])
 
     def _get_spacing_in_fm(self, beta: float) -> float:
-        if 3.85 <= beta <= 5.0:
+        if 3.85 <= beta <= 6.0:
             return self._spacing_in_fm_9707023(beta)
         else:
             raise ValueError(f"beta has to be within [3.85, 5.0] interval "
