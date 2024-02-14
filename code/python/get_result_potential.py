@@ -34,6 +34,9 @@ def get_potential(data):
 
     return pd.DataFrame(potential, columns=['T', 'aV(r)', 'err'])
 
+def get_wilson_loop(data):
+    wilson_loop, err = stat.jackknife_var_numba(data.loc[:, 'wilson_loop'].to_numpy(), potential_numba)
+    return pd.DataFrame([wilson_loop, err], columns=['W', 'W_err'])
 
 def get_potential_binning(data, bin_size):
     time_size_min = data["T"].min()
@@ -69,6 +72,9 @@ def potential_numba(x):
             y[i] = 0
     return y
 
+@njit
+def trivial_numba(x):
+    return x[0]
 
 def potential(x):
     a = np.mean(x, axis=1)

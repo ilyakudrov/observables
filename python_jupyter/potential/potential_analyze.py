@@ -9,4 +9,4 @@ import plots
 import scaler
 import fit
 
-def
+def relative_deviation(data_main, data_deviated):

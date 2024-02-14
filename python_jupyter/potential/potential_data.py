@@ -26,251 +26,132 @@ class DataDecomposition:
                 /{compensate}/potential/potential_monopole.csv',
                 'T' : 8, 'constraints': {'r/a': (1, 16)}}}
 
-                name: id to refer to potential
                 path: path to potential data .csv file
+                parameters: dictironary of paramenters to be included as coumns
                 constraints: (optional) dictionary of ranges of values
 
                 optionaly may contain other key-values to be used by methods
         """
-        data = []
-        for type, path in paths.items():
-            data.append(pd.read_csv(path['path'], index_col=None))
-            data[-1].reset_index(drop=True, inplace=True)
+        df = []
+        for potential_type, path in paths.items():
+            df.append(pd.read_csv(path['path'], index_col=None))
+            df[-1].reset_index(drop=True, inplace=True)
+            if 'parameters' in path:
+                for key, val in path['parameters'].items():
+                    df[-1][key] = val
             if 'constraints' in path:
                 for key, value in path['constraints'].items():
-                    data[-1] = data[-1][(data[-1][key] <= value[1])
-                                        & (data[-1][key] >= value[0])]
-            name = path['name']
-            data[-1] = data[-1].rename(
-                columns={'aV(r)': f'aV(r)_{name}', 'err': f'err_{name}'})
-            data[-1]['r/a'] = data[-1]['r/a']
-            data[-1][f'aV(r)_{name}'] = data[-1][f'aV(r)_{name}']
-            data[-1][f'err_{name}'] = data[-1][f'err_{name}']
-            data[-1] = data[-1].reset_index(drop=True)
-        data = pd.concat(data, axis=1)
-        data = data.loc[:, ~data.columns.duplicated()]
+                    df[-1] = df[-1][(df[-1][key] <= value[1])
+                                        & (df[-1][key] >= value[0])]
+            df[-1]['potential_type'] = potential_type
+        df = pd.concat(df, axis=0)
 
-        self.data = data
-        self.paths = paths
+        self.df = df
 
-    def get_single_T(self):
-        """Extracts dependence of the potential V(r) on a distance r."""
-        data1 = []
-        for type, path in self.paths.items():
-            if 'T' in path:
-                data1.append(self.data[self.data['T'] == path['T']]
-                             .reset_index()[['r/a', 'aV(r)_'
-                                             + path['name'], 'err_'
-                                             + path['name']]])
-            else:
-                data1.append(fit.get_potential_fit(
-                    self.data, fit.func_exponent, (2, 8), path['name']))
+    def fit_original_T(self, fit_range, copy_columns):
+        """For each r fits T dependence with exponent to extract potential"""
+        data_original_r = self.df.loc[self.df['potential_type'] == 'original'].groupby('r/a').apply(fit.potential_fit_T, fit_range).reset_index().drop('level_1', axis=1)
+        for column in copy_columns:
+            data_original_r[column] = self.df.loc[self.df['potential_type'] == 'original'].loc[0, column]
+        data_original_r['potential_type'] = self.df.loc[self.df['potential_type'] == 'original'].loc[0, 'potential_type']
+        self.df = self.df.loc[self.df['potential_type'] != 'original']
+        self.df = pd.concat([data_original_r, self.df])
 
-        self.data = pd.concat(data1, axis=1)
-        self.data = self.data.loc[:, ~self.data.columns.duplicated()]
-
-    def make_fits(self, fit_original, fit_range):
-        self.terms = self.get_terms(self.paths)
-        self.terms_fit = list(self.terms)
-
-        self.data_fits = []
-        params = {}
-        if fit_original:
-            if 'original' in self.paths and 'monopole' in self.paths and 'monopoless' in self.paths:
-                original_name = self.paths['original']['name']
-                monopole_name = self.paths['monopole']['name']
-                monopoless_name = self.paths['monopoless']['name']
-                fit_data, params_original, params_original_err, c_coloumb, c_coloumb_err, c_string, c_string_err = fit.make_fit_original(
-                    self.data, original_name, monopoless_name, monopole_name, fit_range)
-                self.data_fits.append(fit_data)
-                params[f'aV(r)_' + original_name] = params_original
-                params[f'err_' + original_name] = params_original_err
-                params[f'aV(r)_' + monopole_name] = (c_string,
-                                                     0, params_original[2])
-                params[f'err_' + monopole_name] = (
-                    c_string_err, 0, params_original_err[2])
-                params[f'aV(r)_' + monopoless_name] = (c_coloumb,
-                                                       params_original[1], 0)
-                params[f'err_' + monopoless_name] = (
-                    c_coloumb_err, params_original_err[1], 0)
-                for term in [original_name, monopoless_name, monopole_name]:
-                    try:
-                        self.terms_fit.remove(term)
-                    except:
-                        pass
-            if 'original' in self.paths and 'abelian' in self.paths and 'offdiagonal' in self.paths:
-                original_name = self.paths['original']['name']
-                abelian_name = self.paths['abelian']['name']
-                offdiagonal_name = self.paths['offdiagonal']['name']
-                fit_data, params_original, params_original_err, c_coloumb, c_coloumb_err, c_string, c_string_err = fit.make_fit_original(
-                    self.data, original_name, offdiagonal_name, abelian_name, fit_range)
-                self.data_fits.append(fit_data)
-                params[f'aV(r)_' + original_name] = params_original
-                params[f'err_' + original_name] = params_original_err
-                params[f'aV(r)_' + abelian_name] = (c_string,
-                                                    0, params_original[2])
-                params[f'err_' + abelian_name] = (
-                    c_string_err, 0, params_original_err[2])
-                params[f'aV(r)_' + offdiagonal_name] = (c_coloumb,
-                                                        params_original[1], 0)
-                params[f'err_' + offdiagonal_name] = (
-                    c_coloumb_err, params_original_err[1], 0)
-                for term in [original_name, offdiagonal_name, abelian_name]:
-                    try:
-                        self.terms_fit.remove(term)
-                    except:
-                        pass
-
-        if 'monopole' in self.paths and 'monopoless' in self.paths:
-            monopole_name = self.paths['monopole']['name']
-            monopoless_name = self.paths['monopoless']['name']
-            sum_name = f'{monopole_name}+{monopoless_name}'
-            self.data = self.find_sum(self.data, self.paths['monopole']['name'],
-                                      self.paths['monopoless']['name'], sum_name)
-
-        if 'abelian' in self.paths and 'offdiagonal' in self.paths:
-            abelian_name = self.paths['abelian']['name']
-            offdiagonal_name = self.paths['offdiagonal']['name']
-            sum_name = f'{abelian_name}+{offdiagonal_name}'
-            self.data = self.find_sum(self.data, self.paths['abelian']['name'],
-                                      self.paths['offdiagonal']['name'], sum_name)
-
-        fit_data, fit_params = fit.make_fit_separate(
-            self.data, self.terms_fit, fit_range)
-        self.data_fits.append(fit_data)
-        params = {**params, **fit_params}
-
-        self.data_fits = pd.concat(self.data_fits, axis=1)
-        self.data_fits = self.data_fits.loc[:,
-                                            ~self.data_fits.columns.duplicated()]
-        return params
-
-    def scale_by_r0(self, r0):
+    def scale_potentials(self, r0):
         """multiplies V(r) by r0 and divides r by r0."""
-        self.data['r/a'] = self.data['r/a'] * r0
-        for key, value in self.paths.items():
-            self.data[f'aV(r)_' + value['name']
-                      ] = self.data[f'aV(r)_' + value['name']] / r0
-            self.data[f'err_' + value['name']
-                      ] = self.data[f'err_' + value['name']] / r0
+        self.df['r/a'] = self.df['r/a'] * r0
+        self.df['aV(r)'] = self.df['aV(r)'] / r0
+        self.df['err'] = self.df['err'] / r0
 
-    def remove_from_plot(self, remove_from_plot):
-        for term in remove_from_plot:
-            self.terms.remove(self.paths[term]['name'])
-            self.data = self.data.drop(
-                f'aV(r)_' + self.paths[term]['name'], axis=1)
-            self.data = self.data.drop(
-                f'err_' + self.paths[term]['name'], axis=1)
+    def remove_from_plot(self, types_to_remove):
+        self.df = self.df.loc[~self.df['potential_type'].isin(types_to_remove)]
 
-        self.data = self.join_back(self.data, self.terms)
+    def find_sum(self, term1, term2):
+        df1 = self.df.loc[self.df['potential_type'] == term1]
+        df1.loc[:, 'potential_type'] = self.df.loc[self.df['potential_type'] == term1, 'potential_type'].array + "+" + self.df.loc[self.df['potential_type'] == term2, 'potential_type'].array
+        df1.loc[:, 'name'] = self.df.loc[self.df['potential_type'] == term1, 'name'].array + "+" + self.df.loc[self.df['potential_type'] == term2, 'name'].array
+        df1.loc[:, 'err'] = np.sqrt(self.df.loc[self.df['potential_type'] == term1, 'err'].array**2 + self.df.loc[self.df['potential_type'] == term2, 'err'].array**2)
+        df1.loc[:, 'aV(r)'] = self.df.loc[self.df['potential_type'] == term1, 'aV(r)'].array + self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array
+        self.df = pd.concat([self.df, df1])
 
-    def plot(self, black_colors, y_lims, image_path, image_name):
-        ls_arr = ['', '', '', '', '', '', '']
-        marker_arr = ['o', 'v', 'o', '^', 's', 's', 'D']
-        fillstyle_arr = ['full', 'full', 'none',
-                         'full', 'full', 'none', 'none']
-        if black_colors:
-            colors = ['black', 'black', 'black',
-                      'black', 'black', 'black', 'black']
-        else:
-            colors = ['mediumblue', 'orange', 'g', 'r',
-                      'rebeccapurple', 'saddlebrown', 'olive']
-        fg = plots.plot_potential_decomposition(
-            self.data, y_lims, ls_arr, marker_arr, fillstyle_arr, colors, image_path, image_name, 'potential')
+    def find_difference(self, term1, term2):
+        df1 = self.df.loc[self.df['potential_type'] == term1]
+        df1.loc[:, 'potential_type'] = self.df.loc[self.df['potential_type'] == term1, 'potential_type'].array + "-" + self.df.loc[self.df['potential_type'] == term2, 'potential_type'].array
+        df1.loc[:, 'name'] = self.df.loc[self.df['potential_type'] == term1, 'name'].array + "-" + self.df.loc[self.df['potential_type'] == term2, 'name'].array
+        df1.loc[:, 'err'] = np.sqrt(self.df.loc[self.df['potential_type'] == term1, 'err'].array**2 + self.df.loc[self.df['potential_type'] == term2, 'err'].array**2)
+        df1.loc[:, 'aV(r)'] = self.df.loc[self.df['potential_type'] == term1, 'aV(r)'].array - self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array
+        self.df = pd.concat([self.df, df1])
 
-        for i in range(len(self.terms)):
-            seaborn.lineplot(data=self.data_fits, x='r/a',
-                             y='aV(r)_' + self.terms[i], color=colors[i])
-        plt.legend(fontsize="14")
-        plt.show()
-        plots.save_image(image_path, image_name, fg)
+    def find_ratio(self, term1, term2):
+        df1 = self.df.loc[self.df['potential_type'] == term1]
+        df1.loc[:, 'potential_type'] = self.df.loc[self.df['potential_type'] == term1, 'potential_type'].array + "/" + self.df.loc[self.df['potential_type'] == term2, 'potential_type'].array
+        df1.loc[:, 'name'] = self.df.loc[self.df['potential_type'] == term1, 'name'].array + "/" + self.df.loc[self.df['potential_type'] == term2, 'name'].array
+        df1.loc[:, 'err'] = np.sqrt(self.df.loc[self.df['potential_type'] == term1, 'err'].array**2 / self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array**2
+                                     + self.df.loc[self.df['potential_type'] == term2, 'err'].array**2 * self.df.loc[self.df['potential_type'] == term1, 'aV(r)'].array**2
+                                     /self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array**4)
+        df1.loc[:, 'aV(r)'] = self.df.loc[self.df['potential_type'] == term1, 'aV(r)'].array / self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array
+        self.df = pd.concat([self.df, df1])
 
-    def get_terms(self, paths):
-        terms = []
-        for key, value in paths.items():
-            terms.append(value['name'])
-        if 'monopole' in paths and 'monopoless' in paths:
-            monopole_name = paths['monopole']['name']
-            monopoless_name = paths['monopoless']['name']
-            terms.append(f'{monopole_name}+{monopoless_name}')
-        if 'abelian' in paths and 'offdiagonal' in paths:
-            abelian_name = paths['abelian']['name']
-            offdiagonal_name = paths['offdiagonal']['name']
-            terms.append(f'{abelian_name}+{offdiagonal_name}')
-        return terms
+    def shift_fit_linear(self, type1, type2, fit_range1, fit_range2):
+        """potential of type2 gets shifted towards potential if type1
+            so that linear fits coinside."""
+        popt1, pcov1 = fit.fit_single(self.df.loc[self.df['potential_type'] == type1], fit_range1, fit.func_linear)
+        popt2, pcov2 = fit.fit_single(self.df.loc[self.df['potential_type'] == type2], fit_range2, fit.func_linear)
+        self.df.loc[self.df['potential_type'] == type1, 'aV(r)'] =\
+            self.df[self.df['potential_type'] == type2, 'aV(r)'] + (popt1[0] - popt2[0])
 
-    def join_back(self, data, matrix_types):
-        data1 = []
-        for matrix_type in matrix_types:
-            data1.append(
-                data[['r/a', f'aV(r)_{matrix_type}', f'err_{matrix_type}']])
-            data1[-1] = data1[-1].rename(
-                columns={f'aV(r)_{matrix_type}': 'aV(r)', f'err_{matrix_type}': 'err'})
-            data1[-1]['matrix_type'] = matrix_type
+# functions for reading df
 
-        return pd.concat(data1)
-
-    def find_sum(self, data, term1, term2, sum):
-        data[f'err_' + sum] = data.apply(lambda x: math.sqrt(
-            x[f'err_' + term1] ** 2 + x[f'err_' + term2] ** 2), axis=1)
-        data[f'aV(r)_' + sum] = data.apply(lambda x: x[f'aV(r)_' +
-                                                       term1] + x[f'aV(r)_' + term2], axis=1)
-
-        return data
-
-
-# functions for reading data
-
-def read_data_potential(paths):
-    data = []
+def read_df_potential(paths):
+    df = []
     for type, path in paths.items():
-        data.append(pd.read_csv(path['path'], index_col=None))
-        data[-1].reset_index(drop=True, inplace=True)
+        df.append(pd.read_csv(path['path'], index_col=None))
+        df[-1].reset_index(drop=True, inplace=True)
         if 'constraints' in path:
             for key, value in path['constraints'].items():
-                data[-1] = data[-1][(data[-1][key] <= value[1])
-                                    & (data[-1][key] >= value[0])]
+                df[-1] = df[-1][(df[-1][key] <= value[1])
+                                    & (df[-1][key] >= value[0])]
         name = path['name']
-        data[-1] = data[-1].rename(
+        df[-1] = df[-1].rename(
             columns={'aV(r)': f'aV(r)_{name}', 'err': f'err_{name}'})
-        data[-1]['r/a'] = data[-1]['r/a']
-        data[-1][f'aV(r)_{name}'] = data[-1][f'aV(r)_{name}']
-        data[-1][f'err_{name}'] = data[-1][f'err_{name}']
-        data[-1] = data[-1].reset_index(drop=True)
-    data = pd.concat(data, axis=1)
-    data = data.loc[:, ~data.columns.duplicated()]
+        df[-1]['r/a'] = df[-1]['r/a']
+        df[-1][f'aV(r)_{name}'] = df[-1][f'aV(r)_{name}']
+        df[-1][f'err_{name}'] = df[-1][f'err_{name}']
+        df[-1] = df[-1].reset_index(drop=True)
+    df = pd.concat(df, axis=1)
+    df = df.loc[:, ~df.columns.duplicated()]
 
-    return data
+    return df
 
 
-def read_data_single(path):
-    data = pd.read_csv(path['path'], index_col=None)
-    data.reset_index(drop=True, inplace=True)
+def read_df_single(path):
+    df = pd.read_csv(path['path'], index_col=None)
+    df.reset_index(drop=True, inplace=True)
     if 'constraints' in path:
         for key, value in path['constraints'].items():
-            data = data[(data[key] <= value[1]) & (data[key] >= value[0])]
+            df = df[(df[key] <= value[1]) & (df[key] >= value[0])]
     name = path['name']
-    data = data.rename(
+    df = df.rename(
         columns={'aV(r)': f'aV(r)_{name}', 'err': f'err_{name}'})
-    data['r/a'] = data['r/a']
-    data[f'aV(r)_{name}'] = data[f'aV(r)_{name}']
-    data[f'err_{name}'] = data[f'err_{name}']
-    data = data.reset_index(drop=True)
+    df['r/a'] = df['r/a']
+    df[f'aV(r)_{name}'] = df[f'aV(r)_{name}']
+    df[f'err_{name}'] = df[f'err_{name}']
+    df = df.reset_index(drop=True)
 
-    return data
+    return df
 
 
-def get_potantial_data(paths):
-    data = []
+def get_potantial_df(paths):
+    df = []
     for path in paths:
-        data.append(pd.read_csv(path['path']))
+        df.append(pd.read_csv(path['path']))
         if 'parameters' in path:
             for key, val in path['parameters'].items():
-                data[-1][key] = val
+                df[-1][key] = val
         if 'constraints' in path:
             for key, val in path['constraints'].items():
-                data[-1] = data[-1][(data[-1][key] >= val[0])
-                                    & (data[-1][key] <= val[1])]
+                df[-1] = df[-1][(df[-1][key] >= val[0])
+                                    & (df[-1][key] <= val[1])]
 
-    data = pd.concat(data)
-    return data.reset_index(drop=True)
+    df = pd.concat(df)
+    return df.reset_index(drop=True)

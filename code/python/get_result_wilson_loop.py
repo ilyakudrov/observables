@@ -16,7 +16,7 @@ def get_wilson(data):
 
     field, err = stat.jackknife_var_numba(x, trivial)
 
-    return pd.Series([field, math.sqrt(err)], index=['field', 'err'])
+    return pd.Series([field, err], index=['field', 'err'])
 
 
 @njit
