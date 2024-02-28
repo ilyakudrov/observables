@@ -100,11 +100,14 @@ def plot_potential_fitted_single(data, y_lims, term, image_path, image_name):
     return fg
 
 def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, df_fits=None, black_line_y = None):
-    hues = data[hue].unique()
-    n_colors = hues.shape[0]
-    color_palette = seaborn.color_palette(palette='bright', n_colors=n_colors)
-    potential_type_hue = dict(zip(data['potential_type'].unique(), hues))
-    color_palette = dict(zip(hues, color_palette))
+    if hue is not None:
+        hues = data[hue].unique()
+        n_colors = hues.shape[0]
+        color_palette = seaborn.color_palette(palette='bright', n_colors=n_colors)
+        potential_type_hue = dict(zip(data['potential_type'].unique(), hues))
+        color_palette = dict(zip(hues, color_palette))
+    else:
+        color_palette = None
     fg = seaborn.FacetGrid(data=data, hue=hue, height=5,
                            aspect=1.61, palette=color_palette, legend_out=True)
     fg.figure.suptitle(f'potential')
@@ -140,6 +143,6 @@ def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_p
 def make_plots_single(data, x, y, hue, groupby, x_label, y_label, title, image_path, image_name, show_plot, err=None, black_line_y=None):
     if groupby:
         data.groupby(groupby).apply(
-            plot_potential_single, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err, black_line_y)
+            plot_potential_single, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y)
     else:
-        plot_potential_single(data, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err, black_line_y)
+        plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y)

@@ -23,7 +23,6 @@ def read_functional(paths, start, end, increment, padding):
 
 def functional_average_max(df):
     df = df.groupby(['num', 'type']).agg({'functional': 'max'})['functional'].reset_index()
-    print(df)
     df = df.groupby(['type'])['functional']\
         .agg([('functional', np.mean), ('std', lambda x: np.std(x, ddof=1)/math.sqrt(np.size(x)))]).reset_index()
     return df
