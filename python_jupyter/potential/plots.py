@@ -99,12 +99,12 @@ def plot_potential_fitted_single(data, y_lims, term, image_path, image_name):
 
     return fg
 
-def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, df_fits=None, black_line_y = None):
+def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, df_fits=None, black_line_y=None):
     if hue is not None:
         hues = data[hue].unique()
         n_colors = hues.shape[0]
         color_palette = seaborn.color_palette(palette='bright', n_colors=n_colors)
-        potential_type_hue = dict(zip(data['potential_type'].unique(), hues))
+        potential_type_hue = dict(zip(data[hue].unique(), hues))
         color_palette = dict(zip(hues, color_palette))
     else:
         color_palette = None
@@ -127,8 +127,8 @@ def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_p
         plt.axhline(y=black_line_y, color='r', linestyle='-')
 
     if df_fits is not None:
-        for key in df_fits['potential_type'].unique():
-            plt.plot(df_fits[df_fits['potential_type'] == key]['r/a'], df_fits[df_fits['potential_type'] == key]['aV(r)'],
+        for key in df_fits[hue].unique():
+            plt.plot(df_fits[df_fits[hue] == key][x], df_fits[df_fits[hue] == key][y],
                      color=color_palette[potential_type_hue[key]], linewidth=1)
 
 

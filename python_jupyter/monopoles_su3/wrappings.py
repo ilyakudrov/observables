@@ -23,28 +23,23 @@ def fill_windings(data):
     return data.set_index(['conf', 'color', 'winding_number']).unstack('winding_number', fill_value=0).stack()
 
 
-def wrappings_time_dependence1(conf_range, paths, hue_name):
-    print(conf_range)
+def wrappings(paths, length_threshold, groupby_keys):
+    df = monopole_data.read_data_wrapped(paths)
+    df = df[df['length'] < length_threshold]
+    df = df.groupby(groupby_keys + ['color', 'conf'])['x3_wrap'].agg([('wrappings', lambda x: np.sum(np.abs(x)))]).reset_index(level=groupby_keys + ['color', 'conf'])
+    df = df.groupby(groupby_keys + ['conf'])['wrappings'].agg([('wrappings', np.mean)]).reset_index(level=groupby_keys + ['conf'])
+    return df.groupby(groupby_keys)['wrappings'].agg([('wrappings', np.mean), ('std', lambda x: np.std(x, ddof=1)/math.sqrt(np.size(x)))]).reset_index(level=groupby_keys)
 
-
-def wrappings_time_dependence(conf_range, paths, hue_name, path_csv):
-    data = monopole_data.read_data(conf_range, paths, 'windings', hue_name)
-
-    data = data[data['direction'] == 'time']
-    data = data.drop(columns=['direction'])
-    data = data.set_index([hue_name, 'conf', 'color', 'winding_number']).unstack(
-        'winding_number', fill_value=0).stack()
-
-    # data = data.groupby(['time size'])[['color', 'cluster_number', 'winding_number', 'conf']].apply(fill_windings).reset_index()
-
-    data = data_process_wrappings(data, hue_name)
-    monopole_data.save_data_windings_separate_size(data, path_csv)
-
-    data.groupby(['winding_number']).apply(
-        plots.make_plot_time_wrappings, hue_name)
-
-    # data.to_csv('../../data/wrappings_common', sep = ' ', index=False)
-
+def wrappings_separate(paths, length_threshold, groupby_keys):
+    df = monopole_data.read_data_wrapped(paths)
+    df = df[df['length'] < length_threshold]
+    df['wrappings'] = df['x3_wrap'].apply(np.abs)
+    df1 = df.groupby(groupby_keys + ['conf', 'color'])['wrappings'].value_counts().rename('wrapping_number').reset_index()
+    df1 = df1[df1['wrappings'] != 0]
+    df1 = df1.set_index(groupby_keys + ['color', 'conf', 'wrappings']).unstack('wrappings', fill_value=0).stack().reset_index()
+    df1 = df1.groupby(groupby_keys + ['conf', 'wrappings'])['wrapping_number'].agg([('wrapping_number', np.mean)]).reset_index(level=groupby_keys + ['conf', 'wrappings'])
+    df1 = df1.groupby(groupby_keys + ['wrappings'])['wrapping_number'].agg([('wrapping_number', np.mean), ('std', lambda x: np.std(x, ddof=1)/math.sqrt(np.size(x)))]).reset_index(level=groupby_keys + ['wrappings'])
+    return df1
 
 def wrappings_number_dependence(start, end, paths):
     data = monopole_data.read_data(

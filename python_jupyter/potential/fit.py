@@ -114,21 +114,23 @@ def chi_square(x, y, popt, func_fit):
 
 
 def fit_single(data, fit_range, fit_func):
-    data = data[(data['r/a'] >= fit_range[0]) &
+    data1 = data[(data['r/a'] >= fit_range[0]) &
                 (data['r/a'] <= fit_range[1])].reset_index()
-    x = data['r/a'].to_numpy(dtype=np.float64)
-    y = data['aV(r)']
-    y_err = data['err']
+    x = data1['r/a'].to_numpy(dtype=np.float64)
+    y = data1['aV(r)']
+    y_err = data1['err']
     popt, pcov = curve_fit(fit_func, x, y, sigma=y_err)
     return popt, pcov
 
 def make_fit(data, fit_range, fit_func, param_names, x_col, y_col, err_col=None):
-    data = data[(data[x_col] >= fit_range[0]) &
+    """Fits data from x_col and y_col with fit functions
+    and returns DataFrame with fit parameters"""
+    data1 = data[(data[x_col] >= fit_range[0]) &
                 (data[x_col] <= fit_range[1])].reset_index()
-    x = data[x_col].to_numpy(dtype=np.float64)
-    y = data[y_col]
+    x = data1[x_col].to_numpy(dtype=np.float64)
+    y = data1[y_col]
     if err_col is not None:
-        y_err = data[err_col]
+        y_err = data1[err_col]
     else:
         y_err = None
     popt, pcov = curve_fit(fit_func, x, y, sigma=y_err)
@@ -142,7 +144,7 @@ def make_fit(data, fit_range, fit_func, param_names, x_col, y_col, err_col=None)
     return pd.DataFrame(data=fits)
 
 def potential_fit_data(data, fit_range, fit_func, param_names, x_col, y_col, err_col=None):
-    """takes DataFrame with potential data to fit and returns Dataframe with x and y of fit curve"""
+    """Takes DataFrame with potential data to fit and returns Dataframe with x and y of fit curve"""
     fit_params = make_fit(data, fit_range, fit_func, param_names, x_col, y_col, err_col=err_col)
     fit_params = fit_params.iloc[0][param_names].values
     x_max = data[x_col].max()
@@ -152,17 +154,18 @@ def potential_fit_data(data, fit_range, fit_func, param_names, x_col, y_col, err
     return pd.DataFrame({x_col: x, y_col: y})
 
 def make_fit_curve(fit_params, fit_func, x_min, x_max, x_col, y_col, param_names):
+    """Takes fit parameters and makes fit curve"""
     fit_params = fit_params.iloc[0][param_names].values
     x = np.linspace(x_min, x_max, 1000)
     y = fit_func(x, *fit_params)
     return pd.DataFrame({x_col: x, y_col: y})
 
 def potential_fit_T(data, fit_range):
-    data = data[(data['T'] >= fit_range[0]) &
+    data1 = data[(data['T'] >= fit_range[0]) &
                 (data['T'] <= fit_range[1])].reset_index()
-    x = data['T'].to_numpy(dtype=np.float64)
-    y = data['aV(r)']
-    y_err = data['err']
+    x = data1['T'].to_numpy(dtype=np.float64)
+    y = data1['aV(r)']
+    y_err = data1['err']
     popt, pcov = curve_fit(func_exponent, x, y, sigma=y_err)
     return pd.DataFrame({'T': [None], 'aV(r)': [popt[0]], 'err': [np.sqrt(np.diag(pcov))[0]]})
 

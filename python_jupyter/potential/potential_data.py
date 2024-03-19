@@ -50,7 +50,7 @@ class DataDecomposition:
 
     def fit_original_T(self, fit_range, copy_columns):
         """For each r fits T dependence with exponent to extract potential"""
-        data_original_r = self.df.loc[self.df['potential_type'] == 'original'].groupby('r/a').apply(fit.potential_fit_T, fit_range).reset_index().drop('level_1', axis=1)
+        data_original_r = self.df.loc[self.df['potential_type'] == 'original'].groupby('r/a').apply(fit.potential_fit_T, fit_range).reset_index(level='r/a')
         for column in copy_columns:
             data_original_r[column] = self.df.loc[self.df['potential_type'] == 'original'].loc[0, column]
         data_original_r['potential_type'] = self.df.loc[self.df['potential_type'] == 'original'].loc[0, 'potential_type']
@@ -93,12 +93,11 @@ class DataDecomposition:
         self.df = pd.concat([self.df, df1])
 
     def shift_fit_linear(self, type1, type2, fit_range1, fit_range2):
-        """potential of type2 gets shifted towards potential if type1
+        """potential of type1 gets shifted towards potential of type2
             so that linear fits coinside."""
         popt1, pcov1 = fit.fit_single(self.df.loc[self.df['potential_type'] == type1], fit_range1, fit.func_linear)
         popt2, pcov2 = fit.fit_single(self.df.loc[self.df['potential_type'] == type2], fit_range2, fit.func_linear)
-        self.df.loc[self.df['potential_type'] == type1, 'aV(r)'] =\
-            self.df[self.df['potential_type'] == type2, 'aV(r)'] + (popt1[0] - popt2[0])
+        self.df.loc[self.df['potential_type'] == type1, 'aV(r)'] = popt2[0] - popt1[0]
 
 # functions for reading df
 
