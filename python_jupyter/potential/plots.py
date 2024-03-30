@@ -18,6 +18,15 @@ def save_image(image_path, image_name, fg):
     # output_path_grey = f'{image_path}/{image_name}_grey'
     # Image.open(f'{output_path}.png').convert('L').save(f'{output_path_grey}.png')
 
+def save_image_plt(image_path, image_name):
+    try:
+        os.makedirs(image_path)
+    except:
+        pass
+
+    output_path = f'{image_path}/{image_name}'
+    print(output_path)
+    plt.savefig(output_path, dpi=800)
 
 def plot_relative_variation_potential(data):
     # T = data['T'].iloc[0]
@@ -131,6 +140,49 @@ def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_p
             plt.plot(df_fits[df_fits[hue] == key][x], df_fits[df_fits[hue] == key][y],
                      color=color_palette[potential_type_hue[key]], linewidth=1)
 
+    if show_plot:
+        plt.show()
+    save_image(f'{image_path}',
+               f'{image_name}', fg)
+    if not show_plot:
+        plt.close()
+
+def make_plots_single(data, x, y, hue, groupby, x_label, y_label, title, image_path, image_name, show_plot, err=None, black_line_y=None):
+    if groupby:
+        data.groupby(groupby).apply(
+            plot_potential_single, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y)
+    else:
+        plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y)
+
+def plot_errorbar(data, args, kwargs, ax):
+    data = data.reset_index()
+    marker = data.at[0, 'marker']
+    err_container = plt.errorbar(x=data[args[0]], y=data[args[1]], yerr=data[args[2]], fmt=marker, **kwargs)
+    print(err_container.lines)
+    ax.legend((err_container.lines), ('beta'))
+
+def my_plot_func(*args, **kwargs):
+        ax = kwargs['ax']
+        kwargs1 = dict(kwargs)
+        del kwargs1['data']
+        del kwargs1['ax']
+        kwargs['data'].groupby('beta').apply(plot_errorbar, args, kwargs1, ax)
+
+def plot_potential_err_markers(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, df_fits=None, black_line_y=None):
+    color_palette = None
+    fg = seaborn.FacetGrid(data=data, hue='name', height=5,
+                           aspect=1.61, palette=color_palette, legend_out=True)
+    fg.map_dataframe(my_plot_func, x, y, err, ms=6, capsize=5, ls=None, lw=1, markerfacecolor='none', ax=fg.ax)
+
+    fg.ax.set_xlabel(x_label)
+    fg.ax.set_ylabel(y_label)
+    # figure.suptitle(title)
+    fg.ax.spines['right'].set_visible(True)
+    fg.ax.spines['top'].set_visible(True)
+    fg.ax.minorticks_on()
+    fg.ax.tick_params(which='both', bottom=True,
+                      top=True, left=True, right=True)
+    plt.grid(dash_capstyle='round')
 
     if show_plot:
         plt.show()
@@ -139,10 +191,51 @@ def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_p
     if not show_plot:
         plt.close()
 
+def plot_potential_markers(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, df_fits=None, black_line_y=None):
+    # if hue is not None:
+    #     hues = data[hue].unique()
+    #     n_colors = hues.shape[0]
+    #     color_palette = seaborn.color_palette(palette='bright', n_colors=n_colors)
+    #     potential_type_hue = dict(zip(data[hue].unique(), hues))
+    #     color_palette = dict(zip(hues, color_palette))
+    # else:
+    #     color_palette = None
+    color_palette = None
+    # fg = seaborn.FacetGrid(data=data, hue='name', style='beta', height=5,
+    #                        aspect=1.61, palette=color_palette, legend_out=True)
+    # fg.figure.suptitle(f'potential')
+    # fg.map(plt.errorbar, x, y, err, mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls=None
+    #        ).add_legend()
+    # fg.map(plt.scatterplot, x, y, mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls=None
+    #        ).add_legend()
+    # ax = seaborn.scatterplot(data=data, x=x, y=y, hue='name', style='beta', height=7)
+    fg = seaborn.relplot(data=data, x=x, y=y, hue='name', style='beta', height=7, kind='scatter', aspect=1.6)
+    # plt.show()
 
-def make_plots_single(data, x, y, hue, groupby, x_label, y_label, title, image_path, image_name, show_plot, err=None, black_line_y=None):
-    if groupby:
-        data.groupby(groupby).apply(
-            plot_potential_single, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y)
-    else:
-        plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y)
+    fg.ax.set_xlabel(x_label)
+    fg.ax.set_ylabel(y_label)
+    # figure.suptitle(title)
+    fg.ax.spines['right'].set_visible(True)
+    fg.ax.spines['top'].set_visible(True)
+    fg.ax.minorticks_on()
+    fg.ax.tick_params(which='both', bottom=True,
+                      top=True, left=True, right=True)
+    plt.grid(dash_capstyle='round')
+    plt.savefig(f'{image_path}/{image_name}', dpi=800, facecolor='white')
+    # if black_line_y is not None:
+    #     plt.axhline(y=black_line_y, color='r', linestyle='-')
+
+    # if df_fits is not None:
+    #     for key in df_fits[hue].unique():
+    #         plt.plot(df_fits[df_fits[hue] == key][x], df_fits[df_fits[hue] == key][y],
+    #                  color=color_palette[potential_type_hue[key]], linewidth=1)
+
+
+    if show_plot:
+        plt.show()
+    # save_image(f'{image_path}',
+    #            f'{image_name}', fg)
+    # save_image_plt(f'{image_path}',
+    #            f'{image_name}')
+    if not show_plot:
+        plt.close()

@@ -48,11 +48,12 @@ class DataDecomposition:
 
         self.df = df
 
-    def fit_original_T(self, fit_range, copy_columns):
+    def fit_original_T(self, fit_range):
         """For each r fits T dependence with exponent to extract potential"""
-        data_original_r = self.df.loc[self.df['potential_type'] == 'original'].groupby('r/a').apply(fit.potential_fit_T, fit_range).reset_index(level='r/a')
-        for column in copy_columns:
-            data_original_r[column] = self.df.loc[self.df['potential_type'] == 'original'].loc[0, column]
+        data_original_r = self.df.loc[self.df['potential_type'] == 'original']
+        data_original_r = data_original_r\
+            .groupby(list(data_original_r.columns[~data_original_r.columns.isin(['T', 'aV(r)', 'err'])])).apply(fit.potential_fit_T, fit_range)\
+            .reset_index(level=list(self.df.columns[~self.df.columns.isin(['T', 'aV(r)', 'err'])]))
         data_original_r['potential_type'] = self.df.loc[self.df['potential_type'] == 'original'].loc[0, 'potential_type']
         self.df = self.df.loc[self.df['potential_type'] != 'original']
         self.df = pd.concat([data_original_r, self.df])
