@@ -198,14 +198,14 @@ if calculation_type == 'smearing':
     names_out = ['smearing_step', 'T', 'r/a', 'aV(r)', 'err']
     dtype = {'smearing_step': np.int32, "T": np.int32,
              "r/a": np.int32, "wilson_loop": np.float64}
-    dir_name = 'smearing'
+    base_dir = 'smearing'
 
 elif calculation_type == 'no_smearing':
     potential_parameters = ['r/a', 'copy']
     CSV_names = ["T", "r/a", "wilson_loop"]
     dtype = {"T": np.int32, "r/a": np.int32, "wilson_loop": np.float64}
     names_out = ['T', 'r/a', 'aV(r)', 'err']
-    dir_name = ''
+    base_dir = ''
 
 conf_max = 5000
 # mu1 = ['mu0.40']
@@ -222,6 +222,8 @@ chains = ["/"]
 # adjoint_fix = True
 adjoint_fix = False
 
+base_path = "../../data"
+
 iter_arrays = [matrix_type_array, smeared_array,
                betas, conf_sizes, mu1, additional_parameters_arr]
 for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertools.product(*iter_arrays):
@@ -230,7 +232,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     for chain in chains:
         for i in range(0, conf_max + 1):
             if copy_single:
-                file_path = f'../../data/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
+                file_path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
                 if (os.path.isfile(file_path)):
                     data.append(pd.read_csv(file_path, header=0,
                                             names=CSV_names,
@@ -241,7 +243,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
                         data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1
             else:
                 for copy in range(1, copies + 1):
-                    file_path = f'../../data/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}_{copy}'
+                    file_path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}_{copy}'
                     # print(file_path)
                     if (os.path.isfile(file_path)):
                         data.append(pd.read_csv(file_path, header=0,
@@ -277,12 +279,12 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         print("execution time = %s" % (end - start))
 
         if is_binning:
-            dir_name = dir_name + '/binning'
+            base_dir = base_dir + '/binning'
         # df1 = df1[names_out]
-        path_output = f"../../result/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+        path_output = f"../../result/{base_dir}/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
         try:
-            os.makedirs(f'{path_output}/{dir_name}')
+            os.makedirs(f'{path_output}')
         except:
             pass
         df1.to_csv(
-            f"{path_output}/{dir_name}/potential_{matrix_type}.csv", index=False)
+            f"{path_output}/potential_{matrix_type}.csv", index=False)
