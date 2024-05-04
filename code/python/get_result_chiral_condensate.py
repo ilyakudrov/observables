@@ -113,7 +113,6 @@ def read_chiral_condensate(path):
     return pd.DataFrame({'chiral_condensate': data})
 
 
-axis = 'on-axis'
 conf_type = "qc2dstag"
 conf_sizes = ["40^4"]
 theory_type = 'su2'
@@ -143,7 +142,8 @@ chains = ["/"]
 # adjoint_fix = True
 adjoint_fix = False
 
-base_path = "../../data"
+#base_path = "../../data"
+base_path = '/home/clusters/rrcmpi/kudrov/observables_cluster/result'
 
 iter_arrays = [matrix_type_array,
                betas, conf_sizes, mu1, additional_parameters_arr]
@@ -153,14 +153,14 @@ for matrix_type, beta, conf_size, mu, additional_parameters in itertools.product
     for chain in chains:
         for i in range(0, conf_max + 1):
             if copy_single:
-                file_path = f'{base_path}/chiral_condensate/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{additional_parameters}/{chain}/ChiralCond_{i:04}.txt'
+                file_path = f'{base_path}/chiral_condensate/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{additional_parameters}/{chain}/ChiralCond_{i:04}.txt'
                 if (os.path.isfile(file_path)):
                     data.append(read_chiral_condensate(file_path))
                     data[-1]["conf"] = i
                     data[-1]["copy"] = copies
             else:
                 for copy in range(1, copies + 1):
-                    file_path = f'{base_path}/chiral_condensate/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{additional_parameters}/{chain}/ChiralCond_{i:04}_{copy}.txt'
+                    file_path = f'{base_path}/chiral_condensate/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{additional_parameters}/{chain}/ChiralCond_{i:04}_{copy}.txt'
                     # print(file_path)
                     if (os.path.isfile(file_path)):
                         data.append(read_chiral_condensate(file_path))
@@ -193,7 +193,7 @@ for matrix_type, beta, conf_size, mu, additional_parameters in itertools.product
             binning = '/binning'
         else:
             binning = ''
-        path_output = f"../../result/{binning}/chiral_condensate/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{additional_parameters}"
+        path_output = f"../../result/{binning}/chiral_condensate/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{additional_parameters}"
         try:
             os.makedirs(f'{path_output}')
         except:
