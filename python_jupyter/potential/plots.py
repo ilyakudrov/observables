@@ -108,7 +108,7 @@ def plot_potential_fitted_single(data, y_lims, term, image_path, image_name):
 
     return fg
 
-def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, df_fits=None, black_line_y=None):
+def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, df_fits=None, black_line_y=None, dashed_line_y=None):
     if hue is not None:
         hues = data[hue].unique()
         n_colors = hues.shape[0]
@@ -135,6 +135,10 @@ def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_p
     if black_line_y is not None:
         plt.axhline(y=black_line_y, color='r', linestyle='-')
 
+    if dashed_line_y is not None:
+        for coord in dashed_line_y:
+            plt.axhline(y=coord, color='r', linestyle='--')
+
     if df_fits is not None:
         for key in df_fits[hue].unique():
             plt.plot(df_fits[df_fits[hue] == key][x], df_fits[df_fits[hue] == key][y],
@@ -147,12 +151,12 @@ def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_p
     if not show_plot:
         plt.close()
 
-def make_plots_single(data, x, y, hue, groupby, x_label, y_label, title, image_path, image_name, show_plot, err=None, black_line_y=None):
+def make_plots_single(data, x, y, hue, groupby, x_label, y_label, title, image_path, image_name, show_plot, err=None, black_line_y=None, dashed_line_y=None):
     if groupby:
         data.groupby(groupby).apply(
-            plot_potential_single, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y)
+            plot_potential_single, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y, dashed_line_y=dashed_line_y)
     else:
-        plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y)
+        plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, black_line_y=black_line_y, dashed_line_y=dashed_line_y)
 
 def plot_errorbar(data, args, kwargs, ax):
     data = data.reset_index()

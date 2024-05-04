@@ -16,7 +16,7 @@ def save_image(image_path, image_name, fg):
 def make_plot_time_wrappings(data, hue_name):
     wrapping_number = data['winding_number'].iloc[0]
     fg = seaborn.FacetGrid(data=data, height=5, aspect=1.61)
-    fg.fig.suptitle(f'winding_number = {wrapping_number}')
+    fg.figure.suptitle(f'winding_number = {wrapping_number}')
     fg.map(plt.errorbar, hue_name, 'cluster_number', 'std',
            marker="o", fmt='', linestyle='').add_legend()
 

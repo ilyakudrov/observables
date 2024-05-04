@@ -48,14 +48,13 @@ class DataDecomposition:
 
         self.df = df
 
-    def fit_original_T(self, fit_range):
+    def fit_original_T(self, fit_range, potential_type):
         """For each r fits T dependence with exponent to extract potential"""
-        data_original_r = self.df.loc[self.df['potential_type'] == 'original']
+        data_original_r = self.df.loc[self.df['potential_type'] == potential_type]
         data_original_r = data_original_r\
             .groupby(list(data_original_r.columns[~data_original_r.columns.isin(['T', 'aV(r)', 'err'])])).apply(fit.potential_fit_T, fit_range)\
             .reset_index(level=list(self.df.columns[~self.df.columns.isin(['T', 'aV(r)', 'err'])]))
-        data_original_r['potential_type'] = self.df.loc[self.df['potential_type'] == 'original'].loc[0, 'potential_type']
-        self.df = self.df.loc[self.df['potential_type'] != 'original']
+        self.df = self.df.loc[self.df['potential_type'] != potential_type]
         self.df = pd.concat([data_original_r, self.df])
 
     def scale_potentials(self, r0):
@@ -140,18 +139,31 @@ def read_df_single(path):
 
     return df
 
+def append_multiindex(df, values):
+    """
+    Add parameters to DataFrame as multiindex
+    """
+    for key, value in values.items():
+        df[key] = value
+    return df.set_index(list(values.keys()), append=True)
 
-def get_potantial_df(paths):
+def get_potantial_df(paths, coluns_to_multiindex = []):
+    """
+    Read csv files for potential data and make DataFrame
+
+    Parameters:
+        paths: list of dictionaries with parameters
+        coluns_to_multiindex: columns from csv file to turn to multiindex
+    """
     df = []
     for path in paths:
         df.append(pd.read_csv(path['path']))
         if 'parameters' in path:
-            for key, val in path['parameters'].items():
-                df[-1][key] = val
+            df[-1] = append_multiindex(df[-1], path['parameters'])
         if 'constraints' in path:
             for key, val in path['constraints'].items():
                 df[-1] = df[-1][(df[-1][key] >= val[0])
                                     & (df[-1][key] <= val[1])]
-
-    df = pd.concat(df)
-    return df.reset_index(drop=True)
+        if coluns_to_multiindex:
+            df[-1] = df[-1].set_index(coluns_to_multiindex, append=True)
+    return pd.concat(df).reset_index(level=0, drop=True)
