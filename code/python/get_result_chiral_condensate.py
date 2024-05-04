@@ -107,7 +107,7 @@ def read_chiral_condensate(path):
     data = []
     with open(path) as file:
         while line := file.readline():
-            if(line == '#ChiralCond'):
+            if(line.rstrip() == '#ChiralCond'):
                 while line := file.readline():
                     data.append(float(line))
     return pd.DataFrame({'chiral_condensate': data})
@@ -142,7 +142,7 @@ chains = ["/"]
 # adjoint_fix = True
 adjoint_fix = False
 
-#base_path = "../../data"
+# base_path = "../../data"
 base_path = '/home/clusters/rrcmpi/kudrov/observables_cluster/result'
 
 iter_arrays = [matrix_type_array,
@@ -161,7 +161,6 @@ for matrix_type, beta, conf_size, mu, additional_parameters in itertools.product
             else:
                 for copy in range(1, copies + 1):
                     file_path = f'{base_path}/chiral_condensate/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{additional_parameters}/{chain}/ChiralCond_{i:04}_{copy}.txt'
-                    # print(file_path)
                     if (os.path.isfile(file_path)):
                         data.append(read_chiral_condensate(file_path))
                         data[-1]["conf"] = i
@@ -171,6 +170,7 @@ for matrix_type, beta, conf_size, mu, additional_parameters in itertools.product
               conf_size, mu, beta)
     elif len(data) != 0:
         df = pd.concat(data)
+        df = df.groupby(['copy', 'conf']).mean().reset_index(level=['copy', 'conf'])
         start = time.time()
 
         df = fillup_copies(df)
