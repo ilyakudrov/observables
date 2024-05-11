@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.stats import chi2
 import pandas as pd
 import math
 
@@ -9,11 +10,11 @@ def func_exponent(x, a, b, c):
 
 
 def func_cornell(x, c, alpha, sigma):
-    return c + alpha * np.power(x, -1) + sigma * x
+    return c + alpha / x + sigma * x
 
 
 def func_coloumb(x, c, alpha):
-    return c + alpha * np.power(x, -1)
+    return c + alpha / x
 
 
 def func_linear(x, c, sigma):
@@ -46,14 +47,18 @@ def make_fit(data, fit_range, fit_func, param_names, x_col, y_col, err_col=None)
         popt, pcov, *output = curve_fit(fit_func, data1[x_col], data1[y_col], sigma=y_err, absolute_sigma=True, full_output=True)
     except RuntimeError:
         return pd.DataFrame()
-    fits = {}
-    err_diag = np.sqrt(np.diag(pcov))
-    for i in range(len(popt)):
-        fits[param_names[i]] = [popt[i]]
-        fits[param_names[i] + '_err'] = [err_diag[i]]
-    dof = data1[x_col].size - len(param_names) - 1
-    fits['chi_square'] = np.sum(output[0]['fvec']**2)/dof
-    return pd.DataFrame(data=fits)
+    else:
+        fits = {}
+        err_diag = np.sqrt(np.diag(pcov))
+        for i in range(len(popt)):
+            fits[param_names[i]] = [popt[i]]
+            fits[param_names[i] + '_err'] = [err_diag[i]]
+        dof = data1[x_col].size - len(param_names) - 1
+        fits['chi_square'] = np.sum(output[0]['fvec']**2)/dof
+        fits['p_value'] = chi2.sf(fits['chi_square'], dof)
+        df = pd.DataFrame(data=fits)
+        df = df[~df.isin([np.nan, np.inf, -np.inf]).any(axis=1)]
+        return df
 
 def potential_fit_data(data, fit_range, fit_func, param_names, x_col, y_col, err_col=None):
     """Takes DataFrame with potential data to fit and returns Dataframe with x and y of fit curve"""
@@ -65,10 +70,43 @@ def potential_fit_data(data, fit_range, fit_func, param_names, x_col, y_col, err
     y = fit_func(x, *fit_params)
     return pd.DataFrame({x_col: x, y_col: y, 'chi_square': fit_df.at[0, 'chi_sq']})
 
-def make_fit_curve(fit_params, fit_func, x_range, x_col, y_col, param_names):
+def average_fit_p_value(df_fit, param_names, x_col):
+    data = {}
+    for name in param_names:
+        aver = (df_fit[name] * df_fit[f'w_{name}']).sum()
+        err_stat = (df_fit[f'{name}_err'] ** 2 * df_fit[f'w_{name}']).sum()
+        df_fit[f'w_{name}'] * (df_fit[name] - aver) ** 2
+        err_syst = (df_fit[f'w_{name}'] * (df_fit[name] - aver) ** 2).sum()
+        data[name] = [aver]
+        data[f'{name}_err'] = [np.sqrt(err_syst + err_stat)]
+    data[f'{x_col}_min'] = df_fit[f'{x_col}_min'].min()
+    data[f'{x_col}_max'] = df_fit[f'{x_col}_max'].max()
+    return pd.DataFrame(data)
+
+def make_fit_range(df, fit_func, range_min_len, param_names, x_col, y_col, err_col):
+    fit_range = (df[x_col].min(), df[x_col].max())
+    ranges = generate_ranges(*fit_range, range_min_len)
+    fit_df = []
+    for r in ranges:
+        fit_df.append(make_fit(df, r, fit_func, param_names, x_col, y_col, err_col=err_col))
+        fit_df[-1][f'{x_col}_min'] = r[0]
+        fit_df[-1][f'{x_col}_max'] = r[1]
+    fit_df = pd.concat(fit_df)
+    fit_df = fit_df[~fit_df.isin([np.nan, np.inf, -np.inf]).any(axis=1)]
+    if fit_df.empty:
+        return pd.DataFrame()
+    for name in param_names:
+        fit_df[f'w_{name}'] = fit_df['p_value'] / fit_df[f'{name}_err'] ** 2
+        norm = fit_df[f'w_{name}'].sum()
+        fit_df[f'w_{name}'] = fit_df[f'w_{name}'] / norm
+    return fit_df
+
+def make_fit_curve(fit_params, fit_func, x_col, y_col, param_names):
     """Takes fit parameters and makes fit curve"""
+    x_min = fit_params.reset_index().loc[0, f'{x_col}_min']
+    x_max = fit_params.reset_index().loc[0, f'{x_col}_max']
     fit_params = fit_params.iloc[0][param_names].values
-    x = np.linspace(*x_range, 1000)
+    x = np.linspace(x_min, x_max, 1000)
     y = fit_func(x, *fit_params)
     return pd.DataFrame({x_col: x, y_col: y})
 
@@ -78,30 +116,21 @@ def potential_fit_T(data, fit_range):
     popt, pcov = curve_fit(func_exponent, data1['T'], data1['aV(r)'], sigma=data1['err'], absolute_sigma=True)
     return pd.DataFrame({'T': [None], 'aV(r)': [popt[0]], 'err': [np.sqrt(np.diag(pcov))[0]]})
 
-def generate_ranges(min, max):
+def generate_ranges(min, max, range_min_len):
     ranges = []
-    for i in range(min, max-3):
-        for j in range(i + 3, max-1):
+    for i in range(min, max-range_min_len+2):
+        for j in range(i + range_min_len - 1, max+1):
             ranges.append((i, j))
     return ranges
 
-def potential_fit_T_range(data, fit_range):
-    ranges = generate_ranges(*fit_range)
-    fits = []
-    for i in range(len(ranges)):
-        try:
-            df_tmp = potential_fit_T(data, ranges[i])
-        except:
-            pass
-        else:
-            fits.append(df_tmp)
-            fits[-1]['range'] = i
-    fits = pd.concat(fits)
-    if fits.empty:
-        return pd.DataFrame({'T': [None], 'aV(r)': [0], 'err': [0]})
-    fits = fits[fits['err'] != math.inf]
-    popt, pcov = curve_fit(lambda x, c: c, fits['range'], fits['aV(r)'], sigma=fits['err'], absolute_sigma=True)
-    return pd.DataFrame({'T': [None], 'aV(r)': [popt[0]], 'err': [np.sqrt(np.diag(pcov))[0]]})
+def potential_fit_T_range(df, range_min_len):
+    df_fit = make_fit_range(df, func_exponent, range_min_len, ['V', 'a', 'b'], 'T', 'aV(r)', 'err')
+    if df_fit.empty:
+        return pd.DataFrame()
+    V_aver = (df_fit['V'] * df_fit['w_V']).sum()
+    dV_stat = (df_fit['V_err'] ** 2 * df_fit['w_V']).sum()
+    dV_syst = (df_fit['w_V'] * (df_fit['V'] - V_aver) ** 2).sum()
+    return pd.DataFrame({'T': [None], 'aV(r)': [V_aver], 'err': [math.sqrt(dV_syst + dV_stat)]})
 
 def potential_fit_T_range_best(data, fit_range):
     ranges = generate_ranges(*fit_range)

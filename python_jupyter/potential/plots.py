@@ -13,10 +13,7 @@ def save_image(image_path, image_name, fg):
         pass
 
     output_path = f'{image_path}/{image_name}'
-    print(output_path)
     fg.savefig(output_path, dpi=800, facecolor='white')
-    # output_path_grey = f'{image_path}/{image_name}_grey'
-    # Image.open(f'{output_path}.png').convert('L').save(f'{output_path_grey}.png')
 
 def save_image_plt(image_path, image_name):
     try:
@@ -108,7 +105,7 @@ def plot_potential_fitted_single(data, y_lims, term, image_path, image_name):
 
     return fg
 
-def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, df_fits=None, black_line_y=None, dashed_line_y=None):
+def plot_potential_single(data, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err=None, df_fits=None, black_line_y=None, dashed_line_y=None):
     if hue is not None:
         hues = data[hue].unique()
         n_colors = hues.shape[0]
@@ -120,7 +117,11 @@ def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_p
     fg = seaborn.FacetGrid(data=data, hue=hue, height=5,
                            aspect=1.61, palette=color_palette, legend_out=True)
     fg.figure.suptitle(f'potential')
-    fg.map(plt.errorbar, x, y, err, mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls=None
+    if err is not None:
+        fg.map(plt.errorbar, x, y, err, mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls=None
+           ).add_legend()
+    else:
+        fg.map(plt.errorbar, x, y, mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls=None
            ).add_legend()
 
     fg.ax.set_xlabel(x_label)
@@ -148,8 +149,9 @@ def plot_potential_single(data, x, y, err, hue, x_label, y_label, title, image_p
         plt.show()
     save_image(f'{image_path}',
                f'{image_name}', fg)
-    if not show_plot:
-        plt.close()
+    # if not show_plot:
+    #     plt.close()
+    return fg
 
 def make_plots_single(data, x, y, hue, groupby, x_label, y_label, title, image_path, image_name, show_plot, err=None, black_line_y=None, dashed_line_y=None):
     if groupby:
@@ -162,7 +164,6 @@ def plot_errorbar(data, args, kwargs, ax):
     data = data.reset_index()
     marker = data.at[0, 'marker']
     err_container = plt.errorbar(x=data[args[0]], y=data[args[1]], yerr=data[args[2]], fmt=marker, **kwargs)
-    print(err_container.lines)
     ax.legend((err_container.lines), ('beta'))
 
 def my_plot_func(*args, **kwargs):
