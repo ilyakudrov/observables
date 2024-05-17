@@ -8,6 +8,11 @@ import os.path
 import pandas as pd
 import itertools
 
+from tqdm import tqdm
+tqdm.pandas()
+from pandarallel import pandarallel
+pandarallel.initialize(progress_bar=False)
+
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", ".."))
 import statistics_python.src.statistics_observables as stat
@@ -44,6 +49,8 @@ def get_potential_binning(data, bin_size):
     time_size_min = data["T"].min()
     time_size_max = data["T"].max()
 
+    # print(data)
+
     potential = []
 
     for time_size in range(time_size_min, time_size_max):
@@ -54,8 +61,10 @@ def get_potential_binning(data, bin_size):
         x3 = np.vstack((x1, x2))
 
         data_size = x3.shape[1]
-        field, err = stat.jackknife_var_numba_binning(
-            x3, potential_numba, get_bin_borders(data_size, bin_size))
+        # data_size = np.sum(data['T'] == time_size)
+        # print(data_size)
+        field, err = stat.jackknife_var_numba_binning(x3,
+            potential_numba, get_bin_borders(data_size, bin_size))
 
         potential.append([time_size, field, err])
 
@@ -139,24 +148,25 @@ conf_type = "gluodynamics"
 # conf_type = "QCD/140MeV"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
-conf_sizes = ["24^4"]
+conf_sizes = ["28^4"]
 # conf_sizes = ["32^3x64"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
-betas = ['beta6.0']
-copies = 4
-copy_single = True
+betas = ['beta6.1']
+copies = 20
+copy_single = False
 # betas = ['beta2.7', 'beta2.8']
-smeared_array = ['HYP0_APE_alpha=0.5']
-# smeared_array = ['HYP2_alpha=1_1_0.5_APE_alpha=0.5',
-#                  'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
-# smeared_array = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
+#smeared_array = ['HYP0_APE_alpha=0.5']
+smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.6',
+                 'HYP1_alpha=1_1_0.5_APE_alpha=0.6',
+                 'HYP3_alpha=1_1_0.5_APE_alpha=0.6']
+#smeared_array = ['HYP1_alpha=1_1_0.5_APE_alpha=0.6']
 # smeared_array = ['HYP0_APE_alpha=0.5']
 # matrix_type_array = ['monopole',
 #                      'monopoless', 'photon', 'offdiagonal']
-matrix_type_array = ['original']
+#matrix_type_array = ['original']
 matrix_type_array = ['monopole']
-# matrix_type_array = ['monopole',
+#matrix_type_array = ['monopole',
 #                      'monopoless', 'photon',
 #                      'offdiagonal', 'abelian']
 operator_type = 'wilson_loop'
@@ -177,7 +187,7 @@ representation = 'fundamental'
 # additional_parameters_arr = ['steps_25/copies=4', 'steps_50/copies=4',
 #                              'steps_100/copies=4', 'steps_200/copies=4',
 #                              'steps_1000/copies=4', 'steps_2000/copies=4']
-additional_parameters_arr = ['steps_100/copies=4']
+additional_parameters_arr = ['steps_0/copies=20']
 # additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
 #                              'steps_2000/copies=3', 'steps_4000/copies=3',
 #                              'steps_8000/copies=3']
@@ -188,9 +198,10 @@ additional_parameters_arr = ['steps_100/copies=4']
 # additional_parameters_arr = ['steps_500/copies=3']
 # additional_parameters_arr = ['/']
 
-is_binning = False
-bin_max = 1000
-calculation_type = 'no_smearing'
+is_binning = True
+bin_max = 5
+bin_step = 1.3
+calculation_type = 'smearing'
 
 if calculation_type == 'smearing':
     potential_parameters = ['smearing_step', 'r/a', 'copy']
@@ -223,6 +234,7 @@ chains = ["/"]
 adjoint_fix = False
 
 base_path = "../../data"
+#base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 
 iter_arrays = [matrix_type_array, smeared_array,
                betas, conf_sizes, mu1, additional_parameters_arr]
@@ -244,7 +256,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
             else:
                 for copy in range(1, copies + 1):
                     file_path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}_{copy}'
-                    # print(file_path)
+                    #print(file_path)
                     if (os.path.isfile(file_path)):
                         data.append(pd.read_csv(file_path, header=0,
                                                 names=CSV_names,
@@ -261,27 +273,30 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         start = time.time()
 
         df = fillup_copies(df)
+        print(df)
 
         if is_binning:
             df1 = []
-            bin_sizes = int_log_range(1, bin_max, 1.05)
+            # bin_sizes = int_log_range(1, bin_max, bin_step)
+            bin_sizes = [1, 2]
+            print(bin_sizes)
             for bin_size in bin_sizes:
                 df1.append(df.groupby(
-                    potential_parameters).apply(get_potential_binning, bin_size).reset_index(level=potential_parameters))
+                    potential_parameters).parallel_apply(get_potential_binning, bin_size).reset_index(level=potential_parameters))
                 df1[-1]['bin_size'] = bin_size
             df1 = pd.concat(df1)
         else:
             df1 = df.groupby(
-                potential_parameters).apply(get_potential).reset_index(level=potential_parameters)
+                potential_parameters).parallel_apply(get_potential).reset_index(level=potential_parameters)
         print(df1)
 
         end = time.time()
         print("execution time = %s" % (end - start))
 
         if is_binning:
-            base_dir = base_dir + '/binning'
+            base_dir1 = base_dir + '/binning'
         # df1 = df1[names_out]
-        path_output = f"../../result/{base_dir}/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+        path_output = f"../../result/{base_dir1}/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
         try:
             os.makedirs(f'{path_output}')
         except:

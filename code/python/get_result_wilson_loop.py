@@ -160,7 +160,8 @@ additional_parameters_arr = ['steps_100/copies=4']
 # additional_parameters_arr = ['/']
 
 is_binning = False
-bin_max = 1000
+bin_max = 100
+bin_step = 1.3
 calculation_type = 'no_smearing'
 
 if calculation_type == 'smearing':
@@ -235,7 +236,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
 
         if is_binning:
             df1 = []
-            bin_sizes = int_log_range(1, bin_max, 1.05)
+            bin_sizes = int_log_range(1, bin_max, bin_step)
             for bin_size in bin_sizes:
                 df1.append(df.groupby(
                     potential_parameters).apply(get_wilson_binning, bin_size).reset_index(level=potential_parameters))
@@ -250,9 +251,9 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         print("execution time = %s" % (end - start))
 
         if is_binning:
-            base_dir = base_dir + '/binning'
+            base_dir1 = base_dir + '/binning'
         # df1 = df1[names_out]
-        path_output = f"../../result/{base_dir}/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+        path_output = f"../../result/{base_dir1}/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
         try:
             os.makedirs(f'{path_output}')
         except:

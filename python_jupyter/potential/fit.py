@@ -60,16 +60,6 @@ def make_fit(data, fit_range, fit_func, param_names, x_col, y_col, err_col=None)
         df = df[~df.isin([np.nan, np.inf, -np.inf]).any(axis=1)]
         return df
 
-def potential_fit_data(data, fit_range, fit_func, param_names, x_col, y_col, err_col=None):
-    """Takes DataFrame with potential data to fit and returns Dataframe with x and y of fit curve"""
-    fit_df = make_fit(data, fit_range, fit_func, param_names, x_col, y_col, err_col=err_col)
-    fit_params = fit_df.iloc[0][param_names].values
-    x_max = data[x_col].max()
-    x_min = data[x_col].min()
-    x = np.linspace(x_min, x_max, 1000)
-    y = fit_func(x, *fit_params)
-    return pd.DataFrame({x_col: x, y_col: y, 'chi_square': fit_df.at[0, 'chi_sq']})
-
 def average_fit_p_value(df_fit, param_names, x_col):
     data = {}
     for name in param_names:
@@ -110,12 +100,6 @@ def make_fit_curve(fit_params, fit_func, x_col, y_col, param_names):
     y = fit_func(x, *fit_params)
     return pd.DataFrame({x_col: x, y_col: y})
 
-def potential_fit_T(data, fit_range):
-    data1 = data[(data['T'] >= fit_range[0]) &
-                (data['T'] <= fit_range[1])]
-    popt, pcov = curve_fit(func_exponent, data1['T'], data1['aV(r)'], sigma=data1['err'], absolute_sigma=True)
-    return pd.DataFrame({'T': [None], 'aV(r)': [popt[0]], 'err': [np.sqrt(np.diag(pcov))[0]]})
-
 def generate_ranges(min, max, range_min_len):
     ranges = []
     for i in range(min, max-range_min_len+2):
@@ -132,44 +116,19 @@ def potential_fit_T_range(df, range_min_len):
     dV_syst = (df_fit['w_V'] * (df_fit['V'] - V_aver) ** 2).sum()
     return pd.DataFrame({'T': [None], 'aV(r)': [V_aver], 'err': [math.sqrt(dV_syst + dV_stat)]})
 
-def potential_fit_T_range_best(data, fit_range):
-    ranges = generate_ranges(*fit_range)
-    fits = []
-    for i in range(len(ranges)):
-        try:
-            df_tmp = potential_fit_T(data, ranges[i])
-        except:
-            pass
-        else:
-            fits.append(df_tmp)
-            fits[-1]['range'] = i
-    if not fits:
-        return pd.DataFrame({'T': [None], 'aV(r)': [0], 'err': [0]})
-    fits = pd.concat(fits)
-    fits = fits[fits['err'] != math.inf]
-    fits = fits.sort_values(by='chi_square').reset_index()
-    return pd.DataFrame({'T': [None], 'aV(r)': [fits.at[0, 'aV(r)']], 'err': [fits.at[0, 'err']]})
-
-def fit_curve_shift(data_potential, fit_parameters, fit_func):
-    """finds shift constant so that fit curve fits data_potential
+def fit_curve_shift(df, fit_parameters, x_col, y_col, err_col, fit_func):
+    """finds shift constant so that fit curve fits potential from df
     with other parameters fixed"""
-    x = data_potential['r/a'].to_numpy(dtype=np.float64)
-    y = data_potential['aV(r)'].to_numpy()
-    popt, pcov = curve_fit(lambda x, c: fit_func(x, c, *fit_parameters), x, y, absolute_sigma=True)
-    return popt[0], np.sqrt(np.diag(pcov))[0]
-
-def fit_potentials(data, potentials):
-    """Fits potentials and returns fitting DataFrame with fitting curves
-    Args:
-        data: data for potentials
-        potentials: dictionary of dictionaries with fitting info
-    """
-    df_fits = []
-    for key, value in potentials.items():
-        df = potential_fit_data(data.loc[data['potential_type'] == key, ['r/a','aV(r)', 'err']], value['fit_range'], value['fit_func'], value['fit_parameters'], 'r/a', 'aV(r)', 'err')
-        df['potential_type'] = key
-        df_fits.append(df)
-    return pd.concat(df_fits)
+    df_fit = make_fit_range(df, lambda x, c: fit_func(x, *fit_parameters) + c, 6, ['c'], 'r/a', 'aV(r)', err_col='err').reset_index(level=-1, drop=True)
+    df_fit = average_fit_p_value(df_fit, ['c'], 'r/a').reset_index(level=-1, drop=True)
+    # print('shift', df_fit)
+    # df = df[df[x_col] >= 4]
+    # popt, pcov = curve_fit(lambda x, c: fit_func(x, *fit_parameters) + c, df[x_col], df[y_col], sigma=df[err_col], absolute_sigma=True)
+    # return popt[0], np.sqrt(np.diag(pcov))[0]
+    df = df.reset_index(drop=True)
+    # print('shift', df)
+    # print('shift', df_fit.at[0, 'c'], df_fit.at[0, 'c_err'])
+    return df_fit.at[0, 'c'], df_fit.at[0, 'c_err']
 
 def fit_from_original(data, potential_type, fit_func, fit_parameters):
     """fits potential of potential_type with parameters from original potential and shifts fit to it"""

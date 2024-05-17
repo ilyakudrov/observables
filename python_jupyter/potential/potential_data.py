@@ -33,29 +33,10 @@ class DataDecomposition:
                 optionaly may contain other key-values to be used by methods
         """
         df = []
-        for potential_type, path in paths.items():
-            df.append(pd.read_csv(path['path'], index_col=None))
-            df[-1].reset_index(drop=True, inplace=True)
-            if 'parameters' in path:
-                for key, val in path['parameters'].items():
-                    df[-1][key] = val
-            if 'constraints' in path:
-                for key, value in path['constraints'].items():
-                    df[-1] = df[-1][(df[-1][key] <= value[1])
-                                        & (df[-1][key] >= value[0])]
-            df[-1]['potential_type'] = potential_type
-        df = pd.concat(df, axis=0)
-
-        self.df = df
-
-    def fit_original_T(self, fit_range, potential_type):
-        """For each r fits T dependence with exponent to extract potential"""
-        data_original_r = self.df.loc[self.df['potential_type'] == potential_type]
-        data_original_r = data_original_r\
-            .groupby(list(data_original_r.columns[~data_original_r.columns.isin(['T', 'aV(r)', 'err'])])).apply(fit.potential_fit_T, fit_range)\
-            .reset_index(level=list(self.df.columns[~self.df.columns.isin(['T', 'aV(r)', 'err'])]))
-        self.df = self.df.loc[self.df['potential_type'] != potential_type]
-        self.df = pd.concat([data_original_r, self.df])
+        for decomposition_type, path in paths.items():
+            df.append(get_potantial_df(path))
+            df[-1] = append_multiindex(df[-1], [decomposition_type])
+        self.df = pd.concat(df)
 
     def scale_potentials(self, r0):
         """multiplies V(r) by r0 and divides r by r0."""
@@ -64,42 +45,49 @@ class DataDecomposition:
         self.df['err'] = self.df['err'] / r0
 
     def remove_from_plot(self, types_to_remove):
-        self.df = self.df.loc[~self.df['potential_type'].isin(types_to_remove)]
+        self.df = self.df.loc[~self.df['decomposition_type'].isin(types_to_remove)]
 
     def find_sum(self, term1, term2):
-        df1 = self.df.loc[self.df['potential_type'] == term1]
-        df1.loc[:, 'potential_type'] = self.df.loc[self.df['potential_type'] == term1, 'potential_type'].array + "+" + self.df.loc[self.df['potential_type'] == term2, 'potential_type'].array
-        df1.loc[:, 'name'] = self.df.loc[self.df['potential_type'] == term1, 'name'].array + "+" + self.df.loc[self.df['potential_type'] == term2, 'name'].array
-        df1.loc[:, 'err'] = np.sqrt(self.df.loc[self.df['potential_type'] == term1, 'err'].array**2 + self.df.loc[self.df['potential_type'] == term2, 'err'].array**2)
-        df1.loc[:, 'aV(r)'] = self.df.loc[self.df['potential_type'] == term1, 'aV(r)'].array + self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array
+        df1 = self.df.loc[self.df['decomposition_type'] == term1]
+        df1.loc[:, 'decomposition_type'] = self.df.loc[self.df['decomposition_type'] == term1, 'decomposition_type'].array + "+" + self.df.loc[self.df['decomposition_type'] == term2, 'decomposition_type'].array
+        df1.loc[:, 'name'] = self.df.loc[self.df['decomposition_type'] == term1, 'name'].array + "+" + self.df.loc[self.df['decomposition_type'] == term2, 'name'].array
+        df1.loc[:, 'err'] = np.sqrt(self.df.loc[self.df['decomposition_type'] == term1, 'err'].array**2 + self.df.loc[self.df['decomposition_type'] == term2, 'err'].array**2)
+        df1.loc[:, 'aV(r)'] = self.df.loc[self.df['decomposition_type'] == term1, 'aV(r)'].array + self.df.loc[self.df['decomposition_type'] == term2, 'aV(r)'].array
         self.df = pd.concat([self.df, df1])
 
     def find_difference(self, term1, term2):
-        df1 = self.df.loc[self.df['potential_type'] == term1]
-        df1.loc[:, 'potential_type'] = self.df.loc[self.df['potential_type'] == term1, 'potential_type'].array + "-" + self.df.loc[self.df['potential_type'] == term2, 'potential_type'].array
-        df1.loc[:, 'name'] = self.df.loc[self.df['potential_type'] == term1, 'name'].array + "-" + self.df.loc[self.df['potential_type'] == term2, 'name'].array
-        df1.loc[:, 'err'] = np.sqrt(self.df.loc[self.df['potential_type'] == term1, 'err'].array**2 + self.df.loc[self.df['potential_type'] == term2, 'err'].array**2)
-        df1.loc[:, 'aV(r)'] = self.df.loc[self.df['potential_type'] == term1, 'aV(r)'].array - self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array
+        df1 = self.df.loc[self.df['decomposition_type'] == term1]
+        df1.loc[:, 'decomposition_type'] = self.df.loc[self.df['decomposition_type'] == term1, 'decomposition_type'].array + "-" + self.df.loc[self.df['decomposition_type'] == term2, 'decomposition_type'].array
+        df1.loc[:, 'name'] = self.df.loc[self.df['decomposition_type'] == term1, 'name'].array + "-" + self.df.loc[self.df['decomposition_type'] == term2, 'name'].array
+        df1.loc[:, 'err'] = np.sqrt(self.df.loc[self.df['decomposition_type'] == term1, 'err'].array**2 + self.df.loc[self.df['decomposition_type'] == term2, 'err'].array**2)
+        df1.loc[:, 'aV(r)'] = self.df.loc[self.df['decomposition_type'] == term1, 'aV(r)'].array - self.df.loc[self.df['decomposition_type'] == term2, 'aV(r)'].array
         self.df = pd.concat([self.df, df1])
 
     def find_ratio(self, term1, term2):
-        df1 = self.df.loc[self.df['potential_type'] == term1]
-        df1.loc[:, 'potential_type'] = self.df.loc[self.df['potential_type'] == term1, 'potential_type'].array + "/" + self.df.loc[self.df['potential_type'] == term2, 'potential_type'].array
-        df1.loc[:, 'name'] = self.df.loc[self.df['potential_type'] == term1, 'name'].array + "/" + self.df.loc[self.df['potential_type'] == term2, 'name'].array
-        df1.loc[:, 'err'] = np.sqrt(self.df.loc[self.df['potential_type'] == term1, 'err'].array**2 / self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array**2
-                                     + self.df.loc[self.df['potential_type'] == term2, 'err'].array**2 * self.df.loc[self.df['potential_type'] == term1, 'aV(r)'].array**2
-                                     /self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array**4)
-        df1.loc[:, 'aV(r)'] = self.df.loc[self.df['potential_type'] == term1, 'aV(r)'].array / self.df.loc[self.df['potential_type'] == term2, 'aV(r)'].array
+        df1 = self.df.loc[self.df['decomposition_type'] == term1]
+        df1.loc[:, 'decomposition_type'] = self.df.loc[self.df['decomposition_type'] == term1, 'decomposition_type'].array + "/" + self.df.loc[self.df['decomposition_type'] == term2, 'decomposition_type'].array
+        df1.loc[:, 'name'] = self.df.loc[self.df['decomposition_type'] == term1, 'name'].array + "/" + self.df.loc[self.df['decomposition_type'] == term2, 'name'].array
+        df1.loc[:, 'err'] = np.sqrt(self.df.loc[self.df['decomposition_type'] == term1, 'err'].array**2 / self.df.loc[self.df['decomposition_type'] == term2, 'aV(r)'].array**2
+                                     + self.df.loc[self.df['decomposition_type'] == term2, 'err'].array**2 * self.df.loc[self.df['decomposition_type'] == term1, 'aV(r)'].array**2
+                                     /self.df.loc[self.df['decomposition_type'] == term2, 'aV(r)'].array**4)
+        df1.loc[:, 'aV(r)'] = self.df.loc[self.df['decomposition_type'] == term1, 'aV(r)'].array / self.df.loc[self.df['decomposition_type'] == term2, 'aV(r)'].array
         self.df = pd.concat([self.df, df1])
 
     def shift_fit_linear(self, type1, type2, fit_range1, fit_range2):
         """potential of type1 gets shifted towards potential of type2
             so that linear fits coinside."""
-        popt1, pcov1 = fit.fit_single(self.df.loc[self.df['potential_type'] == type1], fit_range1, fit.func_linear)
-        popt2, pcov2 = fit.fit_single(self.df.loc[self.df['potential_type'] == type2], fit_range2, fit.func_linear)
-        self.df.loc[self.df['potential_type'] == type1, 'aV(r)'] = popt2[0] - popt1[0]
+        popt1, pcov1 = fit.fit_single(self.df.loc[self.df['decomposition_type'] == type1], fit_range1, fit.func_linear)
+        popt2, pcov2 = fit.fit_single(self.df.loc[self.df['decomposition_type'] == type2], fit_range2, fit.func_linear)
+        self.df.loc[self.df['decomposition_type'] == type1, 'aV(r)'] = popt2[0] - popt1[0]
 
 # functions for reading df
+
+def find_sum(df, term1, term2):
+    df1 = df.loc[df['decomposition_type'] == term1]
+    df1.loc[:, 'decomposition_type'] = df.loc[df['decomposition_type'] == term1, 'decomposition_type'].array + "+" + df.loc[df['decomposition_type'] == term2, 'decomposition_type'].array
+    df1.loc[:, 'err'] = np.sqrt(df.loc[df['decomposition_type'] == term1, 'err'].array**2 + df.loc[df['decomposition_type'] == term2, 'err'].array**2)
+    df1.loc[:, 'aV(r)'] = df.loc[df['decomposition_type'] == term1, 'aV(r)'].array + df.loc[df['decomposition_type'] == term2, 'aV(r)'].array
+    return pd.concat([df, df1])
 
 def read_df_potential(paths):
     df = []
