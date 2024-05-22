@@ -276,17 +276,15 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
 
         if is_binning:
             df1 = []
-            # bin_sizes = int_log_range(1, bin_max, bin_step)
-            bin_sizes = [1, 2]
-            print(bin_sizes)
+            bin_sizes = int_log_range(1, bin_max, bin_step)
             for bin_size in bin_sizes:
                 df1.append(df.groupby(
-                    potential_parameters).parallel_apply(get_potential_binning, bin_size).reset_index(level=potential_parameters))
+                    potential_parameters).apply(get_potential_binning, bin_size).reset_index(level=potential_parameters))
                 df1[-1]['bin_size'] = bin_size
             df1 = pd.concat(df1)
         else:
             df1 = df.groupby(
-                potential_parameters).parallel_apply(get_potential).reset_index(level=potential_parameters)
+                potential_parameters).apply(get_potential_binning, 50).reset_index(level=potential_parameters)
         print(df1)
 
         end = time.time()

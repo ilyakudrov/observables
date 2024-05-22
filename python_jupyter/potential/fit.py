@@ -121,13 +121,7 @@ def fit_curve_shift(df, fit_parameters, x_col, y_col, err_col, fit_func):
     with other parameters fixed"""
     df_fit = make_fit_range(df, lambda x, c: fit_func(x, *fit_parameters) + c, 6, ['c'], 'r/a', 'aV(r)', err_col='err').reset_index(level=-1, drop=True)
     df_fit = average_fit_p_value(df_fit, ['c'], 'r/a').reset_index(level=-1, drop=True)
-    # print('shift', df_fit)
-    # df = df[df[x_col] >= 4]
-    # popt, pcov = curve_fit(lambda x, c: fit_func(x, *fit_parameters) + c, df[x_col], df[y_col], sigma=df[err_col], absolute_sigma=True)
-    # return popt[0], np.sqrt(np.diag(pcov))[0]
     df = df.reset_index(drop=True)
-    # print('shift', df)
-    # print('shift', df_fit.at[0, 'c'], df_fit.at[0, 'c_err'])
     return df_fit.at[0, 'c'], df_fit.at[0, 'c_err']
 
 def fit_from_original(data, potential_type, fit_func, fit_parameters):

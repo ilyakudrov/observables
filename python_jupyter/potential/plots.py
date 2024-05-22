@@ -149,8 +149,6 @@ def plot_potential_single(data, x, y, hue, x_label, y_label, title, image_path, 
         plt.show()
     save_image(f'{image_path}',
                f'{image_name}', fg)
-    # if not show_plot:
-    #     plt.close()
     return fg
 
 def make_plots_single(data, x, y, hue, groupby, x_label, y_label, title, image_path, image_name, show_plot, err=None, black_line_y=None, dashed_line_y=None):
