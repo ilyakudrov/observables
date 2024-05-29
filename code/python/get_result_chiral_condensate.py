@@ -107,11 +107,13 @@ def read_chiral_condensate(path):
     data = []
     with open(path) as file:
         while line := file.readline():
-            if(line.rstrip() == '#ChiralCond'):
-                while line := file.readline():
-                    data.append(float(line))
+            if(line[0] != '#'):     
+                data.append(float(line))
     return pd.DataFrame({'chiral_condensate': data})
 
+def make_cut(df):
+    df = df.reset_index(drop=True)
+    return df.loc[:99]
 
 conf_type = "qc2dstag"
 conf_sizes = ["40^4"]
@@ -119,10 +121,11 @@ theory_type = 'su2'
 betas = ['/']
 copies = 0
 copy_single = True
-matrix_type_array = ['original']
+matrix_type_array = ['monopole', 'monopoless']
 # matrix_type_array = ['monopole']
 # additional_parameters_arr = ['steps_0/copies=20']
-additional_parameters_arr = ['/']
+#additional_parameters_arr = ['/']
+additional_parameters_arr = ['qc2dstag/ma=0.015', 'qc2dstag/ma=0.0075']
 
 is_binning = False
 bin_max = 1000
@@ -130,14 +133,14 @@ bin_max = 1000
 conf_max = 5000
 mu1 = ['mu0.00']
 # mu1 = ['/']
-chains = ["/"]
+#chains = ["/"]
 # mu1 = ['mu0.05',
 #        'mu0.20', 'mu0.25',
 #        'mu0.30', 'mu0.35', 'mu0.45']
 # mu1 = ['mu0.40']
 # chains = ['s1', 's2']
-# chains = ['s0', 's1', 's2', 's3',
-#           's4', 's5', 's6', 's7', 's8']
+chains = ['/', 's0', 's1', 's2', 's3',
+          's4', 's5', 's6', 's7', 's8']
 
 # adjoint_fix = True
 adjoint_fix = False
