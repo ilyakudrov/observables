@@ -197,7 +197,7 @@ additional_parameters_arr = args.additional_parameters
 # additional_parameters_arr = ['steps_500/copies=3']
 # additional_parameters_arr = ['/']
 
-is_binning = True
+is_binning = False
 bin_max = 5
 bin_step = 1.3
 calculation_type = 'smearing'
@@ -232,8 +232,8 @@ chains = ["/"]
 # adjoint_fix = True
 adjoint_fix = False
 
-base_path = "../../data"
-#base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
+#base_path = "../../data"
+base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 
 iter_arrays = [matrix_type_array, smeared_array,
                betas, conf_sizes, mu1, additional_parameters_arr]
@@ -255,7 +255,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
             else:
                 for copy in range(1, copies + 1):
                     file_path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}_{copy}'
-                    # print(file_path)
+                    #print(file_path)
                     if (os.path.isfile(file_path)):
                         data.append(pd.read_csv(file_path, header=0,
                                                 names=CSV_names,
@@ -292,6 +292,8 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
 
         if is_binning:
             base_dir1 = base_dir + '/binning'
+        else:
+            base_dir1 = base_dir
         # df1 = df1[names_out]
         path_output = f"../../result/{base_dir1}/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
         try:

@@ -33,6 +33,17 @@ def int_log_range(_min, _max, factor):
             result.append(int(current))
     return result
 
+def get_bin_borders(data_size, bin_size):
+    nbins = data_size // bin_size
+    bin_sizes = [bin_size for _ in range(nbins)]
+    residual_size = data_size - nbins * bin_size
+    idx = 0
+    while residual_size > 0:
+        bin_sizes[idx] += 1
+        residual_size -= 1
+        idx = (idx + 1) % nbins
+    return np.array([0] + list(itertools.accumulate(bin_sizes)))
+
 def read_blocks(path):
     return pd.read_csv(path, header=None,delimiter=' ', names=['x', 'y', 'q', 'r', 'n', 'u',
                                                  'a', 'b', 'c', 'd', 'e', 'f', 'g',
@@ -108,11 +119,11 @@ def make_jackknife(df, bin_size=None):
         bin_size = df.loc[0, 'bin_size']
     else:
         bin_size = bin_size * block_size
-    print('block_size', block_size)
-    print('bin_size', bin_size)
+    #print('block_size', block_size)
+    #print('bin_size', bin_size)
     bin_size = (bin_size + block_size -1)//block_size
     S_arr = np.array([df['S'].to_numpy()])
-    mean, err = stat.jackknife_var_numba(S_arr, trivial)
+    mean, err = stat.jackknife_var_numba_binning(S_arr, trivial, get_bin_borders(S_arr.shape[1], bin_size))
     df_result = pd.DataFrame({'S': [mean], 'err': [err], 'bin_size': [bin_size * block_size]})
     df_result.set_index('bin_size', inplace=True)
     return df_result
@@ -158,7 +169,9 @@ if args.bin_test:
     df1.to_csv(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/S_binning.csv', sep=' ', index=False)
 else:
     df1 = []
-    for cut in range(0, Nt * 3 + 1):
+    #for cut in range(0, Nt * 3 + 1):
+    for cut in range(0, 3):
+        print(cut)
         df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut) & (df['y'] <= coord_max - cut) & (df['y'] >= cut)]
         df1.append(df.groupby(['beta']).apply(make_jackknife).reset_index(level=['beta', 'bin_size']))
         df1[-1]['cut'] = cut
