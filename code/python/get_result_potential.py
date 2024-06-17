@@ -9,10 +9,10 @@ import pandas as pd
 import itertools
 import argparse
 
-from tqdm import tqdm
-tqdm.pandas()
-from pandarallel import pandarallel
-pandarallel.initialize(progress_bar=False, nb_workers=4)
+#from tqdm import tqdm
+#tqdm.pandas()
+#from pandarallel import pandarallel
+#pandarallel.initialize(progress_bar=False, nb_workers=4)
 
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", ".."))
@@ -220,14 +220,14 @@ elif calculation_type == 'no_smearing':
 conf_max = 5000
 # mu1 = ['mu0.40']
 mu1 = ['/']
-chains = ["/"]
+#chains = ["/"]
 # mu1 = ['mu0.05',
 #        'mu0.20', 'mu0.25',
 #        'mu0.30', 'mu0.35', 'mu0.45']
 # mu1 = ['mu0.40']
 # chains = ['s1', 's2']
-# chains = ['s0', 's1', 's2', 's3',
-#           's4', 's5', 's6', 's7', 's8']
+chains = ['/', 's0', 's1', 's2', 's3',
+           's4', 's5', 's6', 's7', 's8']
 
 # adjoint_fix = True
 adjoint_fix = False
@@ -260,7 +260,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
                         data.append(pd.read_csv(file_path, header=0,
                                                 names=CSV_names,
                                                 dtype=dtype))
-                        data[-1]["conf"] = i
+                        data[-1]["conf"] = f'{i}-{chain}'
                         data[-1]["copy"] = copy
                         if adjoint_fix:
                             data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1
@@ -269,6 +269,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
               conf_size, mu, beta, smeared)
     elif len(data) != 0:
         df = pd.concat(data)
+        print(df)
         start = time.time()
 
         df = fillup_copies(df)
@@ -283,8 +284,10 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
                 df1[-1]['bin_size'] = bin_size
             df1 = pd.concat(df1)
         else:
+            #df1 = df.groupby(
+            #    potential_parameters).apply(get_potential_binning, 50).reset_index(level=potential_parameters)
             df1 = df.groupby(
-                potential_parameters).apply(get_potential_binning, 50).reset_index(level=potential_parameters)
+                potential_parameters).apply(get_potential).reset_index(level=potential_parameters)
         print(df1)
 
         end = time.time()
