@@ -25,7 +25,7 @@ def pair_wrapped(data, threshold):
     else:
         return pd.DataFrame({'length': [0]})
 
-def find_percolating_wrapped_sum(data, threshold):
+def find_percolating_wrapped_sum(data, threshold=None):
     return pd.DataFrame({'length': [data[data['percolating_group'] == 'percolating']['length'].sum()]})
 
 def clusters_divide(data_unwrapped, data_wrapped, size_threshold, groupby_keys):
@@ -49,8 +49,8 @@ def cluster_gap_unwrapped(data_unwrapped, data_wrapped, thresholds, groupby_keys
     return perc_cluster_aver
 
 def percolating_clusters(paths_unwrapped, paths_wrapped, min_threshold, max_threshold, threshold_step, groupby_keys, image_path, imag_name):
-    data_unwrapped = monopole_data.read_data_unwrapped(paths_unwrapped).reset_index(drop=True)
-    data_wrapped = monopole_data.read_data_wrapped(paths_wrapped).reset_index(drop=True)
+    data_unwrapped = monopole_data.read_data_unwrapped_copies(paths_unwrapped).reset_index(drop=True)
+    data_wrapped = monopole_data.read_data_wrapped_copies(paths_wrapped).reset_index(drop=True)
     size_thresholds = list(range(min_threshold, max_threshold, threshold_step))
     perc_cluster_aver = cluster_gap_unwrapped(data_unwrapped, data_wrapped, size_thresholds, groupby_keys)
     plt.plot(size_thresholds, perc_cluster_aver);

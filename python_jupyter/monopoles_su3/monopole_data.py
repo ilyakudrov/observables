@@ -13,13 +13,17 @@ def fill_wrapped(df):
 def read_data_unwrapped(paths):
     df = []
     for path in paths:
+        if 'chain' in path:
+            chain = path['chain']
+        else:
+            chain = 0
         for i in range(path['conf_range'][0], path['conf_range'][1] + 1):
             data_path = path['path'] + f'_{i:04}'
             if(os.path.isfile(data_path)):
                 df1 = pd.read_csv(data_path)
                 if not df1.empty:
                     df.append(df1)
-                    df[-1]['conf'] = i
+                    df[-1]['conf'] = i + chain * 100000
                     if 'parameters' in path:
                             for key, val in path['parameters'].items():
                                 df[-1][key] = val
@@ -29,13 +33,17 @@ def read_data_unwrapped(paths):
 def read_data_wrapped(paths):
     df = []
     for path in paths:
+        if 'chain' in path:
+            chain = path['chain']
+        else:
+            chain = 0
         for i in range(path['conf_range'][0], path['conf_range'][1] + 1):
             data_path = path['path'] + f'_{i:04}'
             if(os.path.isfile(data_path)):
                 df1 = pd.read_csv(data_path)
                 df1 = fill_wrapped(df1)
                 df.append(df1)
-                df[-1]['conf'] = i
+                df[-1]['conf'] = i + chain * 100000
                 if 'parameters' in path:
                         for key, val in path['parameters'].items():
                             df[-1][key] = val
@@ -45,6 +53,10 @@ def read_data_wrapped(paths):
 def read_data_unwrapped_copies(paths):
     df = []
     for path in paths:
+        if 'chain' in path:
+            chain = path['chain']
+        else:
+            chain = 0
         for i in range(path['conf_range'][0], path['conf_range'][1] + 1):
             for j in range(path['copies_num']):
                 data_path = path['path'] + f'_{i:04}_{j}'
@@ -52,7 +64,7 @@ def read_data_unwrapped_copies(paths):
                     df1 = pd.read_csv(data_path)
                     if not df1.empty:
                         df.append(df1)
-                        df[-1]['conf'] = i
+                        df[-1]['conf'] = i + chain * 100000
                         df[-1]['copy'] = j
                         if 'parameters' in path:
                                 for key, val in path['parameters'].items():
@@ -63,6 +75,10 @@ def read_data_unwrapped_copies(paths):
 def read_data_wrapped_copies(paths):
     df = []
     for path in paths:
+        if 'chain' in path:
+            chain = path['chain']
+        else:
+            chain = 0
         for i in range(path['conf_range'][0], path['conf_range'][1] + 1):
             for j in range(path['copies_num']):
                 data_path = path['path'] + f'_{i:04}_{j}'
@@ -70,7 +86,7 @@ def read_data_wrapped_copies(paths):
                     df1 = pd.read_csv(data_path)
                     df1 = fill_wrapped(df1)
                     df.append(df1)
-                    df[-1]['conf'] = i
+                    df[-1]['conf'] = i + chain * 100000
                     df[-1]['copy'] = j
                     if 'parameters' in path:
                             for key, val in path['parameters'].items():
