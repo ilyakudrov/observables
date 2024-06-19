@@ -10,6 +10,7 @@ import scipy
 from scipy.stats import norm, binned_statistic
 import scipy.stats
 import astropy
+import itertools
 
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", "..", ".."))
@@ -97,9 +98,7 @@ def get_data(base_path, args, df_therm, df_bins):
             filenames = get_file_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{beta}/{chain}', args)
             filenames.sort()
             for f in filenames:
-                print('file: ', f)
                 conf_start, conf_end = get_conf_range(f)
-                print('conf_start, conf_end: ', conf_start, conf_end)
                 if conf_start > therm_length:
                     data = read_blocks(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{beta}/{chain}/{f}')
                     data = data[['x', 'y', 'S']]
@@ -110,6 +109,8 @@ def get_data(base_path, args, df_therm, df_bins):
                     data['bin_size'] = bin_size
                     # data.set_index(['beta', 'bin_size'], inplace=True)
                     df.append(data)
+                    size_in_mem += df[-1].memory_usage(index=True).sum()
+                    print(sys.getsizeof(df), size_in_mem)
     return pd.concat(df)
 
 def make_jackknife(df, bin_size=None):
@@ -138,6 +139,7 @@ def trivial(x):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--base_path')
+parser.add_argument('--beta')
 parser.add_argument('--velocity')
 parser.add_argument('--lattice_size')
 parser.add_argument('--boundary')
