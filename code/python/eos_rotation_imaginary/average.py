@@ -82,35 +82,26 @@ def therm_bin(df_therm, df_bins, beta):
         bin_size = df_bins.loc[df_bins['beta'] == 0.00, 'bin_size'].values[0]
     return therm_length, bin_size
 
-def get_data(base_path, args, df_therm, df_bins):
+def get_data(base_path, args, therm_length, bin_size):
     df = []
-    beta_dirs = get_dir_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}')
-    #beta_dirs = beta_dirs[:1]
-    #beta_dirs = ['4.2200']
-    print('beta_dirs: ', beta_dirs)
-    for beta in beta_dirs:
-        therm_length, bin_size = therm_bin(df_therm, df_bins, beta)
-        print('therm_length: ', therm_length)
-        chain_dirs = get_dir_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{beta}')
-        chain_dirs.sort()
-        print('chain_dirs: ', chain_dirs)
-        for chain in chain_dirs:
-            filenames = get_file_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{beta}/{chain}', args)
-            filenames.sort()
-            for f in filenames:
-                conf_start, conf_end = get_conf_range(f)
-                if conf_start > therm_length:
-                    data = read_blocks(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{beta}/{chain}/{f}')
-                    data = data[['x', 'y', 'S']]
-                    data['block_size'] = get_block_size(f)
-                    data['conf_start'] = conf_start
-                    data['conf_end'] = conf_end
-                    data['beta'] = float(beta)
-                    data['bin_size'] = bin_size
-                    # data.set_index(['beta', 'bin_size'], inplace=True)
-                    df.append(data)
-                    size_in_mem += df[-1].memory_usage(index=True).sum()
-                    print(sys.getsizeof(df), size_in_mem)
+    therm_length, bin_size = therm_bin(df_therm, df_bins, args.beta)
+    print('therm_length: ', therm_length)
+    chain_dirs = get_dir_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}')
+    chain_dirs.sort()
+    print('chain_dirs: ', chain_dirs)
+    for chain in chain_dirs:
+        filenames = get_file_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}', args)
+        filenames.sort()
+        for f in filenames:
+            conf_start, conf_end = get_conf_range(f)
+            if conf_start > therm_length:
+                data = read_blocks(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
+                data = data[['x', 'y', 'S']]
+                data['block_size'] = get_block_size(f)
+                data['conf_start'] = conf_start
+                data['conf_end'] = conf_end
+                data['bin_size'] = bin_size
+                df.append(data)
     return pd.concat(df)
 
 def make_jackknife(df, bin_size=None):
@@ -120,14 +111,23 @@ def make_jackknife(df, bin_size=None):
         bin_size = df.loc[0, 'bin_size']
     else:
         bin_size = bin_size * block_size
-    #print('block_size', block_size)
-    #print('bin_size', bin_size)
     bin_size = (bin_size + block_size -1)//block_size
     S_arr = np.array([df['S'].to_numpy()])
     mean, err = stat.jackknife_var_numba_binning(S_arr, trivial, get_bin_borders(S_arr.shape[1], bin_size))
     df_result = pd.DataFrame({'S': [mean], 'err': [err], 'bin_size': [bin_size * block_size]})
-    df_result.set_index('bin_size', inplace=True)
     return df_result
+
+def get_radii_sq(square_size):
+    radii = set()
+    for i in range(2):
+        y = square_size
+        x = square_size - i
+        while x ** 2 + y ** 2 > (square_size - 1) ** 2:
+            radii.add(x ** 2 + y ** 2)
+            x -= 1
+            y -= 1
+    radii.add(square_size ** 2)
+    return sorted(list(radii),key=float)[:-1]
 
 @njit
 def trivial(x):
@@ -147,37 +147,37 @@ parser.add_argument('--bin_test', action='store_true')
 args = parser.parse_args()
 print('args: ', args)
 
-base_path = args.base_path
-
-df_therm = pd.read_csv(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
+df_therm = pd.read_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
                        header=None, delimiter=' ', names=['beta', 'therm_length'])
-df_bins = pd.read_csv(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
+df_bins = pd.read_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
                        header=None, delimiter=' ', names=['beta', 'bin_size'])
-print(df_therm)
-print(df_bins)
-print('bin_test', args.bin_test)
-df = get_data(base_path, args, df_therm, df_bins)
+therm_length, bin_size = therm_bin(df_therm, df_bins, args.beta)
+df = get_data(args.base_path, args, therm_length, bin_size)
 print(df)
-coord_max = df['x'].max()
-Nt = int(args.lattice_size[0])
-print('Nt', Nt)
 if args.bin_test:
     bin_sizes = int_log_range(1, 100, 1.05)
     print(bin_sizes)
     df1 = []
     for bin in bin_sizes:
-        df1.append(df.groupby(['beta']).apply(make_jackknife, bin).reset_index(level=['beta', 'bin_size']))
+        df1.append(make_jackknife(df, bin_size=bin))
     df1 = pd.concat(df1)
-    df1.to_csv(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/S_binning.csv', sep=' ', index=False)
+    df1.to_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/S_binning.csv', sep=' ', index=False)
 else:
-    df1 = []
+    coord_max = df['x'].max()//2
+    df['x'] = df['x'] - coord_max
+    df['y'] = df['y'] - coord_max
+    df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
+    Nt = int(args.lattice_size[0])
+    df_result = []
     #for cut in range(0, Nt * 3 + 1):
     for cut in range(0, 3):
-        print(cut)
-        df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut) & (df['y'] <= coord_max - cut) & (df['y'] >= cut)]
-        df1.append(df.groupby(['beta']).apply(make_jackknife).reset_index(level=['beta', 'bin_size']))
-        df1[-1]['cut'] = cut
-    df1 = pd.concat(df1)
-    df1.to_csv(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/S_result.csv', sep=' ', index=False)
+        df1 = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut) & (df['y'] <= coord_max - cut) & (df['y'] >= cut)]
+        for radius_sq in get_radii_sq(df1['x'].max()):
+            df1 = df1.loc[df1['rad_sq'] <= radius_sq]
+            df_result.append(make_jackknife(df1))
+            df_result[-1]['cut'] = cut
+            df_result[-1]['radius'] = radius_sq
+    df = pd.concat(df_result)
+    df_result.to_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/S_result.csv', sep=' ', index=False)
 
-print(df1)
+print(df_result)
