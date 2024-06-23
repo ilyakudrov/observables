@@ -124,6 +124,70 @@ def fillup_copies(df):
             df = pd.concat([df, df3])
     return df
 
+def read_data(path, chains, conf_max, copy_single, copies, CSV_names, dtype, adjoint_fix):
+    data = []
+    for chain in chains:
+        for i in range(0, conf_max + 1):
+            if copy_single:
+                file_path = f'{path}/{chain}/wilson_loop_{i:04}'
+                if (os.path.isfile(file_path)):
+                    data.append(pd.read_csv(file_path, header=0,
+                                            names=CSV_names,
+                                            dtype=dtype))
+                    data[-1]["conf"] = i
+                    data[-1]["copy"] = copies
+                    if adjoint_fix:
+                        data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1
+            else:
+                for copy in range(1, copies + 1):
+                    file_path = f'{path}/{chain}/wilson_loop_{i:04}_{copy}'
+                    if (os.path.isfile(file_path)):
+                        data.append(pd.read_csv(file_path, header=0,
+                                                names=CSV_names,
+                                                dtype=dtype))
+                        data[-1]["conf"] = f'{i}-{chain}'
+                        data[-1]["copy"] = copy
+                        if adjoint_fix:
+                            data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1
+    return data
+
+def read_copy(chains, conf_max, path, copy, CSV_names, dtype):
+    data = pd.DataFrame()
+    for chain in chains:
+        for i in range(0, conf_max + 1):
+            file_path = f'{path}/{chain}/wilson_loop_{i:04}_{copy}'
+            if (os.path.isfile(file_path)):
+                df = pd.read_csv(file_path, header=0,
+                                        names=CSV_names,
+                                        dtype=dtype)
+                df["conf"] = f'{i}-{chain}'
+                df["copy"] = copy
+                data = pd.concat([data, df])
+    return data
+
+def read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy):
+    if copy == 0:
+        data = pd.DataFrame()
+        for chain in chains:
+            for i in range(0, conf_max + 1):
+                file_path = f'{path}/{chain}/wilson_loop_{i:04}'
+                if (os.path.isfile(file_path)):
+                    df = pd.read_csv(file_path, header=0,
+                                            names=CSV_names,
+                                            dtype=dtype)
+                    df["conf"] = f'{i}-{chain}'
+                    data = pd.concat([data, df])
+    else:
+        if copy == 1:
+            data = read_copy(chains, conf_max, path, copy, CSV_names, dtype)
+            data = data.set_index('copy')
+        else:
+            for c in range(1, copy + 1):
+                data = pd.concat([data, read_copy(chains, conf_max, path, c, CSV_names, dtype)])
+            data = fillup_copies(data)
+            data = data[data['copy'] == copy]
+            data = data.set_index('copy')
+    return data
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--size', action="append")
@@ -132,70 +196,21 @@ parser.add_argument('--matrix_type', action="append")
 parser.add_argument('--additional_parameters', action="append")
 parser.add_argument('--beta', action="append")
 parser.add_argument('--copies', type=int)
-parser.add_argument('--copy_single', action='store_true')
 args = parser.parse_args()
 print('args: ', args)
 
 axis = 'on-axis'
 conf_type = "gluodynamics"
-# conf_type = "qc2dstag"
-# conf_type = "QCD/140MeV"
-# conf_type = "su2_suzuki"
-# conf_type = "SU2_dinam"
 conf_sizes = args.size
-# conf_sizes = ["32^3x64"]
-# conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
-# betas = ['beta6.1']
 betas = args.beta
-# copies = 20
 copies = args.copies
-# copy_single = False
 copy_single = args.copy_single
-# betas = ['beta2.7', 'beta2.8']
-#smeared_array = ['HYP0_APE_alpha=0.5']
-# smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.6',
-#                  'HYP1_alpha=1_1_0.5_APE_alpha=0.6',
-#                  'HYP3_alpha=1_1_0.5_APE_alpha=0.6']
 smeared_array = args.smearing
-#smeared_array = ['HYP1_alpha=1_1_0.5_APE_alpha=0.6']
-# smeared_array = ['HYP0_APE_alpha=0.5']
-# matrix_type_array = ['monopole',
-#                      'monopoless', 'photon', 'offdiagonal']
-#matrix_type_array = ['original']
 matrix_type_array = args.matrix_type
-#matrix_type_array = ['monopole',
-#                      'monopoless', 'photon',
-#                      'offdiagonal', 'abelian']
 operator_type = 'wilson_loop'
 representation = 'fundamental'
-# representation = 'adjoint'
-# additional_parameters_arr = ['steps_500/copies=3/compensate_1', 'steps_1000/copies=3/compensate_1',
-#  'steps_2000/copies=3/compensate_1', 'steps_4000/copies=3/compensate_1', 'steps_8000/copies=3/compensate_1']
-# additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
-#                              'steps_2000/copies=3', 'steps_4000/copies=3', 'steps_8000/copies=3']
-# additional_parameters_arr = ['steps_500/copies=3']
-# additional_parameters_arr = ['steps_500/copies=3/compensate_1']
-# additional_parameters_arr = ['T_step=0.0001', 'T_step=0.0002', 'T_step=0.0004',
-#                              'T_step=0.0008', 'T_step=0.001', 'T_step=0.002',
-#                              'T_step=0.004', 'T_step=0.008', 'T_step=5e-05']
-# additional_parameters_arr = ['T_step=0.0002']
-# additional_parameters_arr = ['T_step=0.0001', 'T_step=0.0002',
-#                              'T_step=0.0004', 'T_step=0.0008', 'T_step=0.0016', 'T_step=0.0032']
-# additional_parameters_arr = ['steps_25/copies=4', 'steps_50/copies=4',
-#                              'steps_100/copies=4', 'steps_200/copies=4',
-#                              'steps_1000/copies=4', 'steps_2000/copies=4']
-# additional_parameters_arr = ['steps_0/copies=20']
 additional_parameters_arr = args.additional_parameters
-# additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
-#                              'steps_2000/copies=3', 'steps_4000/copies=3',
-#                              'steps_8000/copies=3']
-# additional_parameters_arr = ['steps_500/copies=3/compensate_1', 'steps_1000/copies=3/compensate_1',
-#                              'steps_2000/copies=3/compensate_1', 'steps_4000/copies=3/compensate_1',
-#                              'steps_8000/copies=3/compensate_1']
-# additional_parameters_arr = ['steps_500/copies=3/compensate_1']
-# additional_parameters_arr = ['steps_500/copies=3']
-# additional_parameters_arr = ['/']
 
 is_binning = False
 bin_max = 5
@@ -203,7 +218,7 @@ bin_step = 1.3
 calculation_type = 'smearing'
 
 if calculation_type == 'smearing':
-    potential_parameters = ['smearing_step', 'r/a', 'copy']
+    potential_parameters = ['smearing_step', 'r/a']
     CSV_names = ['smearing_step', "T", "r/a", "wilson_loop"]
     names_out = ['smearing_step', 'T', 'r/a', 'aV(r)', 'err']
     dtype = {'smearing_step': np.int32, "T": np.int32,
@@ -211,7 +226,7 @@ if calculation_type == 'smearing':
     base_dir = 'smearing'
 
 elif calculation_type == 'no_smearing':
-    potential_parameters = ['r/a', 'copy']
+    potential_parameters = ['r/a']
     CSV_names = ["T", "r/a", "wilson_loop"]
     dtype = {"T": np.int32, "r/a": np.int32, "wilson_loop": np.float64}
     names_out = ['T', 'r/a', 'aV(r)', 'err']
@@ -238,70 +253,50 @@ base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 iter_arrays = [matrix_type_array, smeared_array,
                betas, conf_sizes, mu1, additional_parameters_arr]
 for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertools.product(*iter_arrays):
-    print(matrix_type, conf_size, mu, beta, smeared)
-    data = []
-    for chain in chains:
-        for i in range(0, conf_max + 1):
-            if copy_single:
-                file_path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
-                if (os.path.isfile(file_path)):
-                    data.append(pd.read_csv(file_path, header=0,
-                                            names=CSV_names,
-                                            dtype=dtype))
-                    data[-1]["conf"] = i
-                    data[-1]["copy"] = copies
-                    if adjoint_fix:
-                        data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1
+    print('matrix_type: ', matrix_type, ', smeared: ', smeared, ' beta: ', beta,' conf_size: ',
+          conf_size, ' mu: ', mu,' additional_parameters: ', additional_parameters)
+    path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}'
+    if copies > 0:
+        copy_range = range(1, args.copies + 1)
+    else:
+        copy_range = range(1)
+    df1 = []
+    for copy in copy_range:
+        df = read_data(path, chains, conf_max, copy_single, copies, CSV_names, dtype, adjoint_fix)
+        if len(df) == 0:
+            print("no data")
+        else:
+            print(df)
+            start = time.time()
+
+            df = fillup_copies(df)
+            print(df)
+
+            if is_binning:
+                bin_sizes = int_log_range(1, bin_max, bin_step)
+                for bin_size in bin_sizes:
+                    df1.append(df.groupby(df1.index.names +
+                        potential_parameters).apply(get_potential_binning, bin_size).reset_index(level=df1.index.names + potential_parameters))
+                    df1[-1]['bin_size'] = bin_size
+                df1 = pd.concat(df1)
             else:
-                for copy in range(1, copies + 1):
-                    file_path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}_{copy}'
-                    #print(file_path)
-                    if (os.path.isfile(file_path)):
-                        data.append(pd.read_csv(file_path, header=0,
-                                                names=CSV_names,
-                                                dtype=dtype))
-                        data[-1]["conf"] = f'{i}-{chain}'
-                        data[-1]["copy"] = copy
-                        if adjoint_fix:
-                            data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1
-    if len(data) == 0:
-        print("no data", matrix_type,
-              conf_size, mu, beta, smeared)
-    elif len(data) != 0:
-        df = pd.concat(data)
-        print(df)
-        start = time.time()
+                #df1 = df.groupby(
+                #    potential_parameters).apply(get_potential_binning, 50).reset_index(level=potential_parameters)
+                df1 = df.groupby(df1.index.names +
+                    potential_parameters).apply(get_potential).reset_index(level=df1.index.names + potential_parameters)
+            print(df1)
 
-        df = fillup_copies(df)
-        print(df)
+            end = time.time()
+            print("execution time = %s" % (end - start))
 
-        if is_binning:
-            df1 = []
-            bin_sizes = int_log_range(1, bin_max, bin_step)
-            for bin_size in bin_sizes:
-                df1.append(df.groupby(
-                    potential_parameters).apply(get_potential_binning, bin_size).reset_index(level=potential_parameters))
-                df1[-1]['bin_size'] = bin_size
-            df1 = pd.concat(df1)
-        else:
-            #df1 = df.groupby(
-            #    potential_parameters).apply(get_potential_binning, 50).reset_index(level=potential_parameters)
-            df1 = df.groupby(
-                potential_parameters).apply(get_potential).reset_index(level=potential_parameters)
-        print(df1)
-
-        end = time.time()
-        print("execution time = %s" % (end - start))
-
-        if is_binning:
-            base_dir1 = base_dir + '/binning'
-        else:
-            base_dir1 = base_dir
-        # df1 = df1[names_out]
-        path_output = f"../../result/{base_dir1}/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
-        try:
-            os.makedirs(f'{path_output}')
-        except:
-            pass
-        df1.to_csv(
-            f"{path_output}/potential_{matrix_type}.csv", index=False)
+            if is_binning:
+                base_dir1 = base_dir + '/binning'
+            else:
+                base_dir1 = base_dir
+            path_output = f"../../result/{base_dir1}/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+            try:
+                os.makedirs(f'{path_output}')
+            except:
+                pass
+            df1.to_csv(
+                f"{path_output}/potential_{matrix_type}.csv", index=False)
