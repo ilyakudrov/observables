@@ -11,6 +11,8 @@ from scipy.stats import norm, binned_statistic
 import scipy.stats
 import astropy
 import itertools
+import math
+import psutil
 
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", "..", ".."))
@@ -83,7 +85,7 @@ def therm_bin(df_therm, df_bins, beta):
     return therm_length, bin_size
 
 def get_data(base_path, args, therm_length, bin_size):
-    df = []
+    df = pd.DataFrame()
     therm_length, bin_size = therm_bin(df_therm, df_bins, args.beta)
     print('therm_length: ', therm_length)
     chain_dirs = get_dir_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}')
@@ -101,8 +103,10 @@ def get_data(base_path, args, therm_length, bin_size):
                 data['conf_start'] = conf_start
                 data['conf_end'] = conf_end
                 data['bin_size'] = bin_size
-                df.append(data)
-    return pd.concat(df)
+                data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32', 
+                                    'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
+                df = pd.concat([df, data])
+    return df
 
 def make_jackknife(df, bin_size=None):
     df = df.reset_index()
@@ -127,7 +131,7 @@ def get_radii_sq(square_size):
             x -= 1
             y -= 1
     radii.add(square_size ** 2)
-    return sorted(list(radii),key=float)[:-1]
+    return sorted(list(radii), key=float, reverse=True)[1:]
 
 @njit
 def trivial(x):
@@ -155,13 +159,14 @@ therm_length, bin_size = therm_bin(df_therm, df_bins, args.beta)
 df = get_data(args.base_path, args, therm_length, bin_size)
 print(df)
 if args.bin_test:
-    bin_sizes = int_log_range(1, 100, 1.05)
+    bin_max = df['conf_end'].max() // df.loc[0, 'block_size'] // 4
+    bin_sizes = int_log_range(1, bin_max, 1.05)
     print(bin_sizes)
-    df1 = []
+    df_result = []
     for bin in bin_sizes:
-        df1.append(make_jackknife(df, bin_size=bin))
-    df1 = pd.concat(df1)
-    df1.to_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/S_binning.csv', sep=' ', index=False)
+        df_result.append(make_jackknife(df, bin_size=bin))
+    df_result = pd.concat(df_result)
+    df_result.to_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/S_binning.csv', sep=' ', index=False)
 else:
     coord_max = df['x'].max()//2
     df['x'] = df['x'] - coord_max
@@ -175,9 +180,9 @@ else:
         for radius_sq in get_radii_sq(df1['x'].max()):
             df1 = df1.loc[df1['rad_sq'] <= radius_sq]
             df_result.append(make_jackknife(df1))
-            df_result[-1]['cut'] = cut
-            df_result[-1]['radius'] = radius_sq
-    df = pd.concat(df_result)
+            df_result[-1]['box_size'] = coord_max - cut
+            df_result[-1]['radius'] = math.sqrt(radius_sq)
+    df_result = pd.concat(df_result)
     df_result.to_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/S_result.csv', sep=' ', index=False)
 
 print(df_result)
