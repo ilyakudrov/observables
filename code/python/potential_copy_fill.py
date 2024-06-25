@@ -25,20 +25,9 @@ def fillup_copies(df):
     return df
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--axis')
 parser.add_argument('--base_path')
-parser.add_argument('--conf_type')
-parser.add_argument('--conf_size')
-parser.add_argument('--theory_type')
-parser.add_argument('--operator_type')
-parser.add_argument('--representation')
-parser.add_argument('--smearing')
-parser.add_argument('--mu')
-parser.add_argument('--matrix_type')
-parser.add_argument('--smearing_param')
-parser.add_argument('--additional_parameters')
-parser.add_argument('--beta')
 parser.add_argument('--path_output_base')
+parser.add_argument('--path_params')
 parser.add_argument('--copies', type=int)
 args = parser.parse_args()
 print('args: ', args)
@@ -47,21 +36,15 @@ chains = ['/', 's0', 's1', 's2', 's3',
            's4', 's5', 's6', 's7', 's8']
 conf_max = 9999
 for chain in chains:
+    try:
+        os.makedirs(f'{args.path_output_base}/{args.path_params}/{chain}')
+    except:
+        pass
     for conf in range(0, conf_max + 1):
-        path = f'{args.base_path}/{args.smearing}/{args.operator_type}/{args.representation}/{args.axis}\
-            /{args.theory_type}/{args.conf_type}/{args.conf_size}/{args.beta}/{args.mu}/{args.matrix_type}\
-            /{args.smearing_param}/{args.additional_parameters}/{chain}'
+        path = f'{args.base_path}/{args.path_params}/{chain}'
         df = read_copy(conf, path, args.copies)
         if not df.empty:
             df = fillup_copies(df)
             for copy in df['copy'].unique():
-                path_out = f'{args.path_output_base}/{args.smearing}/{args.operator_type}/{args.representation}/{args.axis}\
-                    /{args.theory_type}/{args.conf_type}/{args.conf_size}/{args.beta}/{args.mu}/{args.matrix_type}\
-                    /{args.smearing_param}/{args.additional_parameters}/{chain}/wilson_loop_{conf:04}_{copy}'
-                try:
-                    os.makedirs(f'{args.path_output_base}/{args.smearing}/{args.operator_type}/{args.representation}/{args.axis}\
-                        /{args.theory_type}/{args.conf_type}/{args.conf_size}/{args.beta}/{args.mu}/{args.matrix_type}\
-                        /{args.smearing_param}/{args.additional_parameters}/{chain}')
-                except:
-                    pass
+                path_out = f'{args.path_output_base}/{args.path_params}/{chain}/wilson_loop_{conf:04}_{copy}'
                 df.to_csv(path_out)
