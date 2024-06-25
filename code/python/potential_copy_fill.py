@@ -58,4 +58,10 @@ for chain in chains:
                 path_out = f'{args.path_output_base}/{args.smearing}/{args.operator_type}/{args.representation}/{args.axis}\
                     /{args.theory_type}/{args.conf_type}/{args.conf_size}/{args.beta}/{args.mu}/{args.matrix_type}\
                     /{args.smearing_param}/{args.additional_parameters}/{chain}/wilson_loop_{conf:04}_{copy}'
+                try:
+                    os.makedirs(f'{args.path_output_base}/{args.smearing}/{args.operator_type}/{args.representation}/{args.axis}\
+                        /{args.theory_type}/{args.conf_type}/{args.conf_size}/{args.beta}/{args.mu}/{args.matrix_type}\
+                        /{args.smearing_param}/{args.additional_parameters}/{chain}')
+                except:
+                    pass
                 df.to_csv(path_out)

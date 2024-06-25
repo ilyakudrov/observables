@@ -205,7 +205,6 @@ conf_sizes = args.size
 theory_type = 'su3'
 betas = args.beta
 copies = args.copies
-copy_single = args.copy_single
 smeared_array = args.smearing
 matrix_type_array = args.matrix_type
 operator_type = 'wilson_loop'
@@ -262,7 +261,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         copy_range = range(1)
     df1 = []
     for copy in copy_range:
-        df = read_data(path, chains, conf_max, copy_single, copies, CSV_names, dtype, adjoint_fix)
+        df = read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy)
         if len(df) == 0:
             print("no data")
         else:
