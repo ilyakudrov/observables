@@ -256,7 +256,7 @@ def main():
 
     df_therm = pd.read_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
                            header=None, delimiter=' ', names=['beta', 'therm_length'])
-    df_bins = pd.read_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
+    df_bins = pd.read_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log',
                            header=None, delimiter=' ', names=['beta', 'bin_size'])
     therm_length, bin_size = therm_bin(df_therm, df_bins, args.beta)
     df = get_data(args.base_path, args, therm_length, bin_size)
