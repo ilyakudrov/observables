@@ -151,6 +151,19 @@ def read_data(path, chains, conf_max, copy_single, copies, CSV_names, dtype, adj
                             data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1
     return data
 
+def read_no_copy(chains, conf_max, path, CSV_names, dtype):
+    data = pd.DataFrame()
+    for chain in chains:
+        for i in range(0, conf_max + 1):
+            file_path = f'{path}/{chain}/wilson_loop_{i:04}'
+            if (os.path.isfile(file_path)):
+                df = pd.read_csv(file_path, header=0,
+                                        names=CSV_names,
+                                        dtype=dtype)
+                df["conf"] = f'{i}-{chain}'
+                data = pd.concat([data, df])
+    return data
+
 def read_copy(chains, conf_max, path, copy, CSV_names, dtype):
     data = pd.DataFrame()
     for chain in chains:
@@ -165,27 +178,33 @@ def read_copy(chains, conf_max, path, copy, CSV_names, dtype):
                 data = pd.concat([data, df])
     return data
 
-def read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy):
-    if copy == 0:
-        data = pd.DataFrame()
-        for chain in chains:
-            for i in range(0, conf_max + 1):
-                file_path = f'{path}/{chain}/wilson_loop_{i:04}'
+def read_copy_last(chains, conf_max, path, copy, CSV_names, dtype):
+    data = pd.DataFrame()
+    for chain in chains:
+        for i in range(0, conf_max + 1):
+            c = copy
+            while c > 0:
+                file_path = f'{path}/{chain}/wilson_loop_{i:04}_{c}'
+                c -= 1
                 if (os.path.isfile(file_path)):
                     df = pd.read_csv(file_path, header=0,
                                             names=CSV_names,
                                             dtype=dtype)
                     df["conf"] = f'{i}-{chain}'
+                    df["copy"] = copy
                     data = pd.concat([data, df])
+                    break
+    return data
+
+def read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy):
+    if copy == 0:
+        data = read_no_copy(chains, conf_max, path, CSV_names, dtype)
     else:
         if copy == 1:
             data = read_copy(chains, conf_max, path, copy, CSV_names, dtype)
             data = data.set_index('copy')
         else:
-            for c in range(1, copy + 1):
-                data = pd.concat([data, read_copy(chains, conf_max, path, c, CSV_names, dtype)])
-            data = fillup_copies(data)
-            data = data[data['copy'] == copy]
+            data = read_copy_last(chains, conf_max, path, copy, CSV_names, dtype)
             data = data.set_index('copy')
     return data
 
@@ -260,17 +279,13 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     else:
         copy_range = range(1)
     df1 = []
+    start = time.time()
     for copy in copy_range:
         df = read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy)
         if len(df) == 0:
             print("no data")
         else:
             print(df)
-            start = time.time()
-
-            df = fillup_copies(df)
-            print(df)
-
             if is_binning:
                 bin_sizes = int_log_range(1, bin_max, bin_step)
                 for bin_size in bin_sizes:
@@ -279,23 +294,21 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
                     df1[-1]['bin_size'] = bin_size
                 df1 = pd.concat(df1)
             else:
-                #df1 = df.groupby(
-                #    potential_parameters).apply(get_potential_binning, 50).reset_index(level=potential_parameters)
-                df1 = df.groupby(df1.index.names +
-                    potential_parameters).apply(get_potential).reset_index(level=df1.index.names + potential_parameters)
+                df1.append(df.groupby(df1.index.names +
+                    potential_parameters).apply(get_potential).reset_index(level=df1.index.names + potential_parameters))
             print(df1)
 
-            end = time.time()
-            print("execution time = %s" % (end - start))
+    end = time.time()
+    print("execution time = %s" % (end - start))
 
-            if is_binning:
-                base_dir1 = base_dir + '/binning'
-            else:
-                base_dir1 = base_dir
-            path_output = f"../../result/{base_dir1}/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
-            try:
-                os.makedirs(f'{path_output}')
-            except:
-                pass
-            df1.to_csv(
-                f"{path_output}/potential_{matrix_type}.csv", index=False)
+    if is_binning:
+        base_dir1 = base_dir + '/binning'
+    else:
+        base_dir1 = base_dir
+    path_output = f"../../result/{base_dir1}/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+    try:
+        os.makedirs(f'{path_output}')
+    except:
+        pass
+    df1.to_csv(
+        f"{path_output}/potential_{matrix_type}.csv", index=False)
