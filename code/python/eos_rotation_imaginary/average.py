@@ -277,9 +277,7 @@ def main():
         df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
         Nt = int(args.lattice_size[0])
         df_result = []
-        print(coord_max)
-        for cut in range(0, coord_max - 10):
-            print(cut)
+        for cut in range(0, coord_max - 2):
             df1 = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
             for radius_sq in get_radii_sq(df1['x'].max()):
                 df1 = df1.loc[df1['rad_sq'] <= radius_sq]
