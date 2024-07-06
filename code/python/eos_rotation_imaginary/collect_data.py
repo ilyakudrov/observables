@@ -29,6 +29,7 @@ velocity_dirs = get_dir_names(f'{args.base_path}/{args.lattice_size}/{args.bound
 for velocity in velocity_dirs:
     beta_dirs = get_dir_names(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{velocity}')
     for beta in beta_dirs:
+        print('velocity: ', velocity, ', beta: ', beta) 
         file_path = f'{args.base_path}/{args.lattice_size}/{args.boundary}/{velocity}/{beta}/{args.file_name}'
         if (os.path.isfile(file_path)):
             df_tmp = pd.read_csv(file_path, sep=' ')
@@ -36,9 +37,9 @@ for velocity in velocity_dirs:
             df_tmp['beta'] = float(beta)
             df = pd.concat([df, df_tmp])
 
-path_output = f'../../result/eos_rotation_imaginary/{args.lattice_size}/{args.boundary}'
+path_output = f'../../../result/eos_rotation_imaginary/{args.lattice_size}/{args.boundary}'
 try:
     os.makedirs(f'{path_output}')
 except:
     pass
-df.to_csv(f'{path_output}/{args.file_name}')
+df.to_csv(f'{path_output}/{args.file_name}', index=False)

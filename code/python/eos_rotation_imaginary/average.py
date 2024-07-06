@@ -213,7 +213,7 @@ def get_radii_sq(square_size: int) -> list[int]:
             x -= 1
             y -= 1
     radii.add(square_size ** 2)
-    return sorted(list(radii), key=float, reverse=True)[1:]
+    return sorted(list(radii), key=float, reverse=True)
 
 @njit
 def trivial(x: np.ndarray) -> np.ndarray:
