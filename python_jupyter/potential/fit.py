@@ -73,7 +73,9 @@ def average_fit_p_value(df_fit, param_names, x_col):
     data[f'{x_col}_max'] = df_fit[f'{x_col}_max'].max()
     return pd.DataFrame(data)
 
-def make_fit_range(df, fit_func, range_min_len, param_names, x_col, y_col, err_col):
+def make_fit_range(df, fit_func, param_names, x_col, y_col, err_col, range_min_len=None):
+    if range_min_len is None:
+        range_min_len = df.reset_index(level='range_min_r').reset_index(drop=True).loc[0, 'range_min_r']
     fit_range = (df[x_col].min(), df[x_col].max())
     ranges = generate_ranges(*fit_range, range_min_len)
     fit_df = []
@@ -107,8 +109,10 @@ def generate_ranges(min, max, range_min_len):
             ranges.append((i, j))
     return ranges
 
-def potential_fit_T_range(df, range_min_len):
-    df_fit = make_fit_range(df, func_exponent, range_min_len, ['V', 'a', 'b'], 'T', 'aV(r)', 'err')
+def potential_fit_T_range(df, range_min_len=None):
+    if range_min_len is None:
+        range_min_len = df.reset_index(level='range_min_T').reset_index(drop=True).loc[0, 'range_min_T']
+    df_fit = make_fit_range(df, func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', range_min_len)
     if df_fit.empty:
         return pd.DataFrame()
     V_aver = (df_fit['V'] * df_fit['w_V']).sum()

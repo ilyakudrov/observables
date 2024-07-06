@@ -146,8 +146,8 @@ def get_potantial_df(paths, coluns_to_multiindex = []):
     df = []
     for path in paths:
         df.append(pd.read_csv(path['path']))
-        if 'parameters' in path:
-            df[-1] = append_multiindex(df[-1], path['parameters'])
+        for key, value in path['parameters'].items():
+            df[-1][key] = value
         if 'constraints' in path:
             for key, val in path['constraints'].items():
                 df[-1] = df[-1][(df[-1][key] >= val[0])
