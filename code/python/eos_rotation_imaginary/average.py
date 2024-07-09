@@ -7,13 +7,13 @@ import argparse
 from scipy.stats import norm, binned_statistic
 import itertools
 import math
-from typing import Sequence, Iterable, Tuple, Optional
+from typing import List, Tuple, Optional
 
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", "..", ".."))
 import statistics_python.src.statistics_observables as stat
 
-def int_log_range(_min: int, _max: int, factor: float) -> list[int]:
+def int_log_range(_min: int, _max: int, factor: float) -> List[int]:
     """Make a geometric progression of integer values in range (_min, _max) with
     ratio factor.
 
@@ -92,7 +92,7 @@ def get_conf_range(f: str) -> int:
     arr = f[f.find('_') + 1:f.find('.')].split('_')
     return int(arr[0]), int(arr[1])
 
-def get_file_names(path: str) -> list[str]:
+def get_file_names(path: str) -> List[str]:
     """Get names of files with blocked eos data in directory path.
 
     Args:
@@ -106,7 +106,7 @@ def get_file_names(path: str) -> list[str]:
         break
     return list((f for f in files if f[f.find('-') + 1:].startswith('SEBxy') and f.startswith(f'block')))
 
-def get_dir_names(path: str) -> list[str]:
+def get_dir_names(path: str) -> List[str]:
     """Get names of subdirectories in path.
 
     Args:
@@ -195,7 +195,7 @@ def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataF
     mean, err = stat.jackknife_var_numba_binning(S_arr, trivial, get_bin_borders(S_arr.shape[1], bin_size))
     return pd.DataFrame({'S': [mean], 'err': [err], 'bin_size': [bin_size * block_size]})
 
-def get_radii_sq(square_size: int) -> list[int]:
+def get_radii_sq(square_size: int) -> List[int]:
     """Make squares of radii of circles cutting lattice points inside a square.
 
     Args:
@@ -249,10 +249,15 @@ def main():
     parser.add_argument('--velocity')
     parser.add_argument('--lattice_size')
     parser.add_argument('--boundary')
+    parser.add_argument('--result_path', default=None)
     parser.add_argument('--bin_test', action='store_true')
     args = parser.parse_args()
     print(type(args))
     print('args: ', args)
+    if args.result_path is None:
+        result_path = f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}'
+    else:
+        result_path = args.result_path
 
     df_therm = pd.read_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
                            header=None, delimiter=' ', names=['beta', 'therm_length'])
@@ -269,7 +274,7 @@ def main():
         for bin in bin_sizes:
             df_result.append(make_jackknife(df, bin_size=bin))
         df_result = pd.concat(df_result)
-        df_result.to_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/S_binning.csv', sep=' ', index=False)
+        df_result.to_csv(f'{result_path}/S_binning.csv', sep=' ', index=False)
     else:
         coord_max = df['x'].max()//2
         df['x'] = df['x'] - coord_max
@@ -285,7 +290,7 @@ def main():
                 df_result[-1]['box_size'] = coord_max - cut
                 df_result[-1]['radius'] = math.sqrt(radius_sq)
         df_result = pd.concat(df_result)
-        df_result.to_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/S_result.csv', sep=' ', index=False)
+        df_result.to_csv(f'{result_path}/S_result.csv', sep=' ', index=False)
 
     print(df_result)
 
