@@ -67,7 +67,7 @@ args = [['16^4', 16, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=
         ['32^4', 32, '6.2', 'HYP1_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'original'],
         ['36^4', 36, '6.3', 'HYP1_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'original'],
         ['40^4', 40, '6.4', 'HYP1_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'original']]
-pool = multiprocessing.Pool(21)
+pool = multiprocessing.Pool(8)
 pool.map(potential_T_fit_wrapping, args)
 
 # potential_T_fit('16^4', 16, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'monopole')
