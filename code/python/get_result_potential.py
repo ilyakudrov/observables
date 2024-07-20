@@ -8,6 +8,7 @@ import os.path
 import pandas as pd
 import itertools
 import argparse
+import dask.dataframe as dd
 
 #from tqdm import tqdm
 #tqdm.pandas()
@@ -153,6 +154,7 @@ def read_data(path, chains, conf_max, copy_single, copies, CSV_names, dtype, adj
 
 def read_no_copy(chains, conf_max, path, CSV_names, dtype):
     data = pd.DataFrame()
+    #data = []
     for chain in chains:
         for i in range(0, conf_max + 1):
             file_path = f'{path}/{chain}/wilson_loop_{i:04}'
@@ -162,10 +164,13 @@ def read_no_copy(chains, conf_max, path, CSV_names, dtype):
                                         dtype=dtype)
                 df["conf"] = f'{i}-{chain}'
                 data = pd.concat([data, df])
+                #data.append(df)
     return data
+    #return dd.concat(data)
 
 def read_copy(chains, conf_max, path, copy, CSV_names, dtype):
     data = pd.DataFrame()
+    #data = []
     for chain in chains:
         for i in range(0, conf_max + 1):
             file_path = f'{path}/{chain}/wilson_loop_{i:04}_{copy}'
@@ -175,37 +180,53 @@ def read_copy(chains, conf_max, path, copy, CSV_names, dtype):
                                         dtype=dtype)
                 df["conf"] = f'{i}-{chain}'
                 df["copy"] = copy
+                #df = df[df['r/a'] == 1]
+                #df = df[df['smearing_step'] == 1]
+                #df = df[df['T'] < 3]
+                #print(f'{i}-{chain}', copy)
+                #print(df)
+                #df.head()
                 data = pd.concat([data, df])
+                #data.append(df)
     return data
+    #return dd.concat(data)
 
 def read_copy_last(chains, conf_max, path, copy, CSV_names, dtype):
     data = pd.DataFrame()
+    #data = []
     for chain in chains:
         for i in range(0, conf_max + 1):
             c = copy
             while c > 0:
                 file_path = f'{path}/{chain}/wilson_loop_{i:04}_{c}'
-                c -= 1
                 if (os.path.isfile(file_path)):
                     df = pd.read_csv(file_path, header=0,
                                             names=CSV_names,
                                             dtype=dtype)
-                    df["conf"] = f'{i}-{chain}'
-                    df["copy"] = copy
+                    df['conf'] = f'{i}-{chain}'
+                    df['copy'] = copy
+                    #df = df[df['r/a'] == 1]
+                    #df = df[df['smearing_step'] == 1]
+                    #df = df[df['T'] < 3]
+                    #print(f'{i}-{chain}', c)
+                    #print(df)
+                    #df.head()
                     data = pd.concat([data, df])
+                    #data.append(df)
                     break
+                c -= 1
     return data
+    #return dd.concat(data)
 
 def read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy):
     if copy == 0:
         data = read_no_copy(chains, conf_max, path, CSV_names, dtype)
     else:
         if copy == 1:
+            #print('copy == 1')
             data = read_copy(chains, conf_max, path, copy, CSV_names, dtype)
-            data = data.set_index('copy')
         else:
             data = read_copy_last(chains, conf_max, path, copy, CSV_names, dtype)
-            data = data.set_index('copy')
     return data
 
 parser = argparse.ArgumentParser()
@@ -276,30 +297,36 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}'
     if copies > 0:
         copy_range = range(1, args.copies + 1)
+        groupby_params = ['copy'] + potential_parameters
     else:
         copy_range = range(1)
+        groupby_params = potential_parameters
     df1 = []
     start = time.time()
     for copy in copy_range:
+        print(copy)
         df = read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy)
+        #df = df.persist()
         if len(df) == 0:
             print("no data")
         else:
             print(df)
+            #df.head()
             if is_binning:
                 bin_sizes = int_log_range(1, bin_max, bin_step)
                 for bin_size in bin_sizes:
-                    df1.append(df.groupby(df1.index.names +
-                        potential_parameters).apply(get_potential_binning, bin_size).reset_index(level=df1.index.names + potential_parameters))
+                    df1.append(df.groupby(groupby_params)\
+                        .apply(get_potential_binning, bin_size).reset_index(level=groupby_params))
                     df1[-1]['bin_size'] = bin_size
                 df1 = pd.concat(df1)
             else:
-                df1.append(df.groupby(df1.index.names +
-                    potential_parameters).apply(get_potential).reset_index(level=df1.index.names + potential_parameters))
-            print(df1)
-
+                df1.append(df.groupby(groupby_params)\
+                    .apply(get_potential).reset_index(groupby_params))
     end = time.time()
     print("execution time = %s" % (end - start))
+    df1 = pd.concat(df1)
+    print(df1)
+    #df1.head()
 
     if is_binning:
         base_dir1 = base_dir + '/binning'

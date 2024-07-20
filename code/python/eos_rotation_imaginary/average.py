@@ -161,9 +161,10 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
     for chain in chain_dirs:
         filenames = get_file_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}')
         filenames.sort()
-        for f in filenames:
+        for i in range(len(filenames)):
+            f = filenames[i]
             conf_start, conf_end = get_conf_range(f)
-            if conf_start > therm_length:
+            if conf_start > therm_length and i == 0 or i > 0:
                 data = read_blocks(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
                 data = data[['x', 'y', 'S']]
                 data['block_size'] = get_block_size(f)
@@ -258,6 +259,10 @@ def main():
         result_path = f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}'
     else:
         result_path = args.result_path
+        try:
+            os.makedirs(f'{result_path}')
+        except:
+            pass
 
     df_therm = pd.read_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
                            header=None, delimiter=' ', names=['beta', 'therm_length'])

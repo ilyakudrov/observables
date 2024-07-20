@@ -37,9 +37,10 @@ for velocity in velocity_dirs:
             df_tmp['beta'] = float(beta)
             df = pd.concat([df, df_tmp])
 
-path_output = f'../../../result/eos_rotation_imaginary/{args.lattice_size}/{args.boundary}'
-try:
-    os.makedirs(f'{path_output}')
-except:
-    pass
-df.to_csv(f'{path_output}/{args.file_name}', index=False)
+if not df.empty:
+    path_output = f'../../../result/eos_rotation_imaginary/{args.lattice_size}/{args.boundary}'
+    try:
+        os.makedirs(f'{path_output}')
+    except:
+        pass
+    df.to_csv(f'{path_output}/{args.file_name}', index=False)
