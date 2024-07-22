@@ -115,21 +115,21 @@ conf_sizes = ["24^4"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
 betas = ['beta6.0']
-copies = 4
+copies = 0
 copy_single = True
 # betas = ['beta2.7', 'beta2.8']
-smeared_array = ['HYP0_APE_alpha=0.5']
+smeared_array = ["HYP0_alpha=1_1_0.5_APE_alpha=0.3", "HYP1_alpha=1_1_0.5_APE_alpha=0.3", "HYP3_alpha=1_1_0.5_APE_alpha=0.3", "HYP0_alpha=1_1_0.5_APE_alpha=0.4", "HYP1_alpha=1_1_0.5_APE_alpha=0.4", "HYP3_alpha=1_1_0.5_APE_alpha=0.4", "HYP0_alpha=1_1_0.5_APE_alpha=0.5", "HYP1_alpha=1_1_0.5_APE_alpha=0.5", "HYP3_alpha=1_1_0.5_APE_alpha=0.5", "HYP0_alpha=1_1_0.5_APE_alpha=0.6", "HYP1_alpha=1_1_0.5_APE_alpha=0.6", "HYP3_alpha=1_1_0.5_APE_alpha=0.6", "HYP0_alpha=1_1_0.5_APE_alpha=0.7", "HYP1_alpha=1_1_0.5_APE_alpha=0.7", "HYP3_alpha=1_1_0.5_APE_alpha=0.7", "HYP0_alpha=1_1_0.5_APE_alpha=0.8", "HYP1_alpha=1_1_0.5_APE_alpha=0.8", "HYP3_alpha=1_1_0.5_APE_alpha=0.8", "HYP0_alpha=1_1_0.5_APE_alpha=0.9", "HYP1_alpha=1_1_0.5_APE_alpha=0.9", "HYP3_alpha=1_1_0.5_APE_alpha=0.9", "HYP0_alpha=1_1_0.5_APE_alpha=1", "HYP1_alpha=1_1_0.5_APE_alpha=1", "HYP3_alpha=1_1_0.5_APE_alpha=1"]
 # smeared_array = ['HYP2_alpha=1_1_0.5_APE_alpha=0.5',
 #                  'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP0_APE_alpha=0.5']
 # matrix_type_array = ['monopole',
 #                      'monopoless', 'photon', 'offdiagonal']
-matrix_type_array = ['original']
-# matrix_type_array = ['monopole']
-# matrix_type_array = ['monopole',
-#                      'monopoless', 'photon',
-#                      'offdiagonal', 'abelian']
+#matrix_type_array = ['original']
+#matrix_type_array = ['monopole']
+matrix_type_array = ['monopole',
+                      'monopoless', 'photon',
+                      'offdiagonal', 'abelian']
 operator_type = 'wilson_loop'
 representation = 'fundamental'
 # representation = 'adjoint'
@@ -148,7 +148,7 @@ representation = 'fundamental'
 # additional_parameters_arr = ['steps_25/copies=4', 'steps_50/copies=4',
 #                              'steps_100/copies=4', 'steps_200/copies=4',
 #                              'steps_1000/copies=4', 'steps_2000/copies=4']
-additional_parameters_arr = ['steps_100/copies=4']
+additional_parameters_arr = ['steps_500/copies=4']
 # additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
 #                              'steps_2000/copies=3', 'steps_4000/copies=3',
 #                              'steps_8000/copies=3']
@@ -162,7 +162,7 @@ additional_parameters_arr = ['steps_100/copies=4']
 is_binning = False
 bin_max = 100
 bin_step = 1.3
-calculation_type = 'no_smearing'
+calculation_type = 'smearing'
 
 if calculation_type == 'smearing':
     potential_parameters = ['smearing_step', 'r/a', 'copy', 'T']
@@ -194,7 +194,8 @@ chains = ["/"]
 # adjoint_fix = True
 adjoint_fix = False
 
-base_path = "../../data"
+#base_path = "../../data"
+base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 
 iter_arrays = [matrix_type_array, smeared_array,
                betas, conf_sizes, mu1, additional_parameters_arr]
@@ -252,6 +253,8 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
 
         if is_binning:
             base_dir1 = base_dir + '/binning'
+        else:
+            base_dir1 = base_dir
         # df1 = df1[names_out]
         path_output = f"../../result/{base_dir1}/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
         try:

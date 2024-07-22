@@ -158,22 +158,26 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
     chain_dirs = get_dir_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}')
     chain_dirs.sort()
     print('chain_dirs: ', chain_dirs)
+    confs_to_skip = therm_length
+    conf_last = 0
     for chain in chain_dirs:
         filenames = get_file_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}')
         filenames.sort()
-        for i in range(len(filenames)):
-            f = filenames[i]
+        for f in filenames:
             conf_start, conf_end = get_conf_range(f)
-            if conf_start > therm_length and i == 0 or i > 0:
+            if conf_start > confs_to_skip:
                 data = read_blocks(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
                 data = data[['x', 'y', 'S']]
                 data['block_size'] = get_block_size(f)
-                data['conf_start'] = conf_start
-                data['conf_end'] = conf_end
+                data['conf_start'] = conf_start + conf_last
+                data['conf_end'] = conf_end + conf_last
                 data['bin_size'] = bin_size
                 data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
                                     'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
                 df = pd.concat([df, data])
+        _, conf_tmp = get_conf_range(filenames[-1])
+        conf_last += conf_tmp
+        confs_to_skip -= conf_tmp
     return df
 
 def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataFrame:
@@ -270,7 +274,6 @@ def main():
                            header=None, delimiter=' ', names=['beta', 'bin_size'])
     therm_length, bin_size = therm_bin(df_therm, df_bins, args.beta)
     df = get_data(args.base_path, args, therm_length, bin_size)
-    print(df)
     if args.bin_test:
         bin_max = df['conf_end'].max() // df.loc[0, 'block_size'] // 4
         bin_sizes = int_log_range(1, bin_max, 1.05)
@@ -287,10 +290,14 @@ def main():
         df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
         Nt = int(args.lattice_size[0])
         df_result = []
+        df_test = df.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'])['S'].agg([('S', 'mean')])\
+                    .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
         for cut in range(0, coord_max - 2):
-            df1 = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
-            for radius_sq in get_radii_sq(df1['x'].max()):
-                df1 = df1.loc[df1['rad_sq'] <= radius_sq]
+            df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
+            for radius_sq in get_radii_sq(df['x'].max()):
+                df1 = df.loc[df['rad_sq'] <= radius_sq]
+                df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'])['S'].agg([('S', 'mean')])\
+                    .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
                 df_result.append(make_jackknife(df1))
                 df_result[-1]['box_size'] = coord_max - cut
                 df_result[-1]['radius'] = math.sqrt(radius_sq)
