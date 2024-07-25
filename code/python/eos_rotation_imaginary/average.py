@@ -175,9 +175,10 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
                 data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
                                     'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
                 df = pd.concat([df, data])
-        _, conf_tmp = get_conf_range(filenames[-1])
-        conf_last += conf_tmp
-        confs_to_skip -= conf_tmp
+        if len(filenames) != 0:
+            _, conf_tmp = get_conf_range(filenames[-1])
+            conf_last += conf_tmp
+            confs_to_skip -= conf_tmp
     return df
 
 def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataFrame:

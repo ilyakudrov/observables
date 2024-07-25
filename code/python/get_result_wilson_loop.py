@@ -126,10 +126,10 @@ smeared_array = ["HYP0_alpha=1_1_0.5_APE_alpha=0.3", "HYP1_alpha=1_1_0.5_APE_alp
 # matrix_type_array = ['monopole',
 #                      'monopoless', 'photon', 'offdiagonal']
 #matrix_type_array = ['original']
-#matrix_type_array = ['monopole']
-matrix_type_array = ['monopole',
-                      'monopoless', 'photon',
-                      'offdiagonal', 'abelian']
+matrix_type_array = ['abelian']
+#matrix_type_array = ['monopole',
+#                      'monopoless', 'photon',
+#                      'offdiagonal', 'abelian']
 operator_type = 'wilson_loop'
 representation = 'fundamental'
 # representation = 'adjoint'

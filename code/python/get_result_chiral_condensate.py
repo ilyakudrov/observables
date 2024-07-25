@@ -121,11 +121,12 @@ theory_type = 'su2'
 betas = ['/']
 copies = 0
 copy_single = True
-matrix_type_array = ['monopoless']
+matrix_type_array = ['monopoless', 'monopole']
 #matrix_type_array = ['original']
 # additional_parameters_arr = ['steps_0/copies=20']
 #additional_parameters_arr = ['/']
-additional_parameters_arr = ['qc2dstag/ma=0.015', 'qc2dstag/ma=0.0075', 'qc2dstag/ma=0.0037']
+#additional_parameters_arr = ['qc2dstag/ma=0.015', 'qc2dstag/ma=0.0075', 'qc2dstag/ma=0.0037']
+additional_parameters_arr = ['T_step=0.001/qc2dstag/ma=0.015', 'T_step=0.001/qc2dstag/ma=0.0075', 'T_step=0.001/qc2dstag/ma=0.0037']
 #additional_parameters_arr = ['qc2dstag/ma=0.0075']
 #additional_parameters_arr = ['ma=0.015', 'ma=0.0075', 'ma=0.0037']
 #additional_parameters_arr = ['ma=0.0075']
@@ -134,7 +135,9 @@ is_binning = False
 bin_max = 1000
 
 conf_max = 5000
-mu1 = ['mu0.00', 'mu0.05', 'mu0.15']
+#mu1 = ['mu0.00', 'mu0.05', 'mu0.15']
+#mu1 = ['mu0.00', 'mu0.05']
+mu1 = ['mu0.15']
 # mu1 = ['/']
 #chains = ["/"]
 # mu1 = ['mu0.05',
