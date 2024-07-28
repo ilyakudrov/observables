@@ -289,10 +289,7 @@ def main():
         df['x'] = df['x'] - coord_max
         df['y'] = df['y'] - coord_max
         df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
-        Nt = int(args.lattice_size[0])
         df_result = []
-        df_test = df.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'])['S'].agg([('S', 'mean')])\
-                    .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
         for cut in range(0, coord_max - 2):
             df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
             for radius_sq in get_radii_sq(df['x'].max()):
