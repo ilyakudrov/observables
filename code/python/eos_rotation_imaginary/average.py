@@ -275,34 +275,34 @@ def main():
                            header=None, delimiter=' ', names=['beta', 'bin_size'])
     therm_length, bin_size = therm_bin(df_therm, df_bins, args.beta)
     df = get_data(args.base_path, args, therm_length, bin_size)
-    if args.bin_test:
-        bin_max = df['conf_end'].max() // df.loc[0, 'block_size'] // 4
-        bin_sizes = int_log_range(1, bin_max, 1.05)
-        print(bin_sizes)
-        df_result = []
-        for bin in bin_sizes:
-            df_result.append(make_jackknife(df, bin_size=bin))
-        df_result = pd.concat(df_result)
-        df_result.to_csv(f'{result_path}/S_binning.csv', sep=' ', index=False)
-    else:
-        coord_max = df['x'].max()//2
-        df['x'] = df['x'] - coord_max
-        df['y'] = df['y'] - coord_max
-        df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
-        df_result = []
-        for cut in range(0, coord_max - 2):
-            df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
-            for radius_sq in get_radii_sq(df['x'].max()):
-                df1 = df.loc[df['rad_sq'] <= radius_sq]
-                df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'])['S'].agg([('S', 'mean')])\
-                    .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
-                df_result.append(make_jackknife(df1))
-                df_result[-1]['box_size'] = coord_max - cut
-                df_result[-1]['radius'] = math.sqrt(radius_sq)
-        df_result = pd.concat(df_result)
-        df_result.to_csv(f'{result_path}/S_result.csv', sep=' ', index=False)
-
-    print(df_result)
+    if not df.empty:
+        if args.bin_test:
+            bin_max = df['conf_end'].max() // df.loc[0, 'block_size'] // 4
+            bin_sizes = int_log_range(1, bin_max, 1.05)
+            print(bin_sizes)
+            df_result = []
+            for bin in bin_sizes:
+                df_result.append(make_jackknife(df, bin_size=bin))
+            df_result = pd.concat(df_result)
+            df_result.to_csv(f'{result_path}/S_binning.csv', sep=' ', index=False)
+        else:
+            coord_max = df['x'].max()//2
+            df['x'] = df['x'] - coord_max
+            df['y'] = df['y'] - coord_max
+            df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
+            df_result = []
+            for cut in range(0, coord_max - 2):
+                df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
+                for radius_sq in get_radii_sq(df['x'].max()):
+                    df1 = df.loc[df['rad_sq'] <= radius_sq]
+                    df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'])['S'].agg([('S', 'mean')])\
+                        .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
+                    df_result.append(make_jackknife(df1))
+                    df_result[-1]['box_size'] = coord_max - cut
+                    df_result[-1]['radius'] = math.sqrt(radius_sq)
+            df_result = pd.concat(df_result)
+            df_result.to_csv(f'{result_path}/S_result.csv', sep=' ', index=False)
+        print(df_result)
 
 if __name__ == "__main__":
     main()
