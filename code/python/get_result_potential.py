@@ -154,7 +154,6 @@ def read_data(path, chains, conf_max, copy_single, copies, CSV_names, dtype, adj
 
 def read_no_copy(chains, conf_max, path, CSV_names, dtype):
     data = pd.DataFrame()
-    #data = []
     for chain in chains:
         for i in range(0, conf_max + 1):
             file_path = f'{path}/{chain}/wilson_loop_{i:04}'
@@ -164,13 +163,10 @@ def read_no_copy(chains, conf_max, path, CSV_names, dtype):
                                         dtype=dtype)
                 df["conf"] = f'{i}-{chain}'
                 data = pd.concat([data, df])
-                #data.append(df)
     return data
-    #return dd.concat(data)
 
 def read_copy(chains, conf_max, path, copy, CSV_names, dtype):
     data = pd.DataFrame()
-    #data = []
     for chain in chains:
         for i in range(0, conf_max + 1):
             file_path = f'{path}/{chain}/wilson_loop_{i:04}_{copy}'
@@ -180,20 +176,11 @@ def read_copy(chains, conf_max, path, copy, CSV_names, dtype):
                                         dtype=dtype)
                 df["conf"] = f'{i}-{chain}'
                 df["copy"] = copy
-                #df = df[df['r/a'] == 1]
-                #df = df[df['smearing_step'] == 1]
-                #df = df[df['T'] < 3]
-                #print(f'{i}-{chain}', copy)
-                #print(df)
-                #df.head()
                 data = pd.concat([data, df])
-                #data.append(df)
     return data
-    #return dd.concat(data)
 
 def read_copy_last(chains, conf_max, path, copy, CSV_names, dtype):
     data = pd.DataFrame()
-    #data = []
     for chain in chains:
         for i in range(0, conf_max + 1):
             c = copy
@@ -205,25 +192,16 @@ def read_copy_last(chains, conf_max, path, copy, CSV_names, dtype):
                                             dtype=dtype)
                     df['conf'] = f'{i}-{chain}'
                     df['copy'] = copy
-                    #df = df[df['r/a'] == 1]
-                    #df = df[df['smearing_step'] == 1]
-                    #df = df[df['T'] < 3]
-                    #print(f'{i}-{chain}', c)
-                    #print(df)
-                    #df.head()
                     data = pd.concat([data, df])
-                    #data.append(df)
                     break
                 c -= 1
     return data
-    #return dd.concat(data)
 
 def read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy):
     if copy == 0:
         data = read_no_copy(chains, conf_max, path, CSV_names, dtype)
     else:
         if copy == 1:
-            #print('copy == 1')
             data = read_copy(chains, conf_max, path, copy, CSV_names, dtype)
         else:
             data = read_copy_last(chains, conf_max, path, copy, CSV_names, dtype)

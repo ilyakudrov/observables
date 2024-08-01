@@ -30,32 +30,12 @@ def bin_data(data, bin_size):
     return binned
 
 
-def get_field(data, df1, df, time_size_max):
-
-    time_size = data["T"].iloc[0]
-    space_size = data["r/a"].iloc[0]
-
-    if time_size < time_size_max:
-
-        x1 = data['wilson_loop'].to_numpy()
-
-        x2 = df[(df["T"] == time_size + 1) & (df["r/a"]
-                                              == space_size)]['wilson_loop'].to_numpy()
-
-        x3 = np.vstack((x1, x2))
-
-        # print(x3)
-
-        # field, err = stat.jackknife_var(x3, potential)
-        field, err = stat.jackknife_var_numba(x3, potential_numba)
-        # print(field)
-
-        new_row = {'aV(r)': field, 'err': err}
-
-        df1 = df1.append(new_row, ignore_index=True)
-
-        return df1
-
+def get_plaket(df):
+    x = df['plaket'].to_numpy()
+    plaket, err = stat.jackknife_var_numba(x, trivial_numba)
+    new_row = {'plaket': plaket, 'err': err}
+    df1 = df1.append(new_row, ignore_index=True)
+    return df1
 
 @njit
 def trivial_numba(x):
@@ -89,6 +69,16 @@ def potential(x):
 def estimate_composite(x, y, err_x, err_y):
     return math.log(x / y), math.sqrt((err_x / x) ** 2 + (err_y / y) ** 2)
 
+def fillup_copies(df):
+    copy_num = df.groupby(['copy']).ngroups
+    if copy_num > 1:
+        for i in range(1, copy_num + 1):
+            df1 = df[df['copy'] == i - 1]
+            df2 = df[df['copy'] == i]
+            df3 = df1[~df1['conf'].isin(df2['conf'])]
+            df3.loc[:, 'copy'] = i
+            df = pd.concat([df, df3])
+    return df
 
 axis = 'on-axis'
 conf_type = "gluodynamics"
@@ -102,6 +92,7 @@ conf_sizes = ['16^4', '24^4', '32^4']
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
 betas = ['beta6.0']
+copies = 0
 # betas = ['beta2.7', 'beta2.8']
 #smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP2_alpha=1_1_0.5_APE_alpha=0.5',
@@ -145,6 +136,7 @@ representation = 'fundamental'
 additional_parameters_arr = ['/']
 
 conf_max = 5000
+binning = False
 # mu1 = ['mu0.40']
 mu1 = ['/']
 chains = ["/"]
@@ -162,15 +154,26 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     data = []
     for chain in chains:
         for i in range(0, conf_max + 1):
-            file_path = f"../../data/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{chain}/plaket_{i:04}"
-            if(os.path.isfile(file_path)):
-                data.append(pd.read_csv(file_path, header=0,
-                            names=["plaket"]))
-                data[-1]["conf_num"] = i
+            if copies == 0:
+                file_path = f"../../data/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{chain}/plaket_{i:04}"
+                if(os.path.isfile(file_path)):
+                    data.append(pd.read_csv(file_path, header=0,
+                                names=["plaket"]))
+                    data[-1]["conf_num"] = f'{i}-{chain}'
+            else:
+                for copy in range(len(copies)):
+                    file_path = f"../../data/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{chain}/plaket_{i:04}_{copy}"
+                    if(os.path.isfile(file_path)):
+                        data.append(pd.read_csv(file_path, header=0,
+                                    names=["plaket"]))
+                        data[-1]["conf_num"] = f'{i}-{chain}'
+                        data[-1]["copy"] = copy
     if len(data) == 0:
         print("no data", matrix_type, conf_size, mu)
     elif len(data) != 0:
         df = pd.concat(data)
+    if copies != 0:
+        df = fillup_copies(df)
     df.to_csv(
         f"../../data/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{chain}/plaket.csv", index=False)
     plaket = df['plaket'].to_numpy()
@@ -178,30 +181,34 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         if math.isnan(plaket[i]):
             print(i)
     # print(plaket)
-    df1 = pd.DataFrame(
-        columns=["bin_size", "plaket_jackknife", "err_jackknife", "plaket", "err"])
-    df1 = []
-    for bin_size in range(1, 20):
-        binned = bin_data(plaket, bin_size)
-        # plaket_jackknife, bias, err_jackknife, conf_interval = jackknife_stats(
-        #     binned, np.mean, 0.95)
-        plaket_jackknife, err_jackknife = stat.jackknife_var_numba(
-            np.array([binned]), trivial_numba)
-        def get_error(x): return np.std(
-            x, ddof=1) / math.sqrt(np.size(x))
-        plaket_mean = np.mean(binned)
-        err_mean = get_error(binned)
-        # print(bin_size, plaket_jackknife,
-        #       err_jackknife, plaket_mean, err_mean)
-        new_row = {"bin_size": [bin_size], "plaket_jackknife": [plaket_jackknife],
-                   "err_jackknife": [err_jackknife], "plaket": [plaket_mean], "err": [err_mean]}
-        df1.append(pd.DataFrame(new_row))
-    df1 = pd.concat(df1)
-    print(df1)
+    # df1 = pd.DataFrame(
+    #     columns=["bin_size", "plaket_jackknife", "err_jackknife", "plaket", "err"])
+    # df1 = []
+    # for bin_size in range(1, 20):
+    #     binned = bin_data(plaket, bin_size)
+    #     # plaket_jackknife, bias, err_jackknife, conf_interval = jackknife_stats(
+    #     #     binned, np.mean, 0.95)
+    #     plaket_jackknife, err_jackknife = stat.jackknife_var_numba(
+    #         np.array([binned]), trivial_numba)
+    #     def get_error(x): return np.std(
+    #         x, ddof=1) / math.sqrt(np.size(x))
+    #     plaket_mean = np.mean(binned)
+    #     err_mean = get_error(binned)
+    #     # print(bin_size, plaket_jackknife,
+    #     #       err_jackknife, plaket_mean, err_mean)
+    #     new_row = {"bin_size": [bin_size], "plaket_jackknife": [plaket_jackknife],
+    #                "err_jackknife": [err_jackknife], "plaket": [plaket_mean], "err": [err_mean]}
+    #     df1.append(pd.DataFrame(new_row))
+    # df1 = pd.concat(df1)
+    # print(df1)
+    if copies == 0:
+        df1 = get_plaket(df)
+    else:
+        df1 = df.groupby('copy').apply(get_plaket).reset_index(level='copy')
     path_output = f"../../result/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{chain}"
     try:
         os.makedirs(path_output)
     except:
         pass
     df1.to_csv(
-        f"{path_output}/plaket_binning_{matrix_type1}.csv", index=False)
+        f"{path_output}/plaket_binning_{matrix_type}.csv", index=False)

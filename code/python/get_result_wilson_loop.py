@@ -209,7 +209,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
                     data.append(pd.read_csv(file_path, header=0,
                                             names=CSV_names,
                                             dtype=dtype))
-                    data[-1]["conf"] = i
+                    data[-1]["conf"] = f'{i}-{chain}'
                     data[-1]["copy"] = copies
                     if adjoint_fix:
                         data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1
@@ -221,7 +221,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
                         data.append(pd.read_csv(file_path, header=0,
                                                 names=CSV_names,
                                                 dtype=dtype))
-                        data[-1]["conf"] = i
+                        data[-1]["conf"] = f'{i}-{chain}'
                         data[-1]["copy"] = copy
                         if adjoint_fix:
                             data[-1]["wilson_loop"] = data[-1]["wilson_loop"] + 1

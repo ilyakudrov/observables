@@ -8,6 +8,8 @@ import math
 def func_exponent(x, a, b, c):
     return a + b * np.exp(-x * c)
 
+def func_double_exponent(x, a, b, c, d, e):
+    return a + b * np.exp(-x * c) + d * np.exp(-x * e)
 
 def func_cornell(x, c, alpha, sigma):
     return c + alpha / x + sigma * x
@@ -112,7 +114,8 @@ def generate_ranges(min, max, range_min_len):
 def potential_fit_T_range(df, range_min_len=None):
     if range_min_len is None:
         range_min_len = df.reset_index(level='range_min_T').reset_index(drop=True).loc[0, 'range_min_T']
-    df_fit = make_fit_range(df, func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', range_min_len)
+    # df_fit = make_fit_range(df, func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', range_min_len)
+    df_fit = make_fit_range(df, func_double_exponent, ['V', 'a', 'b', 'c', 'd'], 'T', 'aV(r)', 'err', range_min_len)
     if df_fit.empty:
         return pd.DataFrame()
     V_aver = (df_fit['V'] * df_fit['w_V']).sum()

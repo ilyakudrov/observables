@@ -36,8 +36,10 @@ def potential_T_fit(lattice_size, L, beta, smearing, additional_params, decompos
     image_path = f'../../images/smearing/potential/su3/gluodynamics/T_fit/{lattice_size}/beta{beta}/{smearing}/{additional_params}/{decomposition_type}'
     print(paths[0]['path'])
     df = potential_data.get_potantial_df(paths, coluns_to_multiindex=['smearing_step'])
-    df_fit = df.groupby(df.index.names + ['r/a']).apply(fit.make_fit_range, fit.func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', L // 2 - 4).reset_index(level=-1, drop=True).reset_index(level=df.index.names + ['r/a'])
-    df_curve = df_fit.groupby(df.index.names + ['r/a', 'T_min', 'T_max']).apply(fit.make_fit_curve, fit.func_exponent, 'T', 'aV(r)', ['V', 'a', 'b']).reset_index(level=-1, drop=True).reset_index(level=df.index.names + ['r/a', 'T_min', 'T_max'])
+    # df_fit = df.groupby(df.index.names + ['r/a']).apply(fit.make_fit_range, fit.func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', L // 2 - 4).reset_index(level=-1, drop=True).reset_index(level=df.index.names + ['r/a'])
+    # df_curve = df_fit.groupby(df.index.names + ['r/a', 'T_min', 'T_max']).apply(fit.make_fit_curve, fit.func_exponent, 'T', 'aV(r)', ['V', 'a', 'b']).reset_index(level=-1, drop=True).reset_index(level=df.index.names + ['r/a', 'T_min', 'T_max'])
+    df_fit = df.groupby(df.index.names + ['r/a']).apply(fit.make_fit_range, fit.func_double_exponent, ['V', 'a', 'b', 'c', 'd'], 'T', 'aV(r)', 'err', L // 2 - 4).reset_index(level=-1, drop=True).reset_index(level=df.index.names + ['r/a'])
+    df_curve = df_fit.groupby(df.index.names + ['r/a', 'T_min', 'T_max']).apply(fit.make_fit_curve, fit.func_double_exponent, 'T', 'aV(r)', ['V', 'a', 'b', 'c', 'd']).reset_index(level=-1, drop=True).reset_index(level=df.index.names + ['r/a', 'T_min', 'T_max'])
     df_curve['range'] = '(' + df_curve['T_min'].astype(str) + ', ' + df_curve['T_max'].astype(str) + ')'
     df = df.reset_index(level=['smearing_step'])
     df_curve.groupby(['r/a', 'smearing_step']).apply(plot_T_fit, df, decomposition_type, image_path)
@@ -67,31 +69,31 @@ def potential_T_fit_wrapping(args):
 #         ['32^4', 32, '6.2', 'HYP1_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'original'],
 #         ['36^4', 36, '6.3', 'HYP1_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'original'],
 #         ['40^4', 40, '6.4', 'HYP1_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'original']]
-# args = [['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.3', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.4', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.5', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.6', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.7', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.8', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.9', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=1', 'steps_500/copies=4', 'monopole']]
-args = [['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=0.3', 'steps_500/copies=4', 'monopole'],
+args = [['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.3', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.4', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.5', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.6', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.7', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.8', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.9', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=1', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=0.3', 'steps_500/copies=4', 'monopole'],
         ['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=0.4', 'steps_500/copies=4', 'monopole'],
         ['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=0.5', 'steps_500/copies=4', 'monopole'],
         ['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=0.6', 'steps_500/copies=4', 'monopole'],
         ['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=0.7', 'steps_500/copies=4', 'monopole'],
         ['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=0.8', 'steps_500/copies=4', 'monopole'],
         ['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=0.9', 'steps_500/copies=4', 'monopole'],
-        ['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=1', 'steps_500/copies=4', 'monopole']]
-# args = [['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.3', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.4', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.5', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.6', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.7', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.8', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.9', 'steps_500/copies=4', 'monopole'],
-#         ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=1', 'steps_500/copies=4', 'monopole']]
-pool = multiprocessing.Pool(8)
+        ['24^4', 24, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=1', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.3', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.4', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.5', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.6', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.7', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.8', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=0.9', 'steps_500/copies=4', 'monopole'],
+        ['24^4', 24, '6.0', 'HYP3_alpha=1_1_0.5_APE_alpha=1', 'steps_500/copies=4', 'monopole']]
+pool = multiprocessing.Pool(4)
 pool.map(potential_T_fit_wrapping, args)
 
 # potential_T_fit('16^4', 16, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'monopole')
