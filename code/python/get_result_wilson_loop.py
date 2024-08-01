@@ -118,15 +118,14 @@ betas = ['beta6.0']
 copies = 0
 copy_single = True
 # betas = ['beta2.7', 'beta2.8']
-smeared_array = ["HYP0_alpha=1_1_0.5_APE_alpha=0.3", "HYP1_alpha=1_1_0.5_APE_alpha=0.3", "HYP3_alpha=1_1_0.5_APE_alpha=0.3", "HYP0_alpha=1_1_0.5_APE_alpha=0.4", "HYP1_alpha=1_1_0.5_APE_alpha=0.4", "HYP3_alpha=1_1_0.5_APE_alpha=0.4", "HYP0_alpha=1_1_0.5_APE_alpha=0.5", "HYP1_alpha=1_1_0.5_APE_alpha=0.5", "HYP3_alpha=1_1_0.5_APE_alpha=0.5", "HYP0_alpha=1_1_0.5_APE_alpha=0.6", "HYP1_alpha=1_1_0.5_APE_alpha=0.6", "HYP3_alpha=1_1_0.5_APE_alpha=0.6", "HYP0_alpha=1_1_0.5_APE_alpha=0.7", "HYP1_alpha=1_1_0.5_APE_alpha=0.7", "HYP3_alpha=1_1_0.5_APE_alpha=0.7", "HYP0_alpha=1_1_0.5_APE_alpha=0.8", "HYP1_alpha=1_1_0.5_APE_alpha=0.8", "HYP3_alpha=1_1_0.5_APE_alpha=0.8", "HYP0_alpha=1_1_0.5_APE_alpha=0.9", "HYP1_alpha=1_1_0.5_APE_alpha=0.9", "HYP3_alpha=1_1_0.5_APE_alpha=0.9", "HYP0_alpha=1_1_0.5_APE_alpha=1", "HYP1_alpha=1_1_0.5_APE_alpha=1", "HYP3_alpha=1_1_0.5_APE_alpha=1"]
-# smeared_array = ['HYP2_alpha=1_1_0.5_APE_alpha=0.5',
-#                  'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
+#smeared_array = ["HYP0_alpha=1_1_0.5_APE_alpha=0.3", "HYP1_alpha=1_1_0.5_APE_alpha=0.3", "HYP3_alpha=1_1_0.5_APE_alpha=0.3", "HYP0_alpha=1_1_0.5_APE_alpha=0.4", "HYP1_alpha=1_1_0.5_APE_alpha=0.4", "HYP3_alpha=1_1_0.5_APE_alpha=0.4", "HYP0_alpha=1_1_0.5_APE_alpha=0.5", "HYP1_alpha=1_1_0.5_APE_alpha=0.5", "HYP3_alpha=1_1_0.5_APE_alpha=0.5", "HYP0_alpha=1_1_0.5_APE_alpha=0.6", "HYP1_alpha=1_1_0.5_APE_alpha=0.6", "HYP3_alpha=1_1_0.5_APE_alpha=0.6", "HYP0_alpha=1_1_0.5_APE_alpha=0.7", "HYP1_alpha=1_1_0.5_APE_alpha=0.7", "HYP3_alpha=1_1_0.5_APE_alpha=0.7", "HYP0_alpha=1_1_0.5_APE_alpha=0.8", "HYP1_alpha=1_1_0.5_APE_alpha=0.8", "HYP3_alpha=1_1_0.5_APE_alpha=0.8", "HYP0_alpha=1_1_0.5_APE_alpha=0.9", "HYP1_alpha=1_1_0.5_APE_alpha=0.9", "HYP3_alpha=1_1_0.5_APE_alpha=0.9", "HYP0_alpha=1_1_0.5_APE_alpha=1", "HYP1_alpha=1_1_0.5_APE_alpha=1", "HYP3_alpha=1_1_0.5_APE_alpha=1"]
+smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.6']
 # smeared_array = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP0_APE_alpha=0.5']
 # matrix_type_array = ['monopole',
 #                      'monopoless', 'photon', 'offdiagonal']
-#matrix_type_array = ['original']
-matrix_type_array = ['abelian']
+matrix_type_array = ['original']
+#matrix_type_array = ['abelian']
 #matrix_type_array = ['monopole',
 #                      'monopoless', 'photon',
 #                      'offdiagonal', 'abelian']
@@ -148,7 +147,7 @@ representation = 'fundamental'
 # additional_parameters_arr = ['steps_25/copies=4', 'steps_50/copies=4',
 #                              'steps_100/copies=4', 'steps_200/copies=4',
 #                              'steps_1000/copies=4', 'steps_2000/copies=4']
-additional_parameters_arr = ['steps_500/copies=4']
+#additional_parameters_arr = ['steps_500/copies=4']
 # additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
 #                              'steps_2000/copies=3', 'steps_4000/copies=3',
 #                              'steps_8000/copies=3']
@@ -157,7 +156,7 @@ additional_parameters_arr = ['steps_500/copies=4']
 #                              'steps_8000/copies=3/compensate_1']
 # additional_parameters_arr = ['steps_500/copies=3/compensate_1']
 # additional_parameters_arr = ['steps_500/copies=3']
-# additional_parameters_arr = ['/']
+additional_parameters_arr = ['/']
 
 is_binning = False
 bin_max = 100

@@ -96,24 +96,26 @@ conf_type = "gluodynamics"
 # conf_type = "QCD/140MeV"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
-conf_sizes = ["24^4"]
+#conf_sizes = ["24^4"]
+conf_sizes = ['16^4', '24^4', '32^4']
 # conf_sizes = ["32^3x64"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
 betas = ['beta6.0']
 # betas = ['beta2.7', 'beta2.8']
-smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
+#smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP2_alpha=1_1_0.5_APE_alpha=0.5',
 #                  'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP0_APE_alpha=0.5']
+smeared_array = ['/']
 # matrix_type_array = ['monopole',
 #                      'monopoless', 'photon', 'offdiagonal']
 matrix_type_array = ['original']
 # matrix_type_array = ['abelian']
-matrix_type_array = ['monopole',
-                     'monopoless', 'photon',
-                     'offdiagonal', 'abelian']
+#matrix_type_array = ['monopole',
+#                     'monopoless', 'photon',
+#                     'offdiagonal', 'abelian']
 operator_type = 'wilson_loop'
 representation = 'fundamental'
 # representation = 'adjoint'
@@ -129,9 +131,9 @@ representation = 'fundamental'
 # additional_parameters_arr = ['T_step=0.0002']
 # additional_parameters_arr = ['T_step=0.0001', 'T_step=0.0002',
 #                              'T_step=0.0004', 'T_step=0.0008', 'T_step=0.0016', 'T_step=0.0032']
-additional_parameters_arr = ['steps_25/copies=4', 'steps_50/copies=4',
-                             'steps_100/copies=4', 'steps_200/copies=4',
-                             'steps_1000/copies=4', 'steps_2000/copies=4']
+#additional_parameters_arr = ['steps_25/copies=4', 'steps_50/copies=4',
+#                             'steps_100/copies=4', 'steps_200/copies=4',
+#                             'steps_1000/copies=4', 'steps_2000/copies=4']
 # additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
 #                              'steps_2000/copies=3', 'steps_4000/copies=3',
 #                              'steps_8000/copies=3']
@@ -140,7 +142,7 @@ additional_parameters_arr = ['steps_25/copies=4', 'steps_50/copies=4',
 #                              'steps_8000/copies=3/compensate_1']
 # additional_parameters_arr = ['steps_500/copies=3/compensate_1']
 # additional_parameters_arr = ['steps_500/copies=3']
-# additional_parameters_arr = ['/']
+additional_parameters_arr = ['/']
 
 conf_max = 5000
 # mu1 = ['mu0.40']
