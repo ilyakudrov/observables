@@ -31,12 +31,11 @@ def bin_data(data, bin_size):
 
 
 def get_plaket(df):
-    x = df['plaket'].to_numpy()
+    x = np.array(df['plaket'].to_numpy())
+    x = np.array([x])
     plaket, err = stat.jackknife_var_numba(x, trivial_numba)
-    new_row = {'plaket': plaket, 'err': err}
-    df1 = df1.append(new_row, ignore_index=True)
-    return df1
-
+    return pd.DataFrame({'plaket': [plaket], 'err': [err]})
+ 
 @njit
 def trivial_numba(x):
     return x[0]
@@ -86,12 +85,12 @@ conf_type = "gluodynamics"
 # conf_type = "QCD/140MeV"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
-#conf_sizes = ["24^4"]
-conf_sizes = ['16^4', '24^4', '32^4']
+conf_sizes = ["28^4"]
+#conf_sizes = ['24^4', '32^4']
 # conf_sizes = ["32^3x64"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
-betas = ['beta6.0']
+betas = ['beta6.1']
 copies = 0
 # betas = ['beta2.7', 'beta2.8']
 #smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
@@ -132,21 +131,23 @@ representation = 'fundamental'
 #                              'steps_2000/copies=3/compensate_1', 'steps_4000/copies=3/compensate_1',
 #                              'steps_8000/copies=3/compensate_1']
 # additional_parameters_arr = ['steps_500/copies=3/compensate_1']
-# additional_parameters_arr = ['steps_500/copies=3']
+#additional_parameters_arr = ['steps_500/copies=4']
 additional_parameters_arr = ['/']
 
 conf_max = 5000
 binning = False
 # mu1 = ['mu0.40']
 mu1 = ['/']
-chains = ["/"]
+#chains = ["/"]
 # mu1 = ['mu0.05',
 #        'mu0.20', 'mu0.25',
 #        'mu0.30', 'mu0.35', 'mu0.45']
 # mu1 = ['mu0.40']
 # chains = ['s1', 's2']
-# chains = ['s0', 's1', 's2', 's3',
-#           's4', 's5', 's6', 's7', 's8']
+chains = ['/', 's0', 's1', 's2', 's3',
+           's4', 's5', 's6', 's7', 's8']
+#base_path = "../../data"
+base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 iter_arrays = [matrix_type_array, smeared_array,
                betas, conf_sizes, mu1, additional_parameters_arr]
 for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertools.product(*iter_arrays):
@@ -155,17 +156,15 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     for chain in chains:
         for i in range(0, conf_max + 1):
             if copies == 0:
-                file_path = f"../../data/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{chain}/plaket_{i:04}"
+                file_path = f"{base_path}/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/plaket_{i:04}"
                 if(os.path.isfile(file_path)):
-                    data.append(pd.read_csv(file_path, header=0,
-                                names=["plaket"]))
+                    data.append(pd.read_csv(file_path))
                     data[-1]["conf_num"] = f'{i}-{chain}'
             else:
                 for copy in range(len(copies)):
-                    file_path = f"../../data/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{chain}/plaket_{i:04}_{copy}"
+                    file_path = f"{base_path}/data/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/plaket_{i:04}_{copy}"
                     if(os.path.isfile(file_path)):
-                        data.append(pd.read_csv(file_path, header=0,
-                                    names=["plaket"]))
+                        data.append(pd.read_csv(file_path))
                         data[-1]["conf_num"] = f'{i}-{chain}'
                         data[-1]["copy"] = copy
     if len(data) == 0:
@@ -174,12 +173,6 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         df = pd.concat(data)
     if copies != 0:
         df = fillup_copies(df)
-    df.to_csv(
-        f"../../data/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{chain}/plaket.csv", index=False)
-    plaket = df['plaket'].to_numpy()
-    for i in range(len(plaket)):
-        if math.isnan(plaket[i]):
-            print(i)
     # print(plaket)
     # df1 = pd.DataFrame(
     #     columns=["bin_size", "plaket_jackknife", "err_jackknife", "plaket", "err"])
@@ -200,15 +193,15 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     #                "err_jackknife": [err_jackknife], "plaket": [plaket_mean], "err": [err_mean]}
     #     df1.append(pd.DataFrame(new_row))
     # df1 = pd.concat(df1)
-    # print(df1)
     if copies == 0:
         df1 = get_plaket(df)
     else:
         df1 = df.groupby('copy').apply(get_plaket).reset_index(level='copy')
-    path_output = f"../../result/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{chain}"
+    print(df1)
+    path_output = f"../../result/plaket/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}"
     try:
         os.makedirs(path_output)
     except:
         pass
     df1.to_csv(
-        f"{path_output}/plaket_binning_{matrix_type}.csv", index=False)
+        f"{path_output}/plaket_{matrix_type}.csv", index=False)
