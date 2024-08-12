@@ -1,7 +1,8 @@
 import os
 import pandas as pd
+from typing import List
 
-def get_dir_names(path: str) -> list[str]:
+def get_dir_names(path: str) -> List[str]:
     """Get names of subdirectories in path.
 
     Args:

@@ -258,7 +258,6 @@ def main():
     parser.add_argument('--result_path', default=None)
     parser.add_argument('--bin_test', action='store_true')
     args = parser.parse_args()
-    print(type(args))
     print('args: ', args)
     if args.result_path is None:
         result_path = f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}'
