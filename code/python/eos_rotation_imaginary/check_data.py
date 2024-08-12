@@ -96,6 +96,7 @@ df = pd.DataFrame()
 for base_path in args.data_paths:
     lattice_directories = find_lattices(base_path, lattice_names)
     for lattice_dir in lattice_directories:
+        lattice_size = lattice_dir[lattice_dir.rfind('/') + 1:]
         boundary_dirs = get_dir_names(lattice_dir)
         for boundary in boundary_dirs:
             velocity_dirs = get_dir_names(f'{lattice_dir}/{boundary}')
@@ -104,9 +105,9 @@ for base_path in args.data_paths:
                 beta_dirs = get_dir_names(f'{lattice_dir}/{boundary}/{velocity}')
                 for beta in beta_dirs:
                     file_number, observation_number = get_data_info(f'{lattice_dir}/{boundary}/{velocity}/{beta}')
-                    info_data = {'lattice_dir': [lattice_dir], 'boundary': [boundary],
+                    info_data = {'lattice_dir': [lattice_dir], 'lattice_size': [lattice_size], 'boundary': [boundary],
                                 'velocity': [velocity], 'beta': [beta], 'file_number': [file_number],
-                                'observation_number': observation_number}
+                                'observation_number': [observation_number]}
                     for key, value in spec_info.items():
                         info_data[key] = [value]
                     df = pd.concat([df, pd.DataFrame(info_data)])
