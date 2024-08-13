@@ -120,28 +120,41 @@ def get_dir_names(path: str) -> List[str]:
         break
     return directories
 
-def therm_bin(df_therm: pd.DataFrame, df_bins: pd.DataFrame, beta: str) -> Tuple[int, int]:
-    """Get thermlization size and bin size for data
-    with particular beta from corresponding DataFrames.
+def thermalization_length(therm_path: str, beta: str) -> int:
+    """Get thermlization size for data
+    with particular beta from corresponding csv file.
 
     Args:
-        df_therm: DataFrame with data for thermlization size
-        df_bins: DataFrame with data for bin size
+        therm_path: path to csv file with data for thermlization size
         beta: string of beta directory name
 
-    Returns: tuple of integer values of thermlization size and bin size
+    Returns: thermlization size
     """
+    df_therm = pd.read_csv(therm_path, header=None, delimiter=' ', names=['beta', 'therm_length'])
     if float(beta) in df_therm['beta'].unique():
         therm_length = df_therm.loc[df_therm['beta'] == float(beta), 'therm_length'].values[0]
     else:
         therm_length = df_therm.loc[df_therm['beta'] == 0.00, 'therm_length'].values[0]
+    return therm_length
+
+def bin_length(bins_path: str, beta: str) -> int:
+    """Get bin size for data
+    with particular beta from corresponding csv file.
+
+    Args:
+        bins_path: path to csv file with data for bin size
+        beta: string of beta directory name
+
+    Returns: bin size
+    """
+    df_bins = pd.read_csv(bins_path, header=None, delimiter=' ', names=['beta', 'bin_size'])
     if float(beta) in df_bins['beta'].unique():
         bin_size = df_bins.loc[df_bins['beta'] == float(beta), 'bin_size'].values[0]
     else:
         bin_size = df_bins.loc[df_bins['beta'] == 0.00, 'bin_size'].values[0]
-    return therm_length, bin_size
+    return bin_size
 
-def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_size: int) -> pd.DataFrame:
+def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_size: Optional[int] = None) -> pd.DataFrame:
     """Read and concatenate eos data for particlular parameters
     (lattice_size, boundary, velocity, beta).
 
@@ -171,7 +184,8 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
                 data['block_size'] = get_block_size(f)
                 data['conf_start'] = conf_start + conf_last
                 data['conf_end'] = conf_end + conf_last
-                data['bin_size'] = bin_size
+                if bin_size is not None:
+                    data['bin_size'] = bin_size
                 data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
                                     'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
                 df = pd.concat([df, data])
@@ -268,23 +282,25 @@ def main():
         except:
             pass
 
-    df_therm = pd.read_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
-                           header=None, delimiter=' ', names=['beta', 'therm_length'])
-    df_bins = pd.read_csv(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log',
-                           header=None, delimiter=' ', names=['beta', 'bin_size'])
-    therm_length, bin_size = therm_bin(df_therm, df_bins, args.beta)
-    df = get_data(args.base_path, args, therm_length, bin_size)
-    if not df.empty:
-        if args.bin_test:
+    if args.bin_test:
+        therm_length = thermalization_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
+        df = get_data(args.base_path, args, therm_length)
+        if not df.empty:
             bin_max = df['conf_end'].max() // df.loc[0, 'block_size'] // 4
             bin_sizes = int_log_range(1, bin_max, 1.05)
-            print(bin_sizes)
+            print('bin_sizes', bin_sizes)
             df_result = []
             for bin in bin_sizes:
                 df_result.append(make_jackknife(df, bin_size=bin))
             df_result = pd.concat(df_result)
             df_result.to_csv(f'{result_path}/S_binning.csv', sep=' ', index=False)
         else:
+            raise Exception('No data found')
+    else:
+        therm_length = thermalization_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
+        bin_size = bin_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log', args.beta)
+        df = get_data(args.base_path, args, therm_length, bin_size)
+        if not df.empty:
             coord_max = df['x'].max()//2
             df['x'] = df['x'] - coord_max
             df['y'] = df['y'] - coord_max
@@ -301,7 +317,8 @@ def main():
                     df_result[-1]['radius'] = math.sqrt(radius_sq)
             df_result = pd.concat(df_result)
             df_result.to_csv(f'{result_path}/S_result.csv', sep=' ', index=False)
-        print(df_result)
+        else:
+            raise Exception('No data found')
 
 if __name__ == "__main__":
     main()
