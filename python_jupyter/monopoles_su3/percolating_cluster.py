@@ -26,19 +26,19 @@ def pair_wrapped(data, threshold):
         return pd.DataFrame({'length': [0]})
 
 def find_percolating_wrapped_sum(data, threshold=None):
-    return pd.DataFrame({'length': [data[data['percolating_group'] == 'percolating']['length'].sum()]})
+    return pd.DataFrame({'length': [data[data['percolating_group'] == 'percolating']['length'].sum()]}).reset_index(drop=True)
 
 def clusters_divide(data_unwrapped, data_wrapped, size_threshold, groupby_keys):
     df_unwrapped = data_unwrapped.copy()
     df_unwrapped.loc[df_unwrapped['length'] < size_threshold, 'length'] = 0
     df_unwrapped['length'] = df_unwrapped['length'] * df_unwrapped['number']
     df_unwrapped = df_unwrapped.drop('number', axis=1)
-    df_unwrapped = df_unwrapped.groupby(groupby_keys + ['color'])['length'].agg([('length', np.sum)]).reset_index(level=groupby_keys + ['color'])
-    df_unwrapped = df_unwrapped.set_index(groupby_keys + ['color']).unstack('color', fill_value=0).stack().reset_index()
+    df_unwrapped = df_unwrapped.groupby(groupby_keys + ['color'])['length'].agg([('length', 'sum')]).reset_index(level=groupby_keys + ['color'])
+    df_unwrapped = df_unwrapped.set_index(groupby_keys + ['color']).unstack('color', fill_value=0).stack(future_stack=True).reset_index()
     df_wrapped = data_wrapped.groupby(groupby_keys + ['color']).apply(find_percolating_wrapped_sum, size_threshold).reset_index(level=groupby_keys + ['color']).reset_index(drop=True)
     data_large = pd.concat([df_unwrapped, df_wrapped])
     # data_large = data_unwrapped
-    data_large = data_large.groupby(groupby_keys + ['color'])['length'].agg([('length', np.sum)]).reset_index(level=groupby_keys + ['color'])
+    data_large = data_large.groupby(groupby_keys + ['color'])['length'].agg([('length', 'sum')]).reset_index(level=groupby_keys + ['color'])
     data_large = data_large.groupby(groupby_keys)['length'].mean().reset_index(level=groupby_keys)
     return data_large
 
