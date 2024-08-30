@@ -120,7 +120,7 @@ def get_dir_names(path: str) -> List[str]:
         break
     return directories
 
-def thermalization_length(therm_path: str, beta: str) -> int:
+def thermalization_length(therm_path: str, additional_path: str, beta: str) -> int:
     """Get thermlization size for data
     with particular beta from corresponding csv file.
 
@@ -130,14 +130,20 @@ def thermalization_length(therm_path: str, beta: str) -> int:
 
     Returns: thermlization size
     """
-    df_therm = pd.read_csv(therm_path, header=None, delimiter=' ', names=['beta', 'therm_length'])
+    try:
+        df_therm = pd.read_csv(therm_path, header=None, delimiter=' ', names=['beta', 'therm_length'])
+    except:
+        try:
+            df_therm = pd.read_csv(additional_path, header=None, delimiter=' ', names=['beta', 'therm_length'])
+        except:
+            raise Exception('could not read spec_therm')
     if float(beta) in df_therm['beta'].unique():
         therm_length = df_therm.loc[df_therm['beta'] == float(beta), 'therm_length'].values[0]
     else:
         therm_length = df_therm.loc[df_therm['beta'] == 0.00, 'therm_length'].values[0]
     return therm_length
 
-def bin_length(bins_path: str, beta: str) -> int:
+def bin_length(bins_path: str, additional_path: str, beta: str) -> int:
     """Get bin size for data
     with particular beta from corresponding csv file.
 
@@ -147,7 +153,13 @@ def bin_length(bins_path: str, beta: str) -> int:
 
     Returns: bin size
     """
-    df_bins = pd.read_csv(bins_path, header=None, delimiter=' ', names=['beta', 'bin_size'])
+    try:
+        df_bins = pd.read_csv(bins_path, header=None, delimiter=' ', names=['beta', 'bin_size'])
+    except:
+        try:
+            df_bins = pd.read_csv(additional_path, header=None, delimiter=' ', names=['beta', 'bin_size'])
+        except:
+            raise Exception('could not read spec_bins')
     if float(beta) in df_bins['beta'].unique():
         bin_size = df_bins.loc[df_bins['beta'] == float(beta), 'bin_size'].values[0]
     else:
@@ -283,7 +295,8 @@ def main():
             pass
 
     if args.bin_test:
-        therm_length = thermalization_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
+        therm_length = thermalization_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
+                                             f'../../../data/eos_high_precision/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
         df = get_data(args.base_path, args, therm_length)
         if not df.empty:
             bin_max = df['conf_end'].max() // df.loc[0, 'block_size'] // 4
@@ -297,8 +310,10 @@ def main():
         else:
             raise Exception('No data found')
     else:
-        therm_length = thermalization_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
-        bin_size = bin_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log', args.beta)
+        therm_length = thermalization_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
+                                             f'../../../data/eos_high_precision/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
+        bin_size = bin_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log',
+                              f'../../../data/eos_high_precision/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log', args.beta)
         df = get_data(args.base_path, args, therm_length, bin_size)
         if not df.empty:
             coord_max = df['x'].max()//2
