@@ -81,6 +81,18 @@ def get_block_size(f: str) -> int:
     """
     return int(f[5:f.find('-')])
 
+def get_lattice_sizes(lattice_name: str) -> Tuple[int]:
+    """Extract lattice sizes of eos data from name of a lattice size.
+
+    Args:
+        f: name of a lattice size
+
+    Returns: tuple of integer values [t, z, s]
+    """
+    a = lattice_name.split('x')
+    a[2] = a[2][:a[2].find('sq')]
+    return [int(i) for i in a]
+
 def get_conf_range(f: str) -> int:
     """Extract range of configurations in a block of eos data from it's name.
 
@@ -163,7 +175,9 @@ def bin_length(bins_path: str, additional_path: str, beta: str) -> int:
     if float(beta) in df_bins['beta'].unique():
         bin_size = df_bins.loc[df_bins['beta'] == float(beta), 'bin_size'].values[0]
     else:
-        bin_size = df_bins.loc[df_bins['beta'] == 0.00, 'bin_size'].values[0]
+        print(df_bins)
+        print(df_bins.loc[df_bins['beta'] == 0, 'bin_size'])
+        bin_size = df_bins.loc[df_bins['beta'] == 0, 'bin_size'].values[0]
     return bin_size
 
 def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_size: Optional[int] = None) -> pd.DataFrame:
@@ -192,15 +206,20 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
             conf_start, conf_end = get_conf_range(f)
             if conf_start > confs_to_skip:
                 data = read_blocks(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
-                data = data[['x', 'y', 'S']]
-                data['block_size'] = get_block_size(f)
-                data['conf_start'] = conf_start + conf_last
-                data['conf_end'] = conf_end + conf_last
-                if bin_size is not None:
-                    data['bin_size'] = bin_size
-                data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
+                t, z, s = get_lattice_sizes(args.lattice_size)
+                print(t, z, s)
+                if len(data.index) == s**2:
+                    data = data[['x', 'y', 'S']]
+                    data['block_size'] = get_block_size(f)
+                    data['conf_start'] = conf_start + conf_last
+                    data['conf_end'] = conf_end + conf_last
+                    if bin_size is not None:
+                        data['bin_size'] = bin_size
+                    print(bin_size)
+                    print(data)
+                    data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
                                     'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
-                df = pd.concat([df, data])
+                    df = pd.concat([df, data])
         if len(filenames) != 0:
             _, conf_tmp = get_conf_range(filenames[-1])
             conf_last += conf_tmp
@@ -282,6 +301,7 @@ def main():
     parser.add_argument('--lattice_size')
     parser.add_argument('--boundary')
     parser.add_argument('--result_path', default=None)
+    parser.add_argument('--spec_additional_path')
     parser.add_argument('--bin_test', action='store_true')
     args = parser.parse_args()
     print('args: ', args)
@@ -296,7 +316,7 @@ def main():
 
     if args.bin_test:
         therm_length = thermalization_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
-                                             f'../../../data/eos_high_precision/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
+                                             f'{args.spec_additional_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
         df = get_data(args.base_path, args, therm_length)
         if not df.empty:
             bin_max = df['conf_end'].max() // df.loc[0, 'block_size'] // 4
@@ -311,29 +331,33 @@ def main():
             raise Exception('No data found')
     else:
         therm_length = thermalization_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log',
-                                             f'../../../data/eos_high_precision/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
+                                             f'{args.spec_additional_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
         bin_size = bin_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log',
-                              f'../../../data/eos_high_precision/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log', args.beta)
+                              f'{args.spec_additional_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log', args.beta)
         df = get_data(args.base_path, args, therm_length, bin_size)
         if not df.empty:
-            coord_max = df['x'].max()//2
-            df['x'] = df['x'] - coord_max
-            df['y'] = df['y'] - coord_max
-            df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
-            df_result = []
-            for cut in range(0, coord_max - 2):
-                df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
-                for radius_sq in get_radii_sq(df['x'].max()):
-                    df1 = df.loc[df['rad_sq'] <= radius_sq]
-                    df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'])['S'].agg([('S', 'mean')])\
-                        .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
-                    df_result.append(make_jackknife(df1))
-                    df_result[-1]['box_size'] = coord_max - cut
-                    df_result[-1]['radius'] = math.sqrt(radius_sq)
-            df_result = pd.concat(df_result)
-            df_result.to_csv(f'{result_path}/S_result.csv', sep=' ', index=False)
+            print('data_size', df['conf_end'].max() - df['conf_start'].min())
+            print('bin_size', bin_size)
+            if df['conf_end'].max() - df['conf_start'].min() >= 3 * bin_size:
+                coord_max = df['x'].max()//2
+                df['x'] = df['x'] - coord_max
+                df['y'] = df['y'] - coord_max
+                df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
+                df_result = []
+                for cut in range(0, coord_max - 2):
+                    df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
+                    for radius_sq in get_radii_sq(df['x'].max()):
+                        df1 = df.loc[df['rad_sq'] <= radius_sq]
+                        df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'])['S'].agg([('S', 'mean')])\
+                            .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
+                        df_result.append(make_jackknife(df1))
+                        df_result[-1]['box_size'] = coord_max - cut
+                        df_result[-1]['radius'] = math.sqrt(radius_sq)
+                df_result = pd.concat(df_result)
+                df_result.to_csv(f'{result_path}/S_result.csv', sep=' ', index=False)
         else:
-            raise Exception('No data found')
+            #raise Exception('No data found')
+            print('No data found')
 
 if __name__ == "__main__":
     main()

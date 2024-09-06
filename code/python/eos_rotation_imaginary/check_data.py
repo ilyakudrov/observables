@@ -74,11 +74,13 @@ def get_data_info(beta_path):
     file_number = 0
     observation_number = 0
     for chain in chain_dirs:
+#        print('chain', chain)
         filenames = get_file_names(f'{beta_path}/{chain}')
         for file in filenames:
+#            print('file', file)
             if os.stat(f'{beta_path}/{chain}/{file}').st_size != 0:
                 try:
-                    pd.read_csv(f'{beta_path}/{chain}/{file}')
+                    #pd.read_csv(f'{beta_path}/{chain}/{file}')
                     file_number += 1
                     observation_number += get_block_size(file)
                 except:
@@ -94,21 +96,28 @@ lattice_names = ['24x24x97sq', '30x30x121sq', '30x30x181sq', '30x30x81sq', '36x3
                 '4x24x97sq', '5x30x121sq', '5x30x181sq', '5x30x81sq', '6x36x145sq', '7x42x169sq']
 df = pd.DataFrame()
 for base_path in args.data_paths:
+#    print('base_path', base_path)
     lattice_directories = find_lattices(base_path, lattice_names)
     for lattice_dir in lattice_directories:
+#        print('lattice_dir', lattice_dir)
         lattice_size = lattice_dir[lattice_dir.rfind('/') + 1:]
         boundary_dirs = get_dir_names(lattice_dir)
         for boundary in boundary_dirs:
+#            print('boundary', boundary)
             velocity_dirs = get_dir_names(f'{lattice_dir}/{boundary}')
             for velocity in velocity_dirs:
+#                print('velocity', velocity)
                 spec_info = check_spec(f'{lattice_dir}/{boundary}/{velocity}')
+#                print('spec_info', spec_info)
                 beta_dirs = get_dir_names(f'{lattice_dir}/{boundary}/{velocity}')
                 for beta in beta_dirs:
+#                    print('beta', beta)
                     file_number, observation_number = get_data_info(f'{lattice_dir}/{boundary}/{velocity}/{beta}')
                     info_data = {'lattice_dir': [lattice_dir], 'lattice_size': [lattice_size], 'boundary': [boundary],
                                 'velocity': [velocity], 'beta': [beta], 'file_number': [file_number],
                                 'observation_number': [observation_number]}
                     for key, value in spec_info.items():
                         info_data[key] = [value]
+#                    print('info_data', info_data)
                     df = pd.concat([df, pd.DataFrame(info_data)])
 df.to_csv(f'{args.result_path}/data_summary.csv', index=False)
