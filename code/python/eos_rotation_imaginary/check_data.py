@@ -29,7 +29,21 @@ def get_file_names(path: str) -> List[str]:
     for (dirpath, dirnames, filenames) in os.walk(path):
         files.extend(filenames)
         break
-    return list((f for f in files if f[f.find('-') + 1:].startswith('SEBxy') and f.startswith(f'block')))
+    return list(f for f in files if f[f.find('-') + 1:].startswith('SEBxy') and f.startswith(f'block'))
+
+def get_unblocked_files(path: str) -> List[str]:
+    """Get names of initial eos files directory path.
+
+    Args:
+        path: path of eos data
+
+    Returns: list of file names
+    """
+    files = []
+    for (dirpath, dirnames, filenames) in os.walk(path):
+        files.extend(filenames)
+        break
+    return list(f for f in files if f.startswith('SEBxy'))
 
 def get_block_size(f: str) -> int:
     """Extract block size of eos data from it's name.
@@ -73,6 +87,7 @@ def get_data_info(beta_path):
     chain_dirs = get_dir_names(beta_path)
     file_number = 0
     observation_number = 0
+    unblocked_data = 0
     for chain in chain_dirs:
 #        print('chain', chain)
         filenames = get_file_names(f'{beta_path}/{chain}')
@@ -85,7 +100,11 @@ def get_data_info(beta_path):
                     observation_number += get_block_size(file)
                 except:
                     pass
-    return file_number, observation_number
+        unblocked_files = get_unblocked_files(f'{beta_path}/{chain}')
+        for file in unblocked_files:
+            if os.stat(f'{beta_path}/{chain}/{file}').st_size != 0:
+                unblocked_data += 1
+    return file_number, observation_number, unblocked_data
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_paths', nargs='+')
@@ -112,10 +131,10 @@ for base_path in args.data_paths:
                 beta_dirs = get_dir_names(f'{lattice_dir}/{boundary}/{velocity}')
                 for beta in beta_dirs:
 #                    print('beta', beta)
-                    file_number, observation_number = get_data_info(f'{lattice_dir}/{boundary}/{velocity}/{beta}')
+                    file_number, observation_number, unblocked_data = get_data_info(f'{lattice_dir}/{boundary}/{velocity}/{beta}')
                     info_data = {'lattice_dir': [lattice_dir], 'lattice_size': [lattice_size], 'boundary': [boundary],
                                 'velocity': [velocity], 'beta': [beta], 'file_number': [file_number],
-                                'observation_number': [observation_number]}
+                                'observation_number': [observation_number], 'unblocked_data': [unblocked_data]}
                     for key, value in spec_info.items():
                         info_data[key] = [value]
 #                    print('info_data', info_data)

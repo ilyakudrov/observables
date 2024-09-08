@@ -9,12 +9,12 @@ def save_image(image_path, image_name, fg, save_black=False):
     except:
         pass
 
-    output_path = f'{image_path}/{image_name}'
-    fg.savefig(output_path, dpi=700, facecolor='white')
+    output_path = f'{image_path}/{image_name}.pdf'
+    fg.savefig(output_path, dpi=700, facecolor='white', format='pdf')
     if save_black:
-        Image.open(f'{output_path}.png').convert('L').save(f'{output_path}_bw.eps', fmt='EPS')
+        Image.open(f'{output_path}.png').convert('L').save(f'{output_path}_bw.png')
 
-def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err=None, df_fits=None, black_line_y=None, dashed_line_y=None, markers_different=False, color_palette='bright'):
+def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err=None, df_fits=None, black_line_y=None, dashed_line_y=None, markers_different=False, color_palette='bright', save_figure=False):
     markers_arr = ['o', '^', 's', 'D', 'P', 'X', 'v', '*']
     if hue is not None:
         hues = data[hue].unique()
@@ -63,6 +63,7 @@ def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, 
 
     if show_plot:
         plt.show()
-    # save_image(f'{image_path}',
-    #            f'{image_name}', fg)
+    if save_figure:
+        save_image(f'{image_path}',
+            f'{image_name}', fg)
     return fg
