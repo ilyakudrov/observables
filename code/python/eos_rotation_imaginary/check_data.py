@@ -126,7 +126,7 @@ for base_path in args.data_paths:
             velocity_dirs = get_dir_names(f'{lattice_dir}/{boundary}')
             for velocity in velocity_dirs:
 #                print('velocity', velocity)
-                spec_info = check_spec(f'{lattice_dir}/{boundary}/{velocity}')
+#                spec_info = check_spec(f'{lattice_dir}/{boundary}/{velocity}')
 #                print('spec_info', spec_info)
                 beta_dirs = get_dir_names(f'{lattice_dir}/{boundary}/{velocity}')
                 for beta in beta_dirs:
@@ -135,8 +135,8 @@ for base_path in args.data_paths:
                     info_data = {'lattice_dir': [lattice_dir], 'lattice_size': [lattice_size], 'boundary': [boundary],
                                 'velocity': [velocity], 'beta': [beta], 'file_number': [file_number],
                                 'observation_number': [observation_number], 'unblocked_data': [unblocked_data]}
-                    for key, value in spec_info.items():
-                        info_data[key] = [value]
+#                    for key, value in spec_info.items():
+#                        info_data[key] = [value]
 #                    print('info_data', info_data)
                     df = pd.concat([df, pd.DataFrame(info_data)])
 df.to_csv(f'{args.result_path}/data_summary.csv', index=False)
