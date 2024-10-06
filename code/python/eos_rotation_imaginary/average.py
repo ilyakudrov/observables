@@ -4,7 +4,6 @@ import numpy as np
 import os.path
 import pandas as pd
 import dask.dataframe as dd
-from dask.distributed import LocalCluster, Client
 import argparse
 from scipy.stats import norm, binned_statistic
 import itertools
@@ -213,6 +212,7 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
 #                print(t, z, s)
                 if len(data.index) == s**2:
                     #data = data[['x', 'y', 'S']]
+                    data = data.drop(labels=['20', '21'])
                     data['block_size'] = get_block_size(f)
                     data['conf_start'] = conf_start + conf_last
                     data['conf_end'] = conf_end + conf_last
@@ -228,13 +228,13 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
     return df
 
 def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataFrame:
-    """Make blocked jackknife for data from S column from df.
+    """Make blocked jackknife for data from df.
 
     Args:
-        df: DataFrame with S column to do jackknife
+        df: DataFrame with data to do jackknife on
         bin_size: size of bin in kackknife. If None, derive it from df.
 
-    Returns: DataFrame with jackknifed value of mean and error
+    Returns: DataFrame with jackknifed values of mean and error
     """
     print('make_jackknife')
     df = df.reset_index()
@@ -244,11 +244,33 @@ def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataF
     else:
         bin_size = bin_size * block_size
     bin_size = (bin_size + block_size -1)//block_size
-    print(df)
-    S_arr = np.array([df['S'].to_numpy()])
-    print(S_arr)
-    mean, err = stat.jackknife_var_numba_binning(S_arr, trivial, get_bin_borders(S_arr.shape[1], bin_size))
-    return pd.DataFrame({'S': [mean], 'err': [err], 'bin_size': [bin_size * block_size]})
+    data_arr = df[['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
+                '13', '14', '15', '16', '17', '18', 'S']].to_numpy()
+    S_mean, S_err = stat.jackknife_var_numba_binning(data_arr, trivial, get_bin_borders(data_arr.shape[1], bin_size))
+    Jv_mean, Jv_err = stat.jackknife_var_numba_binning(data_arr, Jv, get_bin_borders(data_arr.shape[1], bin_size))
+    Jv1_mean, Jv1_err = stat.jackknife_var_numba_binning(data_arr, Jv1, get_bin_borders(data_arr.shape[1], bin_size))
+    Jv2_mean, Jv2_err = stat.jackknife_var_numba_binning(data_arr, Jv2, get_bin_borders(data_arr.shape[1], bin_size))
+    Blab_mean, Blab_err = stat.jackknife_var_numba_binning(data_arr, Blab, get_bin_borders(data_arr.shape[1], bin_size))
+    E_mean, E_err = stat.jackknife_var_numba_binning(data_arr, E, get_bin_borders(data_arr.shape[1], bin_size))
+    Elab_mean, Elab_err = stat.jackknife_var_numba_binning(data_arr, Elab, get_bin_borders(data_arr.shape[1], bin_size))
+    Bz_mean, Bz_err = stat.jackknife_var_numba_binning(data_arr, Bz, get_bin_borders(data_arr.shape[1], bin_size))
+    Bxy_mean, Bxy_err = stat.jackknife_var_numba_binning(data_arr, Bxy, get_bin_borders(data_arr.shape[1], bin_size))
+    Ez_mean, Ez_err = stat.jackknife_var_numba_binning(data_arr, Ez, get_bin_borders(data_arr.shape[1], bin_size))
+    Exy_mean, Exy_err = stat.jackknife_var_numba_binning(data_arr, Exy, get_bin_borders(data_arr.shape[1], bin_size))
+    ElabzT_mean, ElabzT_err = stat.jackknife_var_numba_binning(data_arr, ElabzT, get_bin_borders(data_arr.shape[1], bin_size))
+    ElabxyT_mean, ElabxyT_err = stat.jackknife_var_numba_binning(data_arr, ElabxyT, get_bin_borders(data_arr.shape[1], bin_size))
+    Ae_mean, Ae_err = stat.jackknife_var_numba_binning(data_arr, Ae, get_bin_borders(data_arr.shape[1], bin_size))
+    Am_mean, Am_err = stat.jackknife_var_numba_binning(data_arr, Am, get_bin_borders(data_arr.shape[1], bin_size))
+    AlabeT_mean, AlabeT_err = stat.jackknife_var_numba_binning(data_arr, AlabeT, get_bin_borders(data_arr.shape[1], bin_size))
+    return pd.DataFrame({'S': [S_mean], 'S_err': [S_err], 'Jv': [Jv_mean], 'Jv_err': [Jv_err], 'Jv1': [Jv1_mean],\
+                        'Jv1_err': [Jv1_err], 'Jv2': [Jv2_mean], 'Jv2_err': [Jv2_err], 'Blab': [Blab_mean],\
+                        'Blab_err': [Blab_err], 'E': [E_mean], 'E_err': [E_err], 'Elab': [Elab_mean],\
+                        'Elab_err': [Elab_err], 'Bz': [Bz_mean], 'Bz_err': [Bz_err], 'Bxy': [Bxy_mean],\
+                        'Bxy_err': [Bxy_err], 'Ez': [Ez_mean], 'Ez_err': [Ez_err], 'Exy': [Exy_mean],\
+                        'Exy_err': [Exy_err], 'ElabzT': [ElabzT_mean], 'ElabzT_err': [ElabzT_err],\
+                        'ElabxyT': [ElabxyT_mean], 'ElabxyT_err': [ElabxyT_err], 'Ae': [Ae_mean],\
+                        'Ae_err': [Ae_err], 'Am': [Am_mean], 'Am_err': [Am_err], 'AlabeT': [AlabeT_mean],\
+                        'AlabeT_err': [AlabeT_err], 'bin_size': [bin_size * block_size]})
 
 def get_radii_sq(square_size: int) -> List[int]:
     """Make squares of radii of circles cutting lattice points inside a square.
@@ -275,14 +297,241 @@ def trivial(x: np.ndarray) -> np.ndarray:
     """Function for trivial observable jackknife.
 
     Args:
-        x: 2D numpy array of a data with shape (1, n)
+        x: 2D numpy array of a data with shape (18, n)
 
     Returns: 1D numpy array of the data
     """
     n = x.shape[1]
     y = np.zeros(n)
     for i in range(n):
-        y[i] = x[0][i]
+        y[i] = x[17][i]
+    return y
+
+@njit
+def Jv(x: np.ndarray) -> np.ndarray:
+    """Function for Jv observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = -x[15][i] - 2 * (x[16][i] + x[12][i] + x[13][i] + x[14][i] - x[3][i] - x[4][i] - x[5][i])
+    return y
+
+@njit
+def Jv1(x: np.ndarray) -> np.ndarray:
+    """Function for Jv1 observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = -x[15][i]
+    return y
+
+@njit
+def Jv2(x: np.ndarray) -> np.ndarray:
+    """Function for Jv2 observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = - 2 * (x[16][i] + x[12][i] + x[13][i] + x[14][i] - x[3][i] - x[4][i] - x[5][i])
+    return y
+
+@njit
+def Blab(x: np.ndarray) -> np.ndarray:
+    """Function for Blab observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = x[3][i] + x[4][i] + x[5][i] + x[9][i] + x[10][i] + x[11][i]
+    return y
+
+@njit
+def E(x: np.ndarray) -> np.ndarray:
+    """Function for E observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = x[0][i] + x[1][i] + x[2][i] + x[6][i] + x[7][i] + x[8][i]
+    return y
+
+@njit
+def Elab(x: np.ndarray) -> np.ndarray:
+    """Function for Elab observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = x[0][i] + x[1][i] + x[2][i] + x[6][i] + x[7][i] + x[8][i]\
+        + x[15][i] + x[16][i] + x[12][i] + x[13][i] + x[14][i] - x[3][i] - x[4][i] - x[5][i]
+    return y
+
+
+@njit
+def Bz(x: np.ndarray) -> np.ndarray:
+    """Function for Bz observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = x[5][i] + x[11][i]
+    return y
+
+@njit
+def Bxy(x: np.ndarray) -> np.ndarray:
+    """Function for Bxy observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = (x[3][i] + x[4][i] + x[9][i] + x[10][i]) / 2
+    return y
+
+@njit
+def Ez(x: np.ndarray) -> np.ndarray:
+    """Function for Ez observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = x[2][i] + x[8][i]
+    return y
+
+@njit
+def Exy(x: np.ndarray) -> np.ndarray:
+    """Function for Bxy observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = (x[0][i] + x[1][i] + x[6][i] + x[7][i]) / 2
+    return y
+
+@njit
+def ElabzT(x: np.ndarray) -> np.ndarray:
+    """Function for ElabzT observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = x[2][i] + x[8][i] + x[12][i] + x[13][i] - x[3][i] - x[4][i] + x[16][i]
+    return y
+
+@njit
+def ElabxyT(x: np.ndarray) -> np.ndarray:
+    """Function for ElabxyT observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = (x[0][i] + x[1][i] + x[6][i] + x[7][i] + x[14][i] - x[5][i]) / 2
+    return y
+
+@njit
+def Ae(x: np.ndarray) -> np.ndarray:
+    """Function for Ae observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = (x[0][i] + x[1][i] + x[6][i] + x[7][i]) / 2 - x[2][i] - x[8][i]
+    return y
+
+@njit
+def Am(x: np.ndarray) -> np.ndarray:
+    """Function for Am observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = (x[3][i] + x[4][i] + x[9][i] + x[10][i]) / 2 - x[5][i] - x[11][i]
+    return y
+
+@njit
+def AlabeT(x: np.ndarray) -> np.ndarray:
+    """Function for AlabeT observable jackknife.
+
+    Args:
+        x: 2D numpy array of a data with shape (18, n)
+
+    Returns: 1D numpy array of the data
+    """
+    n = x.shape[1]
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = (x[0][i] + x[1][i] + x[6][i] + x[7][i] + x[14][i] - x[5][i]) / 2 - (x[2][i] + x[8][i] + x[12][i] + x[13][i] - x[3][i] - x[4][i] + x[16][i])
     return y
 
 @profile
@@ -353,13 +602,19 @@ def main():
                     df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
                     for radius_sq in get_radii_sq(df['x'].max()):
                         df1 = df.loc[df['rad_sq'] <= radius_sq]
-                        df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'], observed=False)['S'].agg([('S', 'mean')])\
+                        df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'], observed=False)\
+                            .agg(S=('S', 'mean'), col2=('2', 'mean'), col3=('3', 'mean'),\
+                            col4=('4', 'mean'), col5=('5', 'mean'), col6=('6', 'mean'),\
+                            col7=('7', 'mean'), col8=('8', 'mean'), col9=('9', 'mean'),\
+                            col10=('10', 'mean'), col11=('11', 'mean'), col12=('12', 'mean'),\
+                            col13=('13', 'mean'), col14=('14', 'mean'), col15=('15', 'mean'),\
+                            col16=('16', 'mean'), col17=('17', 'mean'), col18=('18', 'mean'))\
                             .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
                         df_result.append(make_jackknife(df1))
                         df_result[-1]['box_size'] = coord_max - cut
                         df_result[-1]['radius'] = math.sqrt(radius_sq)
                 df_result = pd.concat(df_result)
-                df_result.to_csv(f'{result_path}/S_result.csv', sep=' ', index=False)
+                df_result.to_csv(f'{result_path}/observables_result.csv', sep=' ', index=False)
         else:
             #raise Exception('No data found')
             print('No data found')
