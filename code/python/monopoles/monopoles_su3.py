@@ -52,8 +52,8 @@ mu1 = ['/']
 chains = ['/', 's0', 's1', 's2', 's3',
            's4', 's5', 's6', 's7', 's8', 's9', 's10']
 
-base_path = "../../../data"
-# base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
+#base_path = "../../../data"
+base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 
 start = time.time()
 print('beta: ', args.beta,' conf_size: ', args.size, ' additional_parameters: ', args.additional_parameters)
@@ -67,6 +67,7 @@ else:
 data = []
 for chain in chains:
     for conf in range(1, conf_max + 1):
+        print(conf)
         densities = []
         densities_percolating = []
         copies = []

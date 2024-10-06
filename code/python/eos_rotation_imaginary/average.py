@@ -3,6 +3,8 @@ import sys
 import numpy as np
 import os.path
 import pandas as pd
+import dask.dataframe as dd
+from dask.distributed import LocalCluster, Client
 import argparse
 from scipy.stats import norm, binned_statistic
 import itertools
@@ -67,9 +69,9 @@ def read_blocks(path: str) -> pd.DataFrame:
 
     Returns: pandas DataFrame of the data
     """
-    return pd.read_csv(path, header=None,delimiter=' ', names=['x', 'y', 'q', 'r', 'n', 'u',
-                                                 'a', 'b', 'c', 'd', 'e', 'f', 'g',
-                                                 'h', 'i', 'j', 'k', 'l', 'm', 'S', 'o', 'p'])
+    return pd.read_csv(path, header=None,delimiter=' ', names=['x', 'y', '2', '3', '4', '5',
+                                                 '6', '7', '8', '9', '10', '11', '12',
+                                                 '13', '14', '15', '16', '17', '18', 'S', '20', '21'])
 
 def get_block_size(f: str) -> int:
     """Extract block size of eos data from it's name.
@@ -205,18 +207,17 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
         for f in filenames:
             conf_start, conf_end = get_conf_range(f)
             if conf_start > confs_to_skip:
+                #print(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
                 data = read_blocks(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
                 t, z, s = get_lattice_sizes(args.lattice_size)
-                print(t, z, s)
+#                print(t, z, s)
                 if len(data.index) == s**2:
-                    data = data[['x', 'y', 'S']]
+                    #data = data[['x', 'y', 'S']]
                     data['block_size'] = get_block_size(f)
                     data['conf_start'] = conf_start + conf_last
                     data['conf_end'] = conf_end + conf_last
                     if bin_size is not None:
                         data['bin_size'] = bin_size
-                    print(bin_size)
-                    print(data)
                     data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
                                     'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
                     df = pd.concat([df, data])
@@ -235,6 +236,7 @@ def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataF
 
     Returns: DataFrame with jackknifed value of mean and error
     """
+    print('make_jackknife')
     df = df.reset_index()
     block_size = df.loc[0, 'block_size']
     if bin_size == None:
@@ -242,7 +244,9 @@ def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataF
     else:
         bin_size = bin_size * block_size
     bin_size = (bin_size + block_size -1)//block_size
+    print(df)
     S_arr = np.array([df['S'].to_numpy()])
+    print(S_arr)
     mean, err = stat.jackknife_var_numba_binning(S_arr, trivial, get_bin_borders(S_arr.shape[1], bin_size))
     return pd.DataFrame({'S': [mean], 'err': [err], 'bin_size': [bin_size * block_size]})
 
@@ -281,6 +285,7 @@ def trivial(x: np.ndarray) -> np.ndarray:
         y[i] = x[0][i]
     return y
 
+@profile
 def main():
     """Read and process eos data for particular parameters (lattice_size, boundary, velocity, beta).
     Result of calculation is saved inside beta directory.
@@ -348,7 +353,7 @@ def main():
                     df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
                     for radius_sq in get_radii_sq(df['x'].max()):
                         df1 = df.loc[df['rad_sq'] <= radius_sq]
-                        df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'])['S'].agg([('S', 'mean')])\
+                        df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'], observed=False)['S'].agg([('S', 'mean')])\
                             .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
                         df_result.append(make_jackknife(df1))
                         df_result[-1]['box_size'] = coord_max - cut
