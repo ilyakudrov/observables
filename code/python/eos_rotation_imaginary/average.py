@@ -68,7 +68,7 @@ def read_blocks(path: str) -> pd.DataFrame:
 
     Returns: pandas DataFrame of the data
     """
-    return pd.read_csv(path, header=None,delimiter=' ', names=['x', 'y', '2', '3', '4', '5',
+    return pd.read_csv(path, header=None, delimiter=' ', names=['x', 'y', '2', '3', '4', '5',
                                                  '6', '7', '8', '9', '10', '11', '12',
                                                  '13', '14', '15', '16', '17', '18', 'S', '20', '21'])
 
@@ -206,21 +206,23 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
         for f in filenames:
             conf_start, conf_end = get_conf_range(f)
             if conf_start > confs_to_skip:
-                #print(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
+#                print(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
                 data = read_blocks(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
                 t, z, s = get_lattice_sizes(args.lattice_size)
 #                print(t, z, s)
                 if len(data.index) == s**2:
                     #data = data[['x', 'y', 'S']]
-                    data = data.drop(labels=['20', '21'])
+                    data = data.drop(labels=['20', '21'], axis=1)
                     data['block_size'] = get_block_size(f)
                     data['conf_start'] = conf_start + conf_last
                     data['conf_end'] = conf_end + conf_last
                     if bin_size is not None:
                         data['bin_size'] = bin_size
-                    data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
-                                    'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
+                    #data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
+                    #                'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
                     df = pd.concat([df, data])
+                else:
+                    print(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}', ' not complete')
         if len(filenames) != 0:
             _, conf_tmp = get_conf_range(filenames[-1])
             conf_last += conf_tmp
@@ -236,7 +238,6 @@ def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataF
 
     Returns: DataFrame with jackknifed values of mean and error
     """
-    print('make_jackknife')
     df = df.reset_index()
     block_size = df.loc[0, 'block_size']
     if bin_size == None:
@@ -244,8 +245,8 @@ def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataF
     else:
         bin_size = bin_size * block_size
     bin_size = (bin_size + block_size -1)//block_size
-    data_arr = df[['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
-                '13', '14', '15', '16', '17', '18', 'S']].to_numpy()
+    data_arr = df[['col2', 'col3', 'col4', 'col5', 'col6', 'col7', 'col8', 'col9', 'col10', 'col11', 'col12',
+                'col13', 'col14', 'col15', 'col16', 'col17', 'col18', 'S']].to_numpy().T
     S_mean, S_err = stat.jackknife_var_numba_binning(data_arr, trivial, get_bin_borders(data_arr.shape[1], bin_size))
     Jv_mean, Jv_err = stat.jackknife_var_numba_binning(data_arr, Jv, get_bin_borders(data_arr.shape[1], bin_size))
     Jv1_mean, Jv1_err = stat.jackknife_var_numba_binning(data_arr, Jv1, get_bin_borders(data_arr.shape[1], bin_size))
@@ -534,7 +535,6 @@ def AlabeT(x: np.ndarray) -> np.ndarray:
         y[i] = (x[0][i] + x[1][i] + x[6][i] + x[7][i] + x[14][i] - x[5][i]) / 2 - (x[2][i] + x[8][i] + x[12][i] + x[13][i] - x[3][i] - x[4][i] + x[16][i])
     return y
 
-@profile
 def main():
     """Read and process eos data for particular parameters (lattice_size, boundary, velocity, beta).
     Result of calculation is saved inside beta directory.
@@ -599,8 +599,10 @@ def main():
                 df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
                 df_result = []
                 for cut in range(0, coord_max - 2):
+                #for cut in range(0, 1):
                     df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
                     for radius_sq in get_radii_sq(df['x'].max()):
+                    #for radius_sq in [169**2]:
                         df1 = df.loc[df['rad_sq'] <= radius_sq]
                         df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'], observed=False)\
                             .agg(S=('S', 'mean'), col2=('2', 'mean'), col3=('3', 'mean'),\
