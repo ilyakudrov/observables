@@ -119,45 +119,61 @@ def read_data_single_copy(path, chains, conf_max, copy, copy_single):
 
 def fill_matrix(df):
     smearing_arr = df['smearing_step1'].unique()
-    print(smearing_arr)
+    # print(smearing_arr)
     n = len(smearing_arr)
     matrix = np.zeros((n, n), dtype=np.float64)
-    print('df matrix')
-    print(df)
+    # print('df matrix')
+    # print(df)
     for i in range(len(smearing_arr)):
         for j in range(len(smearing_arr)):
             if j >= i:
-                print(i, j)
-                print(smearing_arr[i], smearing_arr[j])
-                print('value', df.loc[(df['smearing_step1'] == smearing_arr[i]) & (df['smearing_step2'] == smearing_arr[j]), 'wilson_loop'])
-                print('value', df.loc[(df['smearing_step1'] == smearing_arr[i]) & (df['smearing_step2'] == smearing_arr[j]), 'wilson_loop'].values[0])
                 matrix[i][j] = df.loc[(df['smearing_step1'] == smearing_arr[i]) & (df['smearing_step2'] == smearing_arr[j]), 'wilson_loop'].values[0]
                 matrix[j][i] = df.loc[(df['smearing_step1'] == smearing_arr[i]) & (df['smearing_step2'] == smearing_arr[j]), 'wilson_loop'].values[0]
-    print('matrix')
-    print(matrix)
+    # print('matrix')
+    # print(matrix)
     return matrix
+
+# def truncate(a, N_trunc):
+#     w, v = scipy.linalg.eigh(a, subset_by_index=[0, N_trunc - 1])
+#     matrix = np.zeros((N_trunc, N_trunc), dtype=np.float64)
+#     for i in range(N_trunc):
+#         for j in range(N_trunc):
+#             matrix[i][j] =
 
 def gevp_simple(df, df_0):
     a = fill_matrix(df)
     b = fill_matrix(df_0)
+    # a = truncate(a, N_trunc)
+    # b = truncate(b, N_trunc)
     w = scipy.linalg.eigh(a, b, eigvals_only=True)
-    print(w)
-    print(w)
-    return w[0]
+    # w = scipy.linalg.eigh(a, eigvals_only=True)
+    # w = np.sort(w)
+    print('w', w)
+    return pd.DataFrame({'potential': [w[-1]]})
 
-def potenttial_gevp_simple(df):
+def potenttial_gevp_simple(df, t0):
     wilson_aver = df.groupby(['smearing_step1', 'smearing_step2', 'time_size'])['wilson_loop'].apply(np.mean)\
         .reset_index(level=['smearing_step1', 'smearing_step2', 'time_size'])
-    print('wilson_aver')
-    print(wilson_aver)
-    print('0 1')
-    print(wilson_aver[(wilson_aver['smearing_step1'] == 0) & (wilson_aver['smearing_step2'] == 1)])
-    print('1 11')
-    print(wilson_aver[(wilson_aver['smearing_step1'] == 0) & (wilson_aver['smearing_step2'] == 1)])
-    wilson_0 = wilson_aver[wilson_aver['time_size'] == 1]
-    wilson_aver = wilson_aver[wilson_aver['time_size'] != 1]
-    potential = wilson_aver.groupby('time_size').apply(gevp_simple, wilson_0)
-    return potential
+    print('wilson_aver', wilson_aver)
+    wilson_0 = wilson_aver[wilson_aver['time_size'] == t0]
+    wilson_aver = wilson_aver[wilson_aver['time_size'] != t0]
+    lambdas = wilson_aver.set_index('time_size').groupby('time_size').apply(gevp_simple, wilson_0, include_groups=False).reset_index(level='time_size').reset_index(drop=True)
+    print('lambdas', lambdas)
+    time_size_min = lambdas["time_size"].min()
+    time_size_max = lambdas["time_size"].max()
+    time_size = []
+    potential = []
+    for t in range(time_size_min, time_size_max):
+        time_size.append(t)
+        tmp = lambdas.loc[lambdas['time_size'] == t]
+        lambda1 = tmp.at[tmp.index[0], 'potential']
+        tmp = lambdas.loc[lambdas['time_size'] == t + 1]
+        lambda2 = tmp.at[tmp.index[0], 'potential']
+        if lambda1 / lambda2 > 0:
+            potential.append(np.log(lambda1 / lambda2))
+        else:
+            potential.append(0)
+    return pd.DataFrame({'time_size': time_size, 'potential': potential})
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--size', action="append")
@@ -215,7 +231,17 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         print('copy', copy)
         df = read_data_single_copy(path, chains, conf_max, copy, copy_single)
         print(df)
-        potential = df.groupby('space_size').apply(potenttial_gevp_simple)
+        t0 = 2
+        df = df[df['time_size'] >= t0]
+        df = df[df['smearing_step1'].isin([0, 1, 11, 41]) & df['smearing_step2'].isin([0, 1, 11, 41])]
+        # df = df[df['smearing_step1'].isin([0, 1, 11, 41, 71, 91]) & df['smearing_step2'].isin([0, 1, 11, 41, 71, 91])]
+        # df = df[df['smearing_step1'].isin([41, 71, 91]) & df['smearing_step2'].isin([41, 71, 91])]
+        # df = df[(df['smearing_step1'] <= 51) & (df['smearing_step2'] <= 51)]
+        # print(df)
+        # df = df[(df['time_size'] == 6) & (df['space_size'] == 6)]
+        potential = df.set_index('space_size').groupby('space_size').apply(potenttial_gevp_simple, t0, include_groups=False).reset_index(level='space_size')
+        print(potential)
+        # potential = potential.reset_index(level=['time_size', 'space_size'])
         print(potential)
     #     if len(df) == 0:
     #         print("no data")
@@ -240,10 +266,10 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     #     base_dir1 = '/binning'
     # else:
     #     base_dir1 = ''
-    # path_output = f"../../result/{base_dir1}/potential_gevp/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
-    # try:
-    #     os.makedirs(f'{path_output}')
-    # except:
-    #     pass
-    # df1.to_csv(
-    #     f"{path_output}/potential_{matrix_type}.csv", index=False)
+    path_output = f"../../result/potential_gevp/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+    try:
+        os.makedirs(f'{path_output}')
+    except:
+        pass
+    potential.to_csv(
+        f"{path_output}/potential_{matrix_type}.csv", index=False)

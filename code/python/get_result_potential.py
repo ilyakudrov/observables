@@ -225,7 +225,8 @@ betas = args.beta
 copies = args.copies
 smeared_array = args.smearing
 matrix_type_array = args.matrix_type
-operator_type = 'wilson_loop'
+# operator_type = 'wilson_loop'
+operator_type = 'wilson_gevp'
 representation = 'fundamental'
 additional_parameters_arr = args.additional_parameters
 
@@ -234,13 +235,20 @@ bin_max = 5
 bin_step = 1.3
 calculation_type = 'smearing'
 
+# if calculation_type == 'smearing':
+#     potential_parameters = ['smearing_step', 'r/a']
+#     CSV_names = ['smearing_step', "T", "r/a", "wilson_loop"]
+#     names_out = ['smearing_step', 'T', 'r/a', 'aV(r)', 'err']
+#     dtype = {'smearing_step': np.int32, "T": np.int32,
+#              "r/a": np.int32, "wilson_loop": np.float64}
+#     base_dir = 'smearing'
 if calculation_type == 'smearing':
     potential_parameters = ['smearing_step', 'r/a']
-    CSV_names = ['smearing_step', "T", "r/a", "wilson_loop"]
-    names_out = ['smearing_step', 'T', 'r/a', 'aV(r)', 'err']
-    dtype = {'smearing_step': np.int32, "T": np.int32,
+    CSV_names = ['smearing_step1', 'smearing_step2', "T", "r/a", "wilson_loop"]
+    names_out = ['smearing_step1', 'smearing_step2', 'T', 'r/a', 'aV(r)', 'err']
+    dtype = {'smearing_step1': np.int32, 'smearing_step2': np.int32, "T": np.int32,
              "r/a": np.int32, "wilson_loop": np.float64}
-    base_dir = 'smearing'
+    base_dir = ''
 
 elif calculation_type == 'no_smearing':
     potential_parameters = ['r/a']
@@ -264,8 +272,8 @@ chains = ['/', 's0', 's1', 's2', 's3',
 # adjoint_fix = True
 adjoint_fix = False
 
-#base_path = "../../data"
-base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
+base_path = "../../data"
+# base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 
 iter_arrays = [matrix_type_array, smeared_array,
                betas, conf_sizes, mu1, additional_parameters_arr]
@@ -283,8 +291,13 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     start = time.time()
     for copy in copy_range:
         print(copy)
+        print(path)
         df = read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy)
+        print(df)
         #df = df.persist()
+        df = df[df['smearing_step1'] == df['smearing_step2']]
+        df = df.rename({'smearing_step1': 'smearing_step'}, axis=1)
+        df = df.drop('smearing_step2', axis=1)
         if len(df) == 0:
             print("no data")
         else:
