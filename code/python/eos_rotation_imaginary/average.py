@@ -61,14 +61,14 @@ def get_bin_borders(data_size: int, bin_size: int) -> np.ndarray:
         idx = (idx + 1) % nbins
     return np.array([0] + list(itertools.accumulate(bin_sizes)))
 
-def read_blocks(path: str) -> pd.DataFrame:
+def read_blocks(path: str) -> dd.DataFrame:
     """Read csv file of eos_rotation_imaginary data.
 
     Agrs: path to the csv file
 
     Returns: pandas DataFrame of the data
     """
-    return pd.read_csv(path, header=None, delimiter=' ', names=['x', 'y', '2', '3', '4', '5',
+    return dd.read_csv(path, header=None, delimiter=' ', names=['x', 'y', '2', '3', '4', '5',
                                                  '6', '7', '8', '9', '10', '11', '12',
                                                  '13', '14', '15', '16', '17', '18', 'S', '20', '21'])
 
@@ -181,7 +181,7 @@ def bin_length(bins_path: str, additional_path: str, beta: str) -> int:
         bin_size = df_bins.loc[df_bins['beta'] == 0, 'bin_size'].values[0]
     return bin_size
 
-def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_size: Optional[int] = None) -> pd.DataFrame:
+def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_size: Optional[int] = None) -> dd.DataFrame:
     """Read and concatenate eos data for particlular parameters
     (lattice_size, boundary, velocity, beta).
 
@@ -193,7 +193,8 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
 
     Returns: DataFrame with the data to process
     """
-    df = pd.DataFrame()
+    #df = dd.DataFrame()
+    df = []
     print('therm_length: ', therm_length)
     chain_dirs = get_dir_names(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}')
     chain_dirs.sort()
@@ -220,14 +221,15 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
                         data['bin_size'] = bin_size
                     #data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
                     #                'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
-                    df = pd.concat([df, data])
+                    #df = dd.concat([df, data])
+                    df.append(data)
                 else:
                     print(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}', ' not complete')
         if len(filenames) != 0:
             _, conf_tmp = get_conf_range(filenames[-1])
             conf_last += conf_tmp
             confs_to_skip -= conf_tmp
-    return df
+    return dd.concat(df)
 
 def make_jackknife(df: pd.DataFrame, bin_size: Optional[int] = None) -> pd.DataFrame:
     """Make blocked jackknife for data from df.
@@ -589,11 +591,11 @@ def main():
         bin_size = bin_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log',
                               f'{args.spec_additional_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log', args.beta)
         df = get_data(args.base_path, args, therm_length, bin_size)
-        if not df.empty:
-            print('data_size', df['conf_end'].max() - df['conf_start'].min())
+        if not len(df.index) == 0:
+            print('data_size', df['conf_end'].max().compute() - df['conf_start'].min().compute())
             print('bin_size', bin_size)
-            if df['conf_end'].max() - df['conf_start'].min() >= 3 * bin_size:
-                coord_max = df['x'].max()//2
+            if df['conf_end'].max().compute() - df['conf_start'].min().compute() >= 3 * bin_size:
+                coord_max = df['x'].max().compute()//2
                 df['x'] = df['x'] - coord_max
                 df['y'] = df['y'] - coord_max
                 df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
@@ -612,6 +614,7 @@ def main():
                             col13=('13', 'mean'), col14=('14', 'mean'), col15=('15', 'mean'),\
                             col16=('16', 'mean'), col17=('17', 'mean'), col18=('18', 'mean'))\
                             .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
+                        print(df1)
                         df_result.append(make_jackknife(df1))
                         df_result[-1]['box_size'] = coord_max - cut
                         df_result[-1]['radius'] = math.sqrt(radius_sq)

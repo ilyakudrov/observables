@@ -67,7 +67,7 @@ else:
 data = []
 for chain in chains:
     for conf in range(1, conf_max + 1):
-        print(conf)
+        #print(conf)
         densities = []
         densities_percolating = []
         copies = []

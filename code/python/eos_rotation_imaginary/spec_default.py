@@ -28,10 +28,22 @@ def find_lattices(path, lattice_names):
     return directories
 
 def get_lengths(lattice_name):
+    if lattice_name == '4x24x97sq':
+        return 1000, 100
+    elif lattice_name == '24x24x97sq':
+        return 200, 20
     if lattice_name == '5x30x121sq':
         return 1500, 150
     elif lattice_name == '30x30x121sq':
         return 200, 20
+    if lattice_name == '5x30x181sq':
+        return 700, 70
+    elif lattice_name == '30x30x181sq':
+        return 100, 10
+    if lattice_name == '5x30x81sq':
+        return 3000, 300
+    elif lattice_name == '30x30x81sq':
+        return 500, 50
     elif lattice_name == '6x36x145sq':
         return 1500, 150
     elif lattice_name == '36x36x145sq':
@@ -73,8 +85,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--data_paths', nargs='+')
 args = parser.parse_args()
 print('args: ', args)
-lattice_names = ['30x30x121sq', '36x36x145sq', '42x42x169sq',
-                '5x30x121sq', '6x36x145sq', '7x42x169sq']
+lattice_names = ['24x24x97sq', '30x30x121sq', '30x30x181sq', '30x30x81sq', '36x36x145sq', '42x42x169sq',
+                '4x24x97sq', '5x30x121sq', '5x30x181sq', '5x30x81sq', '6x36x145sq', '7x42x169sq']
 df = pd.DataFrame()
 for base_path in args.data_paths:
     lattice_directories = find_lattices(base_path, lattice_names)

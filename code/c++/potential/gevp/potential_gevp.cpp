@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     if (string(argv[i]) == "-dir_path") {
       dir_path = argv[++i];
     } else if (string(argv[i]) == "-file_start") {
-      file_start = stoi(string(argv[++i]));
+      file_start = argv[++i];
     } else if (string(argv[i]) == "-file_end") {
       file_end = argv[++i];
     } else if (string(argv[i]) == "-output_path") {
@@ -37,6 +37,14 @@ int main(int argc, char *argv[]) {
       smearing_max = stoi(string(argv[++i]));
     }
   }
+  cout << "dir_path " << dir_path << endl;
+  cout << "file_start " << file_start << endl;
+  cout << "file_end " << file_end << endl;
+  cout << "output_path " << output_path << endl;
+  cout << "padding " << padding << endl;
+  cout << "num_max " << num_max << endl;
+  cout << "smearing_max " << smearing_max << endl;
+
   std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data =
       read_data(dir_path, file_start, file_end, padding, num_max, smearing_max);
   std::map<std::tuple<int, int>, std::tuple<double, double>> potential =

@@ -206,20 +206,15 @@ def get_data(base_path: str, args: argparse.Namespace, therm_length: int, bin_si
         for f in filenames:
             conf_start, conf_end = get_conf_range(f)
             if conf_start > confs_to_skip:
-#                print(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
                 data = read_blocks(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}')
                 t, z, s = get_lattice_sizes(args.lattice_size)
-#                print(t, z, s)
                 if len(data.index) == s**2:
-                    #data = data[['x', 'y', 'S']]
                     data = data.drop(labels=['20', '21'], axis=1)
                     data['block_size'] = get_block_size(f)
                     data['conf_start'] = conf_start + conf_last
                     data['conf_end'] = conf_end + conf_last
                     if bin_size is not None:
                         data['bin_size'] = bin_size
-                    #data = data.astype({'x': 'int32', 'y': 'int32', 'block_size': 'int32',
-                    #                'conf_start': 'int32', 'conf_end': 'int32', 'bin_size': 'int32','S': 'float64'})
                     df = pd.concat([df, data])
                 else:
                     print(f'{base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/{args.beta}/{chain}/{f}', ' not complete')
@@ -535,6 +530,12 @@ def AlabeT(x: np.ndarray) -> np.ndarray:
         y[i] = (x[0][i] + x[1][i] + x[6][i] + x[7][i] + x[14][i] - x[5][i]) / 2 - (x[2][i] + x[8][i] + x[12][i] + x[13][i] - x[3][i] - x[4][i] + x[16][i])
     return y
 
+def move_border(row, coord_max):
+    if row['x'] == 0 or row['x'] == coord_max or row['y'] == 0 or row['y'] == coord_max:
+        return row['rad_sq'] + coord_max**2
+    else:
+        return row['rad_sq']
+
 def main():
     """Read and process eos data for particular parameters (lattice_size, boundary, velocity, beta).
     Result of calculation is saved inside beta directory.
@@ -589,13 +590,21 @@ def main():
         bin_size = bin_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log',
                               f'{args.spec_additional_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log', args.beta)
         df = get_data(args.base_path, args, therm_length, bin_size)
-        if not df.empty:
+        if not len(df.index) == 0:
             print('data_size', df['conf_end'].max() - df['conf_start'].min())
             print('bin_size', bin_size)
             if df['conf_end'].max() - df['conf_start'].min() >= 3 * bin_size:
-                df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
-                df_result = df.groupby(['x', 'y']).apple(make_jackknife(df)).reset_index(level=['x', 'y'])
+                df_result = df.groupby(['x', 'y']).apply(make_jackknife).reset_index(level=['x', 'y'])
                 df_result.to_csv(f'{result_path}/observables_distribution.csv', sep=' ', index=False)
+                coord_max = df['x'].max()
+                coord_middle = df['x'].max()//2
+                df['rad_sq'] = (df['x'] - coord_middle) ** 2 + (df['y'] - coord_middle) ** 2
+                df['rad_sq'] = df.apply(move_border, axis=1, coord_max=coord_max)
+                obs_arr = ['S', 'col2', 'col3', 'col4', 'col5', 'col6', 'col7', 'col8', 'col9', 'col10', 'col11', 'col12', 'col13', 'col14', 'col15', 'col16', 'col17', 'col18']
+                group_arr = ['conf_start', 'conf_end', 'block_size', 'bin_size', 'rad_sq']
+                df[obs_arr] = df.groupby(group_arr)[obs_arr].transform('mean')
+                df_result = df.groupby(['x', 'y']).apply(make_jackknife).reset_index(level=['x', 'y'])
+                df_result.to_csv(f'{result_path}/observables_distribution_aver.csv', sep=' ', index=False)
         else:
             #raise Exception('No data found')
             print('No data found')
