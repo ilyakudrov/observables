@@ -3,16 +3,26 @@ import seaborn
 import matplotlib.pyplot as plt
 from PIL import Image
 
-def save_image(image_path, image_name, fg, save_black=False):
+def save_image(image_path, image_name, fg, format='png', save_black=False):
     try:
         os.makedirs(image_path)
     except:
         pass
 
-    output_path = f'{image_path}/{image_name}.pdf'
-    fg.savefig(output_path, dpi=700, facecolor='white', format='pdf')
+    output_path = f'{image_path}/{image_name}.{format}'
+    fg.savefig(output_path, dpi=800, facecolor='white', format=format)
     if save_black:
         Image.open(f'{output_path}.png').convert('L').save(f'{output_path}_bw.png')
+
+def save_image_plt(image_path, image_name, dpi=800):
+    try:
+        os.makedirs(image_path)
+    except:
+        pass
+
+    output_path = f'{image_path}/{image_name}'
+    print(output_path)
+    plt.savefig(output_path, dpi=dpi)
 
 def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err=None, df_fits=None, black_line_y=None, dashed_line_y=None, markers_different=False, color_palette='bright', save_figure=False):
     markers_arr = ['o', '^', 's', 'D', 'P', 'X', 'v', '*']
