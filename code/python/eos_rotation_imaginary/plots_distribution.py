@@ -83,15 +83,16 @@ def heatmap_errorbar(df, subplot_ratio, observable, image_path, image_name):
             df_tmp = df_tmp.loc[:, ['x', 'y', observable]]
             df_tmp = gaussian_smearing(df_tmp, observable)
             print(df_tmp)
-            df_tmp = df_tmp.pivot(columns='x', index='y', values=observable)
             end = time.time()
             print("time1 = %s" % (end - start))
             start = time.time()
-            n = df_tmp['x'].max * 2 + 1
+            x_max = df_tmp['x'].max()
+            n = x_max * 2 + 1
             df_tmp = df_tmp[observable].to_numpy()
             df_tmp = np.reshape(df_tmp, (n, n))
-            ax[i * 2, j].imshow(df_tmp)
-            #seaborn.heatmap(df_tmp, ax=ax[i * 2, j], vmin=vmin, vmax=vmax, square=True, annot=False, cmap='RdBu')
+            fig = ax[i * 2, j].imshow(df_tmp, cmap='RdBu', vmin=vmin, vmax=vmax, extent=[-x_max, x_max, -x_max, x_max])
+            cbar = ax[i * 2, j].figure.colorbar(fig, ax=ax[i * 2, j])
+            cbar.ax.set_ylabel('', rotation=-90, va="bottom")
             end = time.time()
             print("heatmap time = %s" % (end - start))
             start = time.time()
@@ -99,10 +100,10 @@ def heatmap_errorbar(df, subplot_ratio, observable, image_path, image_name):
             ax[i * 2, j].set_title(f'beta = {betas[j]} | velocity = {velocities[i]}')
             end = time.time()
             print("errorbar time = %s" % (end - start))
-    if 30 * len(betas) * len(velocities) * 400**2 > 2**16:
-        dpi = round(np.sqrt(2**16 / (30 * len(betas) * len(velocities)))) - 1
+    dpi = 300
+    # if 30 * len(betas) * len(velocities) * 800**2 > 2**16:
+    #     dpi = round(np.sqrt(2**16 / (30 * len(betas) * len(velocities)))) - 1
     plots.save_image_plt(image_path, image_name, dpi=dpi)
-    plt.show()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--observable')
