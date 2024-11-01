@@ -31,11 +31,12 @@ def read_data(path, observable):
         beta_dirs.sort()
         print(beta_dirs)
         for beta in beta_dirs:
-            df_tmp = pd.read_csv(f'{path}/{velocity}/{beta}/observables_distribution_aver.csv', delimiter=' ')
-            df_tmp = df_tmp[['x', 'y', observable, f'{observable}_err']]
-            df_tmp['velocity'] = velocity
-            df_tmp['beta'] = float(beta)
-            df = pd.concat([df, df_tmp])
+            if os.path.isfile(f'{path}/{velocity}/{beta}/observables_distribution_aver.csv'):
+                df_tmp = pd.read_csv(f'{path}/{velocity}/{beta}/observables_distribution_aver.csv', delimiter=' ')
+                df_tmp = df_tmp[['x', 'y', observable, f'{observable}_err']]
+                df_tmp['velocity'] = velocity
+                df_tmp['beta'] = float(beta)
+                df = pd.concat([df, df_tmp])
     return df
 
 def gaussian_smearing(df, observable):
@@ -67,7 +68,7 @@ def heatmap_errorbar(df, subplot_ratio, observable, image_path, image_name):
     vmin = -vmax
     gs_kw = dict(height_ratios=list([subplot_ratio if i % 2 == 0 else 1 for i in range(len(velocities) * 2)]))
     fig, ax = plt.subplots(nrows=len(velocities) * 2, ncols=len(betas), gridspec_kw=gs_kw)
-    fig.set_size_inches(5 * len(betas), 6 * len(velocities))
+    fig.set_size_inches(8 * len(betas), 6 * len(velocities))
     fig.suptitle(observable, fontsize=16)
     df['x'] = df['x'] - df['x'].max()//2
     df['y'] = df['y'] - df['y'].max()//2
@@ -100,9 +101,12 @@ def heatmap_errorbar(df, subplot_ratio, observable, image_path, image_name):
             ax[i * 2, j].set_title(f'beta = {betas[j]} | velocity = {velocities[i]}')
             end = time.time()
             print("errorbar time = %s" % (end - start))
-    dpi = 300
-    # if 30 * len(betas) * len(velocities) * 800**2 > 2**16:
-    #     dpi = round(np.sqrt(2**16 / (30 * len(betas) * len(velocities)))) - 1
+    dpi = 100
+    #print(8 * 6 * len(betas) * len(velocities) * dpi**2)
+    #print(
+    #if 8 * len(betas) * dpi > 2**16:
+    #     dpi = 2**16 // (8 * len(betas))
+    print(dpi)
     plots.save_image_plt(image_path, image_name, dpi=dpi)
 
 parser = argparse.ArgumentParser()
@@ -124,4 +128,4 @@ df_0 = df_tmp.merge(df_0, how='left', on=['velocity', 'beta', 'x', 'y'])
 df_T = df_tmp.merge(df_T, how='left', on=['velocity', 'beta', 'x', 'y'])
 df_T[observable] = df_T[observable] - df_0[observable]
 df_T[f'{observable}_err'] = np.sqrt(df_T[f'{observable}_err'] ** 2 + df_0[f'{observable}_err'] ** 2)
-heatmap_errorbar(df_T, 3, observable, f'{args.images_path}/{args.lattice_size_T}/{args.boundary}', f'distribution_common_{observable}')
+heatmap_errorbar(df_T, 3, observable, f'{args.images_path}/{args.lattice_size_T}/{args.boundary}', f'distribution_common_{observable}.png')
