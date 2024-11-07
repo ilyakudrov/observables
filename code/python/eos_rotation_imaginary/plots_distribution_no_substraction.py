@@ -119,6 +119,6 @@ args = parser.parse_args()
 print('args: ', args)
 
 observable = args.observable
-df = read_data(f'{args.base_path}/{args.lattice_size_0}/{args.boundary}', observable)
+df = read_data(f'{args.base_path}/{args.lattice_size}/{args.boundary}', observable)
 df[f'{observable}_err'] = np.sqrt(df[f'{observable}_err'] ** 2 + df[f'{observable}_err'] ** 2)
-heatmap_errorbar(df, 3, observable, f'{args.images_path}/{args.lattice_size_T}/{args.boundary}', f'distribution_common_no_substraction_{observable}.png')
+heatmap_errorbar(df, 3, observable, f'{args.images_path}/{args.lattice_size}/{args.boundary}', f'distribution_common_no_substraction_{observable}.png')
