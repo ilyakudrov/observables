@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
   int padding;
   int num_max;
   int smearing_max;
+  int t0;
   for (int i = 1; i < argc; i++) {
     if (string(argv[i]) == "-dir_path") {
       dir_path = argv[++i];
@@ -35,6 +36,8 @@ int main(int argc, char *argv[]) {
       num_max = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-smearing_max") {
       smearing_max = stoi(string(argv[++i]));
+    } else if (string(argv[i]) == "-t0") {
+      t0 = stoi(string(argv[++i]));
     }
   }
   cout << "dir_path " << dir_path << endl;
@@ -44,11 +47,12 @@ int main(int argc, char *argv[]) {
   cout << "padding " << padding << endl;
   cout << "num_max " << num_max << endl;
   cout << "smearing_max " << smearing_max << endl;
+  cout << "t0 " << t0 << endl;
 
   std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data =
       read_data(dir_path, file_start, file_end, padding, num_max, smearing_max);
   std::map<std::tuple<int, int>, std::tuple<double, double>> potential =
-      calculate_potential(data, 1);
+      calculate_potential(data, 1, t0);
   for (auto const &[key, value] : potential) {
     cout << get<0>(key) << ", " << get<1>(key) << ": " << get<0>(value)
          << " +- " << get<1>(value) << endl;
