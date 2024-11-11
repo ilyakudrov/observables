@@ -139,7 +139,7 @@ std::tuple<double, double> potential_aver(std::vector<double> &lambda_t1,
 
 std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
     std::map<std::tuple<int, int>, std::vector<std::vector<double>>> &data,
-    int bin_size) {
+    int bin_size, int t0) {
   std::map<std::tuple<int, int>, std::tuple<double, double>> potential;
   std::map<int, std::vector<int>> sizes = get_sizes(data);
   std::vector<long int> bin_borders =
@@ -147,15 +147,15 @@ std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
   for (const auto &pair : sizes) {
     std::vector<std::vector<double>> lambdas;
     std::vector<std::vector<double>> data_jackknife_0 =
-        do_jackknife(data[{pair.first, pair.second[0]}], bin_borders);
-    for (int t = 1; t < pair.second.size(); t++) {
+        do_jackknife(data[{pair.first, pair.second[t0]}], bin_borders);
+    for (int t = t0 + 1; t < pair.second.size(); t++) {
       std::vector<std::vector<double>> data_jackknife_t =
           do_jackknife(data[{pair.first, pair.second[t]}], bin_borders);
       lambdas.push_back(make_gevp(data_jackknife_0, data_jackknife_t));
     }
-    for (int t = 1; t < pair.second.size() - 1; t++) {
+    for (int t = t0 + 1; t < pair.second.size() - 1; t++) {
       potential[{pair.first, pair.second[t]}] =
-          potential_aver(lambdas[t - 1], lambdas[t]);
+          potential_aver(lambdas[t - 1 - t0], lambdas[t - t0]);
     }
   }
   return potential;
