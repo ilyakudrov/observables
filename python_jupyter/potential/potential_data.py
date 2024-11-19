@@ -155,4 +155,4 @@ def get_potantial_df(paths, coluns_to_multiindex = []):
         if coluns_to_multiindex:
             df[-1] = df[-1].set_index(coluns_to_multiindex, append=True)
     df = pd.concat(df).reset_index(level=0, drop=True)
-    return df[df['aV(r)'] != 0]
+    return df
