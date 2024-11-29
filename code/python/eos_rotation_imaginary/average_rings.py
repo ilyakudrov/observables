@@ -590,33 +590,44 @@ def main():
                                              f'{args.spec_additional_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
         bin_size = bin_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log',
                               f'{args.spec_additional_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log', args.beta)
-        df = get_data(args.base_path, args, therm_length, bin_size)
+        df = get_data(args.base_path, args, therm_length, bin_size).compute()
         if not len(df.index) == 0:
-            print('data_size', df['conf_end'].max().compute() - df['conf_start'].min().compute())
+            print('data_size', df['conf_end'].max() - df['conf_start'].min())
             print('bin_size', bin_size)
-            if df['conf_end'].max().compute() - df['conf_start'].min().compute() >= 3 * bin_size:
-                coord_max = df['x'].max().compute()//2
+            if df['conf_end'].max() - df['conf_start'].min() >= 3 * bin_size:
+                coord_max = df['x'].max()//2
                 df['x'] = df['x'] - coord_max
                 df['y'] = df['y'] - coord_max
                 df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
                 df_result = []
-                for thickness in [1, 2, 3, 4, 5]:
-                    rad_inner = 1
-                    while rad_inner < coord_max * np.sqrt(2):
-                        df1 = df.loc[(df['rad_sq'] >= rad_inner ** 2) & (df['rad_sq'] < (rad_inner + thickness) ** 2)]
-                        rad_aver = np.sqrt(df['rad_sq']).mean()
-                        df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'], observed=False)\
-                            .agg(S=('S', 'mean'), col2=('2', 'mean'), col3=('3', 'mean'),\
-                            col4=('4', 'mean'), col5=('5', 'mean'), col6=('6', 'mean'),\
-                            col7=('7', 'mean'), col8=('8', 'mean'), col9=('9', 'mean'),\
-                            col10=('10', 'mean'), col11=('11', 'mean'), col12=('12', 'mean'),\
-                            col13=('13', 'mean'), col14=('14', 'mean'), col15=('15', 'mean'),\
-                            col16=('16', 'mean'), col17=('17', 'mean'), col18=('18', 'mean'))\
-                            .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
-                        df_result.append(make_jackknife(df1))
-                        df_result[-1]['rad_aver'] = rad_aver
-                        df_result[-1]['thickness'] = thickness
-                        rad_inner = rad_inner + thickness
+                Nt = int(args.lattice_size[:args.lattice_size.find('x')])
+                cut_step = Nt
+                if Nt > 10:
+                    cut_step = Nt // 6
+                for cut in [0, cut_step, 2 * cut_step]:
+                    print('cut = ', cut)
+                    df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
+                    for thickness in [cut_step, 2 * cut_step, cut_step * 3]:
+                        print('thickness = ', thickness)
+                        rad_inner = 1
+                        while rad_inner < coord_max * np.sqrt(2):
+                            df1 = df.loc[(df['rad_sq'] >= rad_inner ** 2) & (df['rad_sq'] < (rad_inner + thickness) ** 2)]
+                            rad_aver = np.sqrt(df1['rad_sq']).mean()
+                            df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'], observed=False)\
+                                .agg(S=('S', 'mean'), col2=('2', 'mean'), col3=('3', 'mean'),\
+                                col4=('4', 'mean'), col5=('5', 'mean'), col6=('6', 'mean'),\
+                                col7=('7', 'mean'), col8=('8', 'mean'), col9=('9', 'mean'),\
+                                col10=('10', 'mean'), col11=('11', 'mean'), col12=('12', 'mean'),\
+                                col13=('13', 'mean'), col14=('14', 'mean'), col15=('15', 'mean'),\
+                                col16=('16', 'mean'), col17=('17', 'mean'), col18=('18', 'mean'))\
+                                .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
+                            #print('len ', len(df1.index))
+                            if len(df1.index) > 0:
+                                df_result.append(make_jackknife(df1))
+                                df_result[-1]['rad_aver'] = rad_aver
+                                df_result[-1]['thickness'] = thickness
+                                df_result[-1]['cut'] = cut
+                            rad_inner = rad_inner + thickness
                 df_result = pd.concat(df_result)
                 df_result.to_csv(f'{result_path}/observables_ring_result.csv', sep=' ', index=False)
         else:
