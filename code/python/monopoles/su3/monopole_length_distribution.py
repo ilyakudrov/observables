@@ -15,14 +15,18 @@ def functional_bin(df, bins='auto'):
     if type(bins) == float:
         bins = math.ceil((df['functional'].max() - df['functional'].min()) / bins)
     bins = np.histogram_bin_edges(df['functional'], bins=bins)
+    df['bin'] = 0
     for i in range(0, len(bins) - 2):
-        df_tmp = df[(df['functional'] >= bins[i]) & (df['functional'] < bins[i + 1])]
-        df_tmp['bin'] = int(i)
-        df_binned = pd.concat([df_binned, df_tmp])
-    df_tmp = df[(df['functional'] >= bins[len(bins) - 2]) & (df['functional'] <= bins[len(bins) - 1])]
-    df_tmp['bin'] = int(len(bins) - 2)
-    df_binned = pd.concat([df_binned, df_tmp])
-    return df_binned.reset_index(drop=True)
+        # df_tmp = df[(df['functional'] >= bins[i]) & (df['functional'] < bins[i + 1])]
+        # df_tmp.loc[:, 'bin'] = int(i)
+        # df_binned = pd.concat([df_binned, df_tmp])
+        df.loc[(df['functional'] >= bins[i]) & (df['functional'] < bins[i + 1]), 'bin'] = int(i)
+    # df_tmp = df[(df['functional'] >= bins[len(bins) - 2]) & (df['functional'] <= bins[len(bins) - 1])]
+    # df_tmp.loc[:, 'bin'] = int(len(bins) - 2)
+    df.loc[(df['functional'] >= bins[len(bins) - 2]) & (df['functional'] <= bins[len(bins) - 1]), 'bin'] = int(len(bins) - 2)
+    # df_binned = pd.concat([df_binned, df_tmp])
+    # return df_binned.reset_index(drop=True)
+    return df.reset_index(drop=True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--size')
@@ -46,7 +50,7 @@ mu1 = ['/']
 chains = ['/', 's0', 's1', 's2', 's3',
            's4', 's5', 's6', 's7', 's8', 's9', 's10']
 
-#base_path = "../../../../data"
+# base_path = "../../../../data"
 base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 
 start = time.time()
@@ -68,25 +72,21 @@ for chain in chains:
             data_functional[-1]['conf'] = chain + '-' + str(conf)
             for copy in copy_range:
                 path_unwrapped = f'{path}/{chain}/clusters_unwrapped/clusters_unwrapped_{conf:04}_{copy}'
+                # print(path_unwrapped)
                 if os.path.isfile(path_unwrapped):
                     data.append(pd.read_csv(path_unwrapped))
                     data[-1]['conf'] = chain + '-' + str(conf)
                     data[-1]['copy'] = copy
 data = pd.concat(data)
 data = data[data['length'] <= args.percolating_threshold]
-data = data.groupby(['copy', 'conf', 'length']).agg(density=('density', 'mean'))
 data['density'] = data['length'] * data['number'] / lattice_volume / r0 ** 3
-data = data.drop(['length', 'number'], axis=1)
-print(data)
+data = data.drop(['number'], axis=1)
+data = data.groupby(['copy', 'conf', 'length']).agg(density=('density', 'mean')).reset_index(level=['copy', 'conf', 'length'])
 data_functional = pd.concat(data_functional)
 data_functional['functional'] = (1 - data_functional['functional']) * 3/2
-print(data_functional)
 data = data.merge(data_functional, how='inner', on=['copy', 'conf'])
-print(data)
-data = data.set_index('length').groupby('length').apply(functional_bin, include_groups=False).reset_index(level='length')
-print(data)
+data = data.set_index(['length', 'copy']).groupby(['length', 'copy']).apply(functional_bin, include_groups=False).reset_index(level=['length', 'copy'])
 data = data.groupby(['bin', 'length']).agg(density=('density', 'mean'), std_density=('density', 'sem'), functional=('functional', 'mean')).reset_index(level=['length', 'bin'])
-print(data)
 data = data.drop('bin', axis=1)
 path_output = f"../../../../result/monopoles_su3/{conf_type}/{args.size}/{args.beta}/{args.additional_parameters}"
 try:
