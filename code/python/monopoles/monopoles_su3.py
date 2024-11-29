@@ -74,6 +74,8 @@ for chain in chains:
         for copy in copy_range:
             path_wrapped = f'{path}/{chain}/clusters_wrapped/clusters_wrapped_{conf:04}_{copy}'
             path_unwrapped = f'{path}/{chain}/clusters_unwrapped/clusters_unwrapped_{conf:04}_{copy}'
+            #print(path_wrapped)
+            #print(path_unwrapped)
             if (os.path.isfile(path_wrapped)) and (os.path.isfile(path_unwrapped)):
                 df_wrapped = pd.read_csv(path_wrapped)
                 df_unwrapped = pd.read_csv(path_unwrapped)

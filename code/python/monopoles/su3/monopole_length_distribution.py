@@ -7,7 +7,7 @@ import pandas as pd
 import argparse
 
 sys.path.append(os.path.join(os.path.dirname(
-    os.path.abspath(__file__)), "..", "..", "..", "python_jupyter", "common"))
+    os.path.abspath(__file__)), "..", "..", "..", "..", "python_jupyter", "common"))
 import scaler
 
 def functional_bin(df, bins='auto'):
@@ -46,8 +46,8 @@ mu1 = ['/']
 chains = ['/', 's0', 's1', 's2', 's3',
            's4', 's5', 's6', 's7', 's8', 's9', 's10']
 
-base_path = "../../../data"
-# base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
+#base_path = "../../../../data"
+base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 
 start = time.time()
 print('beta: ', args.beta,' conf_size: ', args.size, ' additional_parameters: ', args.additional_parameters)
@@ -64,7 +64,7 @@ for chain in chains:
     for conf in range(1, conf_max + 1):
         path_functional = f'{base_path}/mag/functional/su3/{conf_type}/{args.size}/{args.beta}/{args.additional_parameters}/{chain}/functional_{conf:0{args.functional_padding}}'
         if os.path.isfile(path_functional):
-            data_functional.append(path_functional)
+            data_functional.append(pd.read_csv(path_functional))
             data_functional[-1]['conf'] = chain + '-' + str(conf)
             for copy in copy_range:
                 path_unwrapped = f'{path}/{chain}/clusters_unwrapped/clusters_unwrapped_{conf:04}_{copy}'
@@ -77,13 +77,18 @@ data = data[data['length'] <= args.percolating_threshold]
 data = data.groupby(['copy', 'conf', 'length']).agg(density=('density', 'mean'))
 data['density'] = data['length'] * data['number'] / lattice_volume / r0 ** 3
 data = data.drop(['length', 'number'], axis=1)
+print(data)
 data_functional = pd.concat(data_functional)
 data_functional['functional'] = (1 - data_functional['functional']) * 3/2
+print(data_functional)
 data = data.merge(data_functional, how='inner', on=['copy', 'conf'])
+print(data)
 data = data.set_index('length').groupby('length').apply(functional_bin, include_groups=False).reset_index(level='length')
+print(data)
 data = data.groupby(['bin', 'length']).agg(density=('density', 'mean'), std_density=('density', 'sem'), functional=('functional', 'mean')).reset_index(level=['length', 'bin'])
+print(data)
 data = data.drop('bin', axis=1)
-path_output = f"../../../result/monopoles_su3/{conf_type}/{args.size}/{args.beta}/{args.additional_parameters}"
+path_output = f"../../../../result/monopoles_su3/{conf_type}/{args.size}/{args.beta}/{args.additional_parameters}"
 try:
     os.makedirs(f'{path_output}')
 except:
