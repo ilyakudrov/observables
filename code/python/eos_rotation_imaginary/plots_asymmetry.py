@@ -156,6 +156,7 @@ df = read_data(path, ['Ae', 'Am'])
 df = df[df['beta'] >= 3.85]
 df['nt'] = df['lattice'].apply(lambda x: int(x[:x.find('x')]))
 df['ns'] = df['lattice'].apply(lambda x: int(x[x.rfind('x') + 1:]))
+df['R'] = df['ns'] // 2
 df = df[df['box_size'] == df['ns'] // 2 - df['nt']]
 df = df[np.isclose(df['radius'], df['box_size'] * np.sqrt(2))]
 scale_setter = scale_setters.ExtendedSymanzikScaleSetter()
@@ -168,7 +169,7 @@ df['T'] = df['a_crit'] / df['a_GeV']
 df['T'] = df.apply(lambda x: 0 if x['nt'] >= 10 else x['T'], axis=1)
 df['y'] = df['y'] * df['beta'] / 6 / df['a_GeV'] ** 4
 df['err'] = df['err'] * df['beta'] / 6 / df['a_GeV'] ** 4
-df['velocity'] = df['velocity'] / df['a_GeV']
+df['velocity'] = df['velocity'] / df['a_GeV'] / df['R']
 df['y'] = -df['y']
 T_arr = get_T_arr(df)
 #print(T_arr)
