@@ -24,7 +24,6 @@ int main(int argc, char *argv[]) {
   int num_max;
   int smearing_max;
   int t0;
-  bool copies;
   for (int i = 1; i < argc; i++) {
     if (string(argv[i]) == "-dir_path") {
       dir_path = argv[++i];
@@ -46,8 +45,6 @@ int main(int argc, char *argv[]) {
       smearing_max = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-t0") {
       t0 = stoi(string(argv[++i]));
-    } else if (string(argv[i]) == "-copies") {
-      istringstream(string(argv[++i])) >> copies;
     }
   }
   cout << "dir_path " << dir_path << endl;
@@ -58,7 +55,6 @@ int main(int argc, char *argv[]) {
   cout << "num_max " << num_max << endl;
   cout << "smearing_max " << smearing_max << endl;
   cout << "t0 " << t0 << endl;
-  cout << "copies " << copies << endl;
 
   std::map<std::tuple<std::string, int, int>, double> functional =
       read_functional(functional_path, padding_functional, num_max);
