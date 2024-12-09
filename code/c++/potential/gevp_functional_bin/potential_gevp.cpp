@@ -67,21 +67,23 @@ int main(int argc, char *argv[]) {
   stream_potential << "functional,space_size,time_size,potential,err" << endl;
 
   for (const auto &pair : bins) {
+    if (pair.second.size() > 5) {
+      std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
 
-    std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
+      data = read_data(dir_path, pair.second, file_start, file_end, padding,
+                       smearing_max);
 
-    data = read_data(dir_path, pair.second, file_start, file_end, padding,
-                     smearing_max);
-
-    std::map<std::tuple<int, int>, std::tuple<double, double>> potential =
-        calculate_potential(data, 1, t0);
-    for (auto const &[key, value] : potential) {
-      cout << pair.first << ", " << get<0>(key) << ", " << get<1>(key) << ": "
-           << get<0>(value) << " +- " << get<1>(value) << endl;
-    }
-    for (auto const &[key, value] : potential) {
-      stream_potential << pair.first << "," << get<0>(key) << "," << get<1>(key)
-                       << "," << get<0>(value) << "," << get<1>(value) << endl;
+      std::map<std::tuple<int, int>, std::tuple<double, double>> potential =
+          calculate_potential(data, 1, t0);
+      for (auto const &[key, value] : potential) {
+        cout << pair.first << ", " << get<0>(key) << ", " << get<1>(key) << ": "
+             << get<0>(value) << " +- " << get<1>(value) << endl;
+      }
+      for (auto const &[key, value] : potential) {
+        stream_potential << pair.first << "," << get<0>(key) << ","
+                         << get<1>(key) << "," << get<0>(value) << ","
+                         << get<1>(value) << endl;
+      }
     }
   }
   stream_potential.close();
