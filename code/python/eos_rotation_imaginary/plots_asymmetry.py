@@ -47,7 +47,7 @@ def read_data(path, observables):
     return df
 
 def read_data_test():
-    base_path = '/home/clusters/rrcmpi/kudrov/observables/result/eos_rotation_imaginary'
+    base_path = '../../../result/eos_rotation_imaginary'
     lattice_dirs = {'5x30x121sq': '4.6800', '6x36x145sq': '4.8400', '7x42x169sq': '5.0000'}
     df = pd.DataFrame()
     for lattice, beta in lattice_dirs.items():
@@ -63,7 +63,7 @@ def read_data_test():
                 df_tmp['lattice'] = lattice[:-2]
                 df = pd.concat([df, df_tmp])
     return df
-    
+
 
 def find_closest(val, arr, threshold):
     closest = None
@@ -151,8 +151,8 @@ beta_critical = {'nt4o': 4.088,
 
 path = '../../../result/eos_rotation_imaginary'
 fm_to_GeV = 1/0.197327 # 1 fm = 1/0.197327 GeV ** -1
-df = read_data(path, ['Ae', 'Am'])
-#df = read_data_test()
+# df = read_data(path, ['Ae', 'Am'])
+df = read_data_test()
 df = df[df['beta'] >= 3.85]
 df['nt'] = df['lattice'].apply(lambda x: int(x[:x.find('x')]))
 df['ns'] = df['lattice'].apply(lambda x: int(x[x.rfind('x') + 1:]))
@@ -184,4 +184,4 @@ try:
     os.makedirs('../../../images/eos_rotation_imaginary/asymmetry')
 except:
     pass
-df.set_index(['border', 'T']).groupby(['border', 'T']).apply(plot_asymmetry, include_groups=False)
+# df.set_index(['border', 'T']).groupby(['border', 'T']).apply(plot_asymmetry, include_groups=False)
