@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "read_data.h"
 
@@ -73,7 +74,6 @@ read_data(std::string dir_path,
     file_path = ss.str();
     if (std::filesystem::exists(file_path)) {
       read_csv(file_path, data, smearing_max);
-      break;
     }
   }
   std::map<std::tuple<int, int>, std::vector<std::vector<double>>> result;
