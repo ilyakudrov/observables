@@ -604,7 +604,7 @@ def main():
                 cut_step = Nt
                 if Nt > 10:
                     cut_step = Nt // 6
-                for cut in [0, cut_step, 2 * cut_step]:
+                for cut in [0, cut_step, 2 * cut_step, 3 * cut_step, 4 * cut_step]:
                     print('cut = ', cut)
                     df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
                     for thickness in [cut_step, 2 * cut_step, cut_step * 3]:
@@ -627,7 +627,7 @@ def main():
                                 df_result[-1]['rad_aver'] = rad_aver
                                 df_result[-1]['thickness'] = thickness
                                 df_result[-1]['cut'] = cut
-                            rad_inner = rad_inner + thickness
+                            rad_inner = rad_inner + 1
                 df_result = pd.concat(df_result)
                 df_result.to_csv(f'{result_path}/observables_ring_result.csv', sep=' ', index=False)
         else:

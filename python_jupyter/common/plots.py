@@ -24,7 +24,7 @@ def save_image_plt(image_path, image_name, dpi=800):
     print(output_path)
     plt.savefig(output_path, dpi=dpi)
 
-def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err=None, df_fits=None, black_line_y=None, dashed_line_y=None, markers_different=False, color_palette='bright', save_figure=False):
+def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err=None, df_fits=None, black_line_y=None, dashed_line_y=None, markers_different=False, color_palette='bright', save_figure=False, x_log=False, y_log=False):
     markers_arr = ['o', '^', 's', 'D', 'P', 'X', 'v', '*']
     if hue is not None:
         hues = data[hue].unique()
@@ -48,10 +48,12 @@ def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, 
     else:
         fg.map(plt.errorbar, x, y, mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls=None
            ).add_legend()
-    # plt.legend()
+    if x_log:
+        fg.ax.set_xscale('log')
+    if y_log:
+        fg.ax.set_yscale('log')
     fg.ax.set_xlabel(x_label, fontsize=14)
     fg.ax.set_ylabel(y_label, fontsize=14)
-    # fg.figure.suptitle(title)
     fg.ax.set_title(title)
     fg.ax.spines['right'].set_visible(True)
     fg.ax.spines['top'].set_visible(True)
