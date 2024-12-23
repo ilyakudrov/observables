@@ -110,16 +110,17 @@ conf_type = "gluodynamics"
 # conf_type = "QCD/140MeV"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
-conf_sizes = ["24^4"]
+conf_sizes = ["32^3x8"]
 # conf_sizes = ["32^3x64"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
-theory_type = 'su3'
-betas = ['beta6.0']
+theory_type = 'su2'
+betas = ['beta2.779']
 copies = 0
 copy_single = True
 # betas = ['beta2.7', 'beta2.8']
 #smeared_array = ["HYP0_alpha=1_1_0.5_APE_alpha=0.3", "HYP1_alpha=1_1_0.5_APE_alpha=0.3", "HYP3_alpha=1_1_0.5_APE_alpha=0.3", "HYP0_alpha=1_1_0.5_APE_alpha=0.4", "HYP1_alpha=1_1_0.5_APE_alpha=0.4", "HYP3_alpha=1_1_0.5_APE_alpha=0.4", "HYP0_alpha=1_1_0.5_APE_alpha=0.5", "HYP1_alpha=1_1_0.5_APE_alpha=0.5", "HYP3_alpha=1_1_0.5_APE_alpha=0.5", "HYP0_alpha=1_1_0.5_APE_alpha=0.6", "HYP1_alpha=1_1_0.5_APE_alpha=0.6", "HYP3_alpha=1_1_0.5_APE_alpha=0.6", "HYP0_alpha=1_1_0.5_APE_alpha=0.7", "HYP1_alpha=1_1_0.5_APE_alpha=0.7", "HYP3_alpha=1_1_0.5_APE_alpha=0.7", "HYP0_alpha=1_1_0.5_APE_alpha=0.8", "HYP1_alpha=1_1_0.5_APE_alpha=0.8", "HYP3_alpha=1_1_0.5_APE_alpha=0.8", "HYP0_alpha=1_1_0.5_APE_alpha=0.9", "HYP1_alpha=1_1_0.5_APE_alpha=0.9", "HYP3_alpha=1_1_0.5_APE_alpha=0.9", "HYP0_alpha=1_1_0.5_APE_alpha=1", "HYP1_alpha=1_1_0.5_APE_alpha=1", "HYP3_alpha=1_1_0.5_APE_alpha=1"]
-smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.6']
+smeared_array = ['alpha_0.1', 'alpha_0.2', 'alpha_0.3', 'alpha_0.4', 'alpha_0.5', 'alpha_0.6', 'alpha_0.7', 'alpha_0.8', 'alpha_0.9', 'alpha_1']
+#smeared_array = ['alpha_0.1']
 # smeared_array = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP0_APE_alpha=0.5']
 # matrix_type_array = ['monopole',
@@ -129,7 +130,7 @@ matrix_type_array = ['original']
 #matrix_type_array = ['monopole',
 #                      'monopoless', 'photon',
 #                      'offdiagonal', 'abelian']
-operator_type = 'wilson_loop'
+operator_type = 'wilson_loop_spatial'
 representation = 'fundamental'
 # representation = 'adjoint'
 # additional_parameters_arr = ['steps_500/copies=3/compensate_1', 'steps_1000/copies=3/compensate_1',
@@ -169,7 +170,8 @@ if calculation_type == 'smearing':
     names_out = ['smearing_step', 'T', 'r/a', 'aV(r)', 'err']
     dtype = {'smearing_step': np.int32, "T": np.int32,
              "r/a": np.int32, "wilson_loop": np.float64}
-    base_dir = 'smearing'
+    #base_dir = 'smearing'
+    base_dir = ''
 
 elif calculation_type == 'no_smearing':
     potential_parameters = ['r/a', 'copy', 'T']
@@ -181,14 +183,14 @@ elif calculation_type == 'no_smearing':
 conf_max = 5000
 # mu1 = ['mu0.40']
 mu1 = ['/']
-chains = ["/"]
+#chains = ["/"]
 # mu1 = ['mu0.05',
 #        'mu0.20', 'mu0.25',
 #        'mu0.30', 'mu0.35', 'mu0.45']
 # mu1 = ['mu0.40']
 # chains = ['s1', 's2']
-# chains = ['s0', 's1', 's2', 's3',
-#           's4', 's5', 's6', 's7', 's8']
+chains = ['/', 's0', 's1', 's2', 's3',
+           's4', 's5', 's6', 's7', 's8', 's9', 's10']
 
 # adjoint_fix = True
 adjoint_fix = False
@@ -205,6 +207,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         for i in range(0, conf_max + 1):
             if copy_single:
                 file_path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}/{chain}/wilson_loop_{i:04}'
+                #print(file_path)
                 if (os.path.isfile(file_path)):
                     data.append(pd.read_csv(file_path, header=0,
                                             names=CSV_names,
@@ -255,7 +258,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         else:
             base_dir1 = base_dir
         # df1 = df1[names_out]
-        path_output = f"../../result/{base_dir1}/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+        path_output = f"../../result/{base_dir1}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
         try:
             os.makedirs(f'{path_output}')
         except:

@@ -157,6 +157,7 @@ def read_no_copy(chains, conf_max, path, CSV_names, dtype):
     for chain in chains:
         for i in range(0, conf_max + 1):
             file_path = f'{path}/{chain}/wilson_loop_{i:04}'
+            #print(file_path)
             if (os.path.isfile(file_path)):
                 df = pd.read_csv(file_path, header=0,
                                         names=CSV_names,
@@ -220,13 +221,14 @@ print('args: ', args)
 axis = 'on-axis'
 conf_type = "gluodynamics"
 conf_sizes = args.size
-theory_type = 'su3'
+theory_type = 'su2'
 betas = args.beta
 copies = args.copies
 smeared_array = args.smearing
 matrix_type_array = args.matrix_type
 # operator_type = 'wilson_loop'
-operator_type = 'wilson_gevp'
+#operator_type = 'wilson_gevp'
+operator_type = 'wilson_loop_spatial'
 representation = 'fundamental'
 additional_parameters_arr = args.additional_parameters
 
@@ -244,9 +246,12 @@ calculation_type = 'smearing'
 #     base_dir = 'smearing'
 if calculation_type == 'smearing':
     potential_parameters = ['smearing_step', 'r/a']
-    CSV_names = ['smearing_step1', 'smearing_step2', "T", "r/a", "wilson_loop"]
-    names_out = ['smearing_step1', 'smearing_step2', 'T', 'r/a', 'aV(r)', 'err']
-    dtype = {'smearing_step1': np.int32, 'smearing_step2': np.int32, "T": np.int32,
+    #CSV_names = ['smearing_step1', 'smearing_step2', "T", "r/a", "wilson_loop"]
+    CSV_names = ['smearing_step', "T", "r/a", "wilson_loop"]
+    #names_out = ['smearing_step1', 'smearing_step2', 'T', 'r/a', 'aV(r)', 'err']
+    names_out = ['smearing_step', 'T', 'r/a', 'aV(r)', 'err']
+    #dtype = {'smearing_step1': np.int32, 'smearing_step2': np.int32, "T": np.int32,
+    dtype = {'smearing_step': np.int32, "T": np.int32,
              "r/a": np.int32, "wilson_loop": np.float64}
     base_dir = ''
 
@@ -272,8 +277,8 @@ chains = ['/', 's0', 's1', 's2', 's3',
 # adjoint_fix = True
 adjoint_fix = False
 
-base_path = "../../data"
-# base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
+#base_path = "../../data"
+base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 
 iter_arrays = [matrix_type_array, smeared_array,
                betas, conf_sizes, mu1, additional_parameters_arr]
@@ -290,14 +295,12 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     df1 = []
     start = time.time()
     for copy in copy_range:
-        print(copy)
-        print(path)
         df = read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy)
-        print(df)
+        #print(df.to_string())
         #df = df.persist()
-        df = df[df['smearing_step1'] == df['smearing_step2']]
-        df = df.rename({'smearing_step1': 'smearing_step'}, axis=1)
-        df = df.drop('smearing_step2', axis=1)
+        #df = df[df['smearing_step1'] == df['smearing_step2']]
+        #df = df.rename({'smearing_step1': 'smearing_step'}, axis=1)
+        #df = df.drop('smearing_step2', axis=1)
         if len(df) == 0:
             print("no data")
         else:
@@ -323,7 +326,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         base_dir1 = base_dir + '/binning'
     else:
         base_dir1 = base_dir
-    path_output = f"../../result/{base_dir1}/potential/wilson_loop/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+    path_output = f"../../result/{base_dir1}/potential/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
     try:
         os.makedirs(f'{path_output}')
     except:

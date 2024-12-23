@@ -590,12 +590,12 @@ def main():
                                              f'{args.spec_additional_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_therm.log', args.beta)
         bin_size = bin_length(f'{args.base_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log',
                               f'{args.spec_additional_path}/{args.lattice_size}/{args.boundary}/{args.velocity}/spec_bin_S.log', args.beta)
-        df = get_data(args.base_path, args, therm_length, bin_size)
+        df = get_data(args.base_path, args, therm_length, bin_size).compute()
         if not len(df.index) == 0:
-            print('data_size', df['conf_end'].max().compute() - df['conf_start'].min().compute())
+            print('data_size', df['conf_end'].max() - df['conf_start'].min())
             print('bin_size', bin_size)
-            if df['conf_end'].max().compute() - df['conf_start'].min().compute() >= 3 * bin_size:
-                coord_max = df['x'].max().compute()//2
+            if df['conf_end'].max() - df['conf_start'].min() >= 3 * bin_size:
+                coord_max = df['x'].max()//2
                 df['x'] = df['x'] - coord_max
                 df['y'] = df['y'] - coord_max
                 df['rad_sq'] = df['x'] ** 2 + df['y'] ** 2
@@ -614,7 +614,7 @@ def main():
                             col13=('13', 'mean'), col14=('14', 'mean'), col15=('15', 'mean'),\
                             col16=('16', 'mean'), col17=('17', 'mean'), col18=('18', 'mean'))\
                             .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
-                        print(df1)
+                        #print(df1)
                         df_result.append(make_jackknife(df1))
                         df_result[-1]['box_size'] = coord_max - cut
                         df_result[-1]['radius'] = math.sqrt(radius_sq)
