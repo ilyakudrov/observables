@@ -68,14 +68,15 @@ int main(int argc, char *argv[]) {
 
   for (const auto &pair : bins) {
     if (pair.second.size() > 5) {
-      cout<<pair.second.size()<<endl;
+      cout << pair.second.size() << endl;
       std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
 
       data = read_data(dir_path, pair.second, file_start, file_end, padding,
                        smearing_max);
 
-      for(const auto &a : data){
-        cout<<get<0>(a.first)<<" "<<get<1>(a.first)<<" "<<a.second[0].size()<<endl;
+      for (const auto &a : data) {
+        cout << get<0>(a.first) << " " << get<1>(a.first) << " "
+             << a.second[0].size() << endl;
         break;
       }
 

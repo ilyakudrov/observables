@@ -57,6 +57,14 @@ int main(int argc, char *argv[]) {
   cout << "copies " << copies << endl;
   cout << "copy " << copy << endl;
 
+  Eigen::Matrix3cd A;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      A(i, j) = std::complex<double>(1. * i / 2, 1. * j / 3);
+    }
+  }
+  cout << A << endl;
+
   std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
 
   if (copies) {
