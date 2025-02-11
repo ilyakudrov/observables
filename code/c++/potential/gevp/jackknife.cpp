@@ -6,24 +6,26 @@
 #include <map>
 #include <vector>
 
-std::vector<long int> accumulate_bins(std::vector<long int> &bin_sizes) {
-  long int bin_num = bin_sizes.size();
-  std::vector<long int> bin_borders;
+std::vector<unsigned long>
+accumulate_bins(std::vector<unsigned long> &bin_sizes) {
+  unsigned long bin_num = bin_sizes.size();
+  std::vector<unsigned long> bin_borders;
   bin_borders.reserve(bin_num + 1);
   bin_borders.push_back(0);
-  long int tmp = 0;
-  for (long int i = 0; i < bin_num; i++) {
+  unsigned long tmp = 0;
+  for (unsigned long i = 0; i < bin_num; i++) {
     tmp += bin_sizes[i];
     bin_borders.push_back(tmp);
   }
   return bin_borders;
 }
 
-std::vector<long int> get_bin_borders(long int data_size, long int bin_size) {
-  long int nbins = data_size / bin_size;
-  std::vector<long int> bin_sizes(nbins, bin_size);
-  long int residual_size = data_size - nbins * bin_size;
-  long int idx = 0;
+std::vector<unsigned long> get_bin_borders(unsigned long data_size,
+                                           unsigned long bin_size) {
+  unsigned long nbins = data_size / bin_size;
+  std::vector<unsigned long> bin_sizes(nbins, bin_size);
+  unsigned long residual_size = data_size - nbins * bin_size;
+  unsigned long idx = 0;
   while (residual_size > 0) {
     bin_sizes[idx] += 1;
     residual_size -= 1;
@@ -40,14 +42,14 @@ std::vector<long int> get_bin_borders(long int data_size, long int bin_size) {
 
 std::vector<std::vector<double>>
 do_jackknife(std::vector<std::vector<double>> &data,
-             std::vector<long int> &bin_borders) {
+             std::vector<unsigned long> &bin_borders) {
   int m = data.size();
-  long int n = data[0].size();
+  unsigned long n = data[0].size();
   std::vector<double> sum(m);
 #pragma omp parallel for collapse(2) reduction(vec_double_plus : sum)          \
     shared(data)
   for (int i = 0; i < m; i++) {
-    for (long int j = 0; j < n; j++) {
+    for (unsigned long j = 0; j < n; j++) {
       sum[i] += data[i][j];
     }
   }
@@ -142,7 +144,7 @@ std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
     int bin_size, int t0) {
   std::map<std::tuple<int, int>, std::tuple<double, double>> potential;
   std::map<int, std::vector<int>> sizes = get_sizes(data);
-  std::vector<long int> bin_borders =
+  std::vector<unsigned long> bin_borders =
       get_bin_borders(data[data.begin()->first][0].size(), bin_size);
   for (const auto &pair : sizes) {
     std::vector<std::vector<double>> lambdas;
