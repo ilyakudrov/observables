@@ -89,11 +89,6 @@ public:
     for (; it1 != value1_end && it2 != value2_end && it3 != value3_end &&
            it4 != value4_end && it5 != value5_end;
          ++it1, ++it2, ++it3, ++it4, ++it5, ++it_result) {
-      if (count == 0) {
-        std::cout << *it1 << " " << *it2 << " " << *it3 << " " << *it4 << " "
-                  << *it5 << " " << *it1 + *it2 + *it3 + *it4 - *it5
-                  << std::endl;
-      }
       count++;
       *it_result = *it1 + *it2 + *it3 + *it4 - *it5;
     }
@@ -125,11 +120,6 @@ public:
     auto it2 = value2_begin;
     int count = 0;
     for (; it1 != value1_end && it2 != value2_end; ++it1, ++it2, ++it_result) {
-      if (count == 0) {
-        std::cout << *it_result << " " << *it1 << " " << *it2 << " "
-                  << *it_result - *it1 - *it2 << " "
-                  << -2 * (*it_result - *it1 - *it2) << std::endl;
-      }
       count++;
       *it_result = -2 * (*it_result - *it1 - *it2);
     }
@@ -606,7 +596,7 @@ public:
     auto it5 = value5_begin;
     for (; it1 != value1_end && it2 != value2_end && it3 != value3_end &&
            it4 != value4_end && it5 != value5_end;
-         ++it1, ++it2, ++it_result) {
+         ++it1, ++it2, ++it3, ++it4, ++it5, ++it_result) {
       *it_result = *it_result - *it1 - *it2 - *it3 - *it4 - *it5;
     }
   }
