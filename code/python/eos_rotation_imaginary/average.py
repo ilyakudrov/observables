@@ -8,6 +8,7 @@ import argparse
 from scipy.stats import norm, binned_statistic
 import itertools
 import math
+import time
 from typing import List, Tuple, Optional
 
 sys.path.append(os.path.join(os.path.dirname(
@@ -603,9 +604,13 @@ def main():
                 for cut in range(0, coord_max - 2):
                 #for cut in range(0, 1):
                     df = df.loc[(df['x'] <= coord_max - cut) & (df['x'] >= cut - coord_max) & (df['y'] <= coord_max - cut) & (df['y'] >= cut - coord_max)]
+                    print(get_radii_sq(df['x'].max()))
                     for radius_sq in get_radii_sq(df['x'].max()):
                     #for radius_sq in [169**2]:
+                        start = time.time()
                         df1 = df.loc[df['rad_sq'] <= radius_sq]
+                        print('loc time: ', time.time() - start)
+                        start = time.time()
                         df1 = df1.groupby(['conf_start', 'conf_end', 'block_size', 'bin_size'], observed=False)\
                             .agg(S=('S', 'mean'), col2=('2', 'mean'), col3=('3', 'mean'),\
                             col4=('4', 'mean'), col5=('5', 'mean'), col6=('6', 'mean'),\
@@ -614,8 +619,11 @@ def main():
                             col13=('13', 'mean'), col14=('14', 'mean'), col15=('15', 'mean'),\
                             col16=('16', 'mean'), col17=('17', 'mean'), col18=('18', 'mean'))\
                             .reset_index(level=['conf_start', 'conf_end', 'block_size', 'bin_size'])
+                        print('groupby time: ', time.time() - start)
                         #print(df1)
+                        start = time.time()
                         df_result.append(make_jackknife(df1))
+                        print('jackknife time: ', time.time() - start)
                         df_result[-1]['box_size'] = coord_max - cut
                         df_result[-1]['radius'] = math.sqrt(radius_sq)
                 df_result = pd.concat(df_result)

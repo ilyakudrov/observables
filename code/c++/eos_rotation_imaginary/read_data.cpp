@@ -1,3 +1,4 @@
+#include "omp.h"
 #include <DataFrame/DataFrame.h>
 #include <filesystem>
 #include <string>
@@ -88,15 +89,25 @@ void df_load(hmdf::StdDataFrame<unsigned long> &df,
 
 hmdf::StdDataFrame<unsigned long> read_csv(std::string file_path, int row_num,
                                            int last_conf) {
+  double start_time;
+  double end_time;
+  double search_time;
   hmdf::StdDataFrame<unsigned long> df;
   std::ifstream file_stream(file_path);
   std::string line;
   std::vector<std::string> parsed_line;
   std::vector<int> x_col;
+  x_col.reserve(row_num);
   std::vector<int> y_col;
+  y_col.reserve(row_num);
   std::vector<std::vector<double>> observables_col(20);
+  for (int i = 0; i < 20; i++) {
+    observables_col[i].reserve(row_num);
+  }
   std::vector<int> conf_end;
+  conf_end.reserve(row_num);
   int row_count = 0;
+  start_time = omp_get_wtime();
   while (std::getline(file_stream, line)) {
     row_count++;
     parsed_line = parse_line(line);
@@ -109,14 +120,21 @@ hmdf::StdDataFrame<unsigned long> read_csv(std::string file_path, int row_num,
       observables_col[i].push_back(std::stod(parsed_line[i + 2]));
     }
   }
+  end_time = omp_get_wtime();
+  search_time = end_time - start_time;
+  std::cout << "read lines time: " << search_time << std::endl;
   if (row_count != row_num) {
     throw std::runtime_error("has wrong number of rows");
   }
+  start_time = omp_get_wtime();
   std::vector<unsigned long> idx_col(row_count);
   std::iota(std::begin(idx_col), std::end(idx_col), 0);
   conf_end = std::vector<int>(
       row_count, std::get<1>(get_file_conf_range(file_path)) + last_conf);
   df_load(df, idx_col, x_col, y_col, observables_col, conf_end);
+  end_time = omp_get_wtime();
+  search_time = end_time - start_time;
+  std::cout << "load data time: " << search_time << std::endl;
   return df;
 }
 

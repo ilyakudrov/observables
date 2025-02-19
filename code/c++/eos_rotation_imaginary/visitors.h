@@ -1,6 +1,9 @@
+#pragma once
+
 #include "jackknife.h"
 
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 class JackknifeVisitor {
@@ -605,5 +608,233 @@ public:
   const result_type &get_result() const { return result_; }
 
 private:
+  result_type result_;
+};
+
+class MeanVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef double value_type;
+  typedef double result_type;
+
+  MeanVisitor() {}
+  void pre() {
+    result_ = 0;
+    count = 0;
+  }
+  void post() { result_ /= count; }
+
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const H &value) {
+    result_ += value;
+    count++;
+  }
+
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  int count;
+  result_type result_;
+};
+
+class MeanSingleVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef double value_type;
+  typedef double result_type;
+
+  MeanSingleVisitor() {}
+  void pre() {}
+  void post() {}
+
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    int n = idx_end - idx_begin;
+    result_ = 0;
+    auto it1 = value1_begin;
+    // #pragma omp parallel for firstprivate(it1) reduction(+ : result_)
+    for (int i = 0; i < n; i++) {
+      result_ += it1[i];
+    }
+    result_ /= n;
+  }
+
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  result_type result_;
+};
+
+class GroupbyIndicesVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef int value_type;
+  typedef std::vector<int> result_type;
+
+  GroupbyIndicesVisitor(std::unordered_map<int, int> &place) : place_(place) {}
+  void pre() {}
+  void post() {}
+
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    auto it = value1_begin;
+    int n = idx_end - idx_begin;
+    result_ = result_type(n);
+    for (int i = 0; i < n; i++) {
+      result_[i] = place_[it[i]];
+    }
+  }
+
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  std::unordered_map<int, int> place_;
+  result_type result_;
+};
+
+class MeanGroupVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef double value_type;
+  typedef std::vector<double> result_type;
+
+  MeanGroupVisitor(std::vector<int> &index, int type_num)
+      : index_(std::move(index)) {
+    result_ = std::vector<double>(type_num);
+  }
+  void pre() {}
+  void post() {}
+
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    std::cout << "size: " << index_.size() << std::endl;
+    // for (int i = 0; i < index_.size(); i++) {
+    //   std::cout << index_[i] << std::endl;
+    // }
+    int n = idx_end - idx_begin;
+    auto it1 = value1_begin;
+    // #pragma omp parallel for firstprivate(it1)
+    for (int i = 0; i < n; i++) {
+      // std::cout << i << std::endl;
+      result_[index_[i]] += it1[i];
+    }
+    for (int i = 0; i < result_.size(); i++) {
+      result_[i] /= n;
+    }
+  }
+
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  std::vector<int> index_;
+  result_type result_;
+};
+
+class GroupbyBordersVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef int value_type;
+  typedef std::unordered_map<int, std::tuple<int, int>> result_type;
+
+  GroupbyBordersVisitor(std::unordered_map<int, int> &place) : place_(place) {}
+  void pre() {}
+  void post() {}
+
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    auto it = value1_begin;
+    int n = idx_end - idx_begin;
+    for (auto &pl : place_) {
+      result_[pl.second] = std::make_tuple(n, 0);
+      // std::cout << pl.first << " " << pl.second << std::endl;
+    }
+    std::tuple<int, int> &tmp = result_[it[0]];
+    // std::get<0>(tmp) = 3;
+    // std::get<1>(tmp) = 5;
+    // for (int i = 0; i < 5; i++) {
+    //   std::cout << it[i] << " " << std::get<0>(result_[it[i]]) << " "
+    //             << std::get<1>(result_[it[i]]) << std::endl;
+    // }
+    // for (auto &res : result_) {
+    //   std::cout << res.first << " " << std::get<0>(res.second) << " "
+    //             << std::get<1>(res.second) << std::endl;
+    // }
+    int pos1, pos2;
+    for (int i = 0; i < n; i++) {
+      std::tuple<int, int> &tmp = result_[place_[it[i]]];
+      // std::cout << i << " " << std::get<0>(tmp) << " " << std::get<1>(tmp)
+      //           << " " << std::get<0>(result_[it[i]]) << " "
+      //           << std::get<1>(result_[it[i]]) << " " << it[i] << std::endl;
+      if (std::get<0>(tmp) > i) {
+        std::get<0>(tmp) = i;
+        // std::cout << i << " " << std::get<0>(tmp) << std::endl;
+      }
+      if (std::get<1>(tmp) < i) {
+        std::get<1>(tmp) = i;
+      }
+      // std::cout << i << " " << std::get<0>(tmp) << " " << std::get<1>(tmp)
+      //           << " " << std::get<0>(result_[it[i]]) << " "
+      //           << std::get<1>(result_[it[i]]) << " " << it[i] << std::endl;
+    }
+    // for (auto &res : result_) {
+    //   std::cout << res.first << " " << std::get<0>(res.second) << " "
+    //             << std::get<1>(res.second) << std::endl;
+    // }
+  }
+
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  std::unordered_map<int, int> place_;
+  result_type result_;
+};
+
+class MeanBordersVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef double value_type;
+  typedef std::vector<double> result_type;
+
+  MeanBordersVisitor(std::unordered_map<int, std::tuple<int, int>> &borders)
+      : borders_(std::move(borders)) {}
+  void pre() {}
+  void post() {}
+
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    int n = idx_end - idx_begin;
+    auto it1 = value1_begin;
+    result_ = result_type(borders_.size());
+    // for (auto &bord : borders_) {
+    //   std::cout << bord.first << " " << std::get<0>(bord.second) << " "
+    //             << std::get<1>(bord.second) << std::endl;
+    // }
+    for (auto &border_pair : borders_) {
+      // #pragma omp parallel for firstprivate(border_pair, it1)
+      for (int i = std::get<0>(border_pair.second);
+           i <= std::get<1>(border_pair.second); i++) {
+        // std::cout << i << std::endl;
+        result_[border_pair.first] += it1[i];
+      }
+      result_[border_pair.first] /= (std::get<1>(border_pair.second) -
+                                     std::get<0>(border_pair.second) + 1);
+    }
+  }
+
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  std::unordered_map<int, std::tuple<int, int>> borders_;
   result_type result_;
 };

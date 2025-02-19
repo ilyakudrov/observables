@@ -93,7 +93,7 @@ make_gevp(const std::vector<std::vector<double>> &data_jackknife_0,
         count++;
       }
     }
-    ges.compute(A, B);
+    ges.compute(A, B, Eigen::DecompositionOptions::EigenvaluesOnly);
     auto eigenvalues = ges.eigenvalues();
     lambdas[i] = eigenvalues[eigenvalues.size() - 1];
   }

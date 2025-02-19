@@ -38,3 +38,7 @@ std::vector<double> do_jackknife(const H &data_begin, const H &data_end,
   }
   return data_jackknife;
 }
+
+std::vector<std::vector<double>>
+do_jackknife(std::vector<std::vector<double>> &data,
+             std::vector<unsigned long> &bin_borders);

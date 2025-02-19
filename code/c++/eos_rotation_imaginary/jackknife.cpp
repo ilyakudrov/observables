@@ -1,3 +1,5 @@
+#include "jackknife.h"
+
 #include <cmath>
 #include <vector>
 
@@ -43,4 +45,36 @@ std::tuple<double, double> get_aver(std::vector<double> &data) {
     sigma += (data[i] - aver) * (data[i] - aver);
   }
   return {aver, sqrt((n - 1) / (n + .0) * sigma)};
+}
+
+std::vector<std::vector<double>>
+do_jackknife(std::vector<std::vector<double>> &data,
+             std::vector<unsigned long> &bin_borders) {
+  int m = data.size();
+  unsigned long n = data[0].size();
+  std::vector<double> sum(m);
+#pragma omp parallel for collapse(2) reduction(vec_double_plus : sum)          \
+    shared(data)
+  for (int i = 0; i < m; i++) {
+    for (unsigned long j = 0; j < n; j++) {
+      sum[i] += data[i][j];
+    }
+  }
+
+  std::vector<std::vector<double>> data_jackknife(
+      m, std::vector<double>(bin_borders.size() - 1));
+  long int l = bin_borders.size() - 1;
+#pragma omp parallel for collapse(2) shared(data_jackknife, sum, bin_borders)
+  for (int i = 0; i < m; i++) {
+    for (long int j = 0; j < l; j++) {
+      data_jackknife[i][j] = sum[i];
+      for (long int k = bin_borders[j]; k < bin_borders[j + 1]; k++) {
+        data_jackknife[i][j] -= data[i][k];
+      }
+      data_jackknife[i][j] =
+          data_jackknife[i][j] / (n - bin_borders[j + 1] + bin_borders[j]);
+    }
+  }
+
+  return data_jackknife;
 }
