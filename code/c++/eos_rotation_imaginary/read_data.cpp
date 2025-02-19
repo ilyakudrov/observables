@@ -4,18 +4,24 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> parse_line(std::string &line) {
-  std::vector<std::string> result;
-  std::string delimiter = " ";
-  size_t pos = 0;
-  std::string token;
-  while ((pos = line.find(delimiter)) != std::string::npos) {
-    token = line.substr(0, pos);
-    result.push_back(token);
-    line.erase(0, pos + delimiter.length());
+std::vector<std::string> parse_line(std::string s) {
+  const char delimiter = ' ';
+  size_t start = 0;
+  size_t end = s.find_first_of(delimiter);
+
+  std::vector<std::string> output;
+
+  while (end <= std::string::npos) {
+    output.emplace_back(s.substr(start, end - start));
+
+    if (end == std::string::npos)
+      break;
+
+    start = end + 1;
+    end = s.find_first_of(delimiter, start);
   }
-  result.push_back(line);
-  return result;
+
+  return output;
 }
 
 std::set<std::filesystem::path> get_directories(std::string dir_path) {
@@ -87,81 +93,86 @@ void df_load(hmdf::StdDataFrame<unsigned long> &df,
                std::make_pair("conf_end", conf_end));
 }
 
-hmdf::StdDataFrame<unsigned long> read_csv(std::string file_path, int row_num,
-                                           int last_conf) {
+hmdf::StdDataFrame<unsigned long>
+read_csv(std::vector<int> &x_col, std::vector<int> &y_col,
+         std::vector<std::vector<double>> &observables_col,
+         std::vector<int> &conf_end, std::string file_path, int row_num,
+         int last_conf) {
   double start_time;
   double end_time;
   double search_time;
   hmdf::StdDataFrame<unsigned long> df;
   std::ifstream file_stream(file_path);
+  // FILE *fp = fopen(file_path.c_str(), "r");
   std::string line;
   std::vector<std::string> parsed_line;
-  std::vector<int> x_col;
-  x_col.reserve(row_num);
-  std::vector<int> y_col;
-  y_col.reserve(row_num);
-  std::vector<std::vector<double>> observables_col(20);
+  std::vector<int> x_col_tmp;
+  x_col_tmp.reserve(row_num);
+  std::vector<int> y_col_tmp;
+  y_col_tmp.reserve(row_num);
+  std::vector<std::vector<double>> observables_col_tmp(20);
   for (int i = 0; i < 20; i++) {
-    observables_col[i].reserve(row_num);
+    observables_col_tmp[i].reserve(row_num);
   }
-  std::vector<int> conf_end;
-  conf_end.reserve(row_num);
+  std::vector<int> conf_end_tmp;
+  conf_end_tmp.reserve(row_num);
   int row_count = 0;
-  start_time = omp_get_wtime();
   while (std::getline(file_stream, line)) {
     row_count++;
     parsed_line = parse_line(line);
     if (parsed_line.size() != 22) {
       throw std::runtime_error("has wrong number of columns");
     }
-    x_col.push_back(std::stoi(parsed_line[0]));
-    y_col.push_back(std::stoi(parsed_line[1]));
+    x_col_tmp.push_back(std::stoi(parsed_line[0]));
+    y_col_tmp.push_back(std::stoi(parsed_line[1]));
     for (int i = 0; i < 20; i++) {
-      observables_col[i].push_back(std::stod(parsed_line[i + 2]));
+      observables_col_tmp[i].push_back(std::stod(parsed_line[i + 2]));
     }
   }
-  end_time = omp_get_wtime();
-  search_time = end_time - start_time;
-  std::cout << "read lines time: " << search_time << std::endl;
   if (row_count != row_num) {
     throw std::runtime_error("has wrong number of rows");
   }
-  start_time = omp_get_wtime();
-  std::vector<unsigned long> idx_col(row_count);
-  std::iota(std::begin(idx_col), std::end(idx_col), 0);
-  conf_end = std::vector<int>(
+  conf_end_tmp = std::vector<int>(
       row_count, std::get<1>(get_file_conf_range(file_path)) + last_conf);
-  df_load(df, idx_col, x_col, y_col, observables_col, conf_end);
-  end_time = omp_get_wtime();
-  search_time = end_time - start_time;
-  std::cout << "load data time: " << search_time << std::endl;
+
+  x_col.insert(x_col.end(), x_col_tmp.begin(), x_col_tmp.end());
+  y_col.insert(y_col.end(), y_col_tmp.begin(), y_col_tmp.end());
+  for (int i = 0; i < 20; i++) {
+    observables_col[i].insert(observables_col[i].end(),
+                              observables_col_tmp[i].begin(),
+                              observables_col_tmp[i].end());
+  }
+  conf_end.insert(conf_end.end(), conf_end_tmp.begin(), conf_end_tmp.end());
   return df;
 }
 
 hmdf::StdDataFrame<unsigned long> read_data(std::string dir_path, int row_num) {
+  double start_time;
+  double end_time;
+  double search_time;
   std::string file_path;
   hmdf::StdDataFrame<unsigned long> df;
-  hmdf::StdDataFrame<unsigned long> df_tmp;
-  std::vector<unsigned long> idx_col;
   std::vector<int> x_col;
   std::vector<int> y_col;
   std::vector<std::vector<double>> observables_col(20);
   std::vector<int> conf_end;
   int last_conf = 0;
   int conf_tmp = 0;
-  df_load(df, idx_col, x_col, y_col, observables_col, conf_end);
   std::set<std::filesystem::path> directories = get_directories(dir_path);
   for (auto &chain_dir : directories) {
     std::set<std::filesystem::path> files = get_files(chain_dir);
     last_conf = conf_tmp;
     for (auto &file_path : files) {
       try {
-        df_tmp = read_csv(file_path, row_num, last_conf);
-        df = df.concat<decltype(df_tmp), int, double>(df_tmp);
+        read_csv(x_col, y_col, observables_col, conf_end, file_path, row_num,
+                 last_conf);
         conf_tmp = std::get<1>(get_file_conf_range(file_path));
       } catch (...) {
       }
     }
   }
+  std::vector<unsigned long> idx_col(x_col.size());
+  std::iota(std::begin(idx_col), std::end(idx_col), 0);
+  df_load(df, idx_col, x_col, y_col, observables_col, conf_end);
   return df;
 }
