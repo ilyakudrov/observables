@@ -1,7 +1,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
-#include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
@@ -50,7 +49,7 @@ read_data(std::string dir_path, std::string file_start, std::string file_end,
   std::string file_path;
   std::vector<std::string> chains = {"",    "s0/", "s1/", "s2/", "s3/", "s4/",
                                      "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
-  //std::vector<std::string> chains = {"s1/"};
+  // std::vector<std::string> chains = {"s1/"};
   for (auto chain : chains) {
     for (int i = 1; i <= num_max; i++) {
       std::stringstream ss;
@@ -86,7 +85,7 @@ read_data_copies(std::string dir_path, std::string file_start,
            << std::setfill('0') << std::to_string(i) << "_" << std::to_string(j)
            << file_end;
         file_path = ss.str();
-        //std::cout << file_path << std::endl;
+        // std::cout << file_path << std::endl;
         if (std::filesystem::exists(file_path)) {
           read_csv(file_path, data, smearing_max);
           break;
