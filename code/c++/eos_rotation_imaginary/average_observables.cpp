@@ -97,7 +97,6 @@ int main(int argc, char *argv[]) {
     int bin_size = get_bin_length(base_path, spec_additional_path, lattice_size,
                                   boundary, velocity, beta) /
                    block_size;
-    std::cout << "bin_size: " << bin_size << " " << block_size << std::endl;
 
     start_time = omp_get_wtime();
     df = df.get_data_by_sel<int, decltype(functor_less), int, double>(
@@ -142,9 +141,10 @@ int main(int argc, char *argv[]) {
     std::map<std::tuple<int, int, double>,
              std::vector<std::tuple<double, double>>>
         result;
+    end_time = omp_get_wtime();
     for (int cut = 0; cut < coord_max - 2; cut++) {
       // for (int cut = 0; cut < 2; cut++) {
-      start_time = omp_get_wtime();
+      // start_time = omp_get_wtime();
       auto functor_cut = [coord_max, cut](const unsigned long &, const int &x,
                                           const int &y) -> bool {
         return (x <= 2 * coord_max - cut) && (x >= cut) &&
@@ -152,45 +152,48 @@ int main(int argc, char *argv[]) {
       };
       df = df.get_data_by_sel<int, int, decltype(functor_cut), int, double>(
           "x", "y", functor_cut);
-      end_time = omp_get_wtime();
-      search_time = end_time - start_time;
-      std::cout << "box cut time: " << search_time << std::endl;
+      // end_time = omp_get_wtime();
+      // search_time = end_time - start_time;
+      // std::cout << "box cut time: " << search_time << std::endl;
 
       radii_sq = get_radii_sq(coord_max - cut);
       for (int rad_cut : radii_sq) {
-        std::cout << "rad_cut: " << rad_cut << std::endl;
-        start_time = omp_get_wtime();
+        // std::cout << "rad_cut: " << rad_cut << std::endl;
+        // start_time = omp_get_wtime();
         auto functor_rad_cut = [rad_cut](const unsigned long &,
                                          const int &rad_sq) -> bool {
           return rad_sq <= rad_cut;
         };
         df1 = df.get_data_by_sel<int, decltype(functor_rad_cut), int, double>(
             "rad_sqared", functor_rad_cut);
-        end_time = omp_get_wtime();
-        search_time = end_time - start_time;
-        std::cout << "radii cut time: " << search_time << std::endl;
+        // end_time = omp_get_wtime();
+        // search_time = end_time - start_time;
+        // std::cout << "radii cut time: " << search_time << std::endl;
 
-        start_time = omp_get_wtime();
+        // start_time = omp_get_wtime();
         data_aver = observables_aver(df1);
-        end_time = omp_get_wtime();
-        search_time = end_time - start_time;
-        std::cout << "observables_aver time: " << search_time << std::endl;
+        // end_time = omp_get_wtime();
+        // search_time = end_time - start_time;
+        // std::cout << "observables_aver time: " << search_time << std::endl;
 
-        std::cout.precision(10);
-        start_time = omp_get_wtime();
+        // std::cout.precision(10);
+        // start_time = omp_get_wtime();
         std::map<std::string, std::tuple<double, double>> jackknife_aver =
             jackknife(data_aver, bin_size);
-        end_time = omp_get_wtime();
-        search_time = end_time - start_time;
         add_to_map(result, jackknife_aver, bin_size, coord_max - cut,
                    sqrt(rad_cut));
         // for (auto &res : jackknife_aver) {
         //   std::cout << res.first << " " << std::get<0>(res.second) << " "
         //             << std::get<1>(res.second) << std::endl;
         // }
-        std::cout << "jackknife time: " << search_time << std::endl;
+        // end_time = omp_get_wtime();
+        // search_time = end_time - start_time;
+        // std::cout << "jackknife time: " << search_time << std::endl;
       }
     }
+    end_time = omp_get_wtime();
+    search_time = end_time - start_time;
+    std::cout << "data processing time: " << search_time << std::endl;
     try {
       std::filesystem::create_directories(result_path);
     } catch (const char *error) {
@@ -199,7 +202,6 @@ int main(int argc, char *argv[]) {
 
     std::ofstream stream_result;
     stream_result.open(result_path + "/observables_result.csv");
-    std::cout << result_path + "observables_result.csv" << std::endl;
     stream_result.precision(17);
     stream_result
         << "S S_err Jv Jv_err Jv1 Jv1_err Jv2 Jv2_err Blab Blab_err E E_err "

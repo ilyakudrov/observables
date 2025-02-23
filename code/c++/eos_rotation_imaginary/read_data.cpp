@@ -126,7 +126,7 @@ read_csv(std::vector<int> &x_col, std::vector<int> &y_col,
     row_count++;
     parsed_line = parse_line(line);
     if (parsed_line.size() != 22) {
-      throw std::runtime_error("has wrong number of columns");
+      throw std::runtime_error(file_path + " has wrong number of columns");
     }
     x_col_tmp.push_back(std::stoi(parsed_line[0]));
     y_col_tmp.push_back(std::stoi(parsed_line[1]));
@@ -135,7 +135,7 @@ read_csv(std::vector<int> &x_col, std::vector<int> &y_col,
     }
   }
   if (row_count != row_num) {
-    throw std::runtime_error("has wrong number of rows");
+    throw std::runtime_error(file_path + " has wrong number of rows");
   }
   conf_end_tmp = std::vector<int>(
       row_count, std::get<1>(get_file_conf_range(file_path)) + last_conf);
@@ -196,21 +196,19 @@ std::tuple<int, int, int> get_lattice_sizes(std::string lattice_size) {
   return std::tuple<int, int, int>(std::stoi(a), std::stoi(b), std::stoi(c));
 }
 
-std::vector<std::tuple<double, int>>
-read_spec_therm(std::string therm_spec_path) {
-  if (!std::filesystem::exists(therm_spec_path)) {
-    throw std::runtime_error(therm_spec_path + "does not exist");
+std::vector<std::tuple<double, int>> read_spec(std::string spec_path) {
+  if (!std::filesystem::exists(spec_path)) {
+    throw std::runtime_error(spec_path + " does not exist");
   }
   std::vector<std::tuple<double, int>> result;
-  std::ifstream file_stream(therm_spec_path);
+  std::ifstream file_stream(spec_path);
   std::string line;
   std::vector<std::string> parsed_line;
   while (std::getline(file_stream, line)) {
-    if (line != "\n") {
+    if (line != "" && line[0] != '\n') {
       parsed_line = parse_line(line);
       if (parsed_line.size() != 2) {
-        throw std::runtime_error(therm_spec_path +
-                                 "has wrong number of columns");
+        throw std::runtime_error(spec_path + " has wrong number of columns");
       }
       result.push_back(std::make_tuple(std::stod(parsed_line[0]),
                                        std::stoi(parsed_line[1])));
@@ -246,22 +244,23 @@ int get_thermalization_length(std::string base_path,
   std::stringstream ss;
   std::vector<std::tuple<double, int>> spec_therm_vec;
   try {
-    ss << base_path << "/" << lattice_size << "/" << boundary << "/" << velocity
-       << "/" << "spec_therm.log";
-    spec_therm_vec = read_spec_therm(ss.str());
-    therm_length = get_spec(spec_therm_vec, std::stod(beta));
-  } catch (const char *error) {
-    std::cout << error << std::endl;
     try {
+      ss << base_path << "/" << lattice_size << "/" << boundary << "/"
+         << velocity << "/" << "spec_therm.log";
+      spec_therm_vec = read_spec(ss.str());
+      therm_length = get_spec(spec_therm_vec, std::stod(beta));
+    } catch (...) {
+      std::cout << "main spec_therm path didn't work, try additional path"
+                << std::endl;
       ss.str(std::string());
       ss << spec_additional_path << "/" << lattice_size << "/" << boundary
          << "/" << velocity << "/" << "spec_therm.log";
-      spec_therm_vec = read_spec_therm(ss.str());
+      spec_therm_vec = read_spec(ss.str());
       therm_length = get_spec(spec_therm_vec, std::stod(beta));
-    } catch (const char *error1) {
-      std::cout << error1 << std::endl;
-      throw std::runtime_error("get_thermalization_length failed");
     }
+  } catch (std::runtime_error &error) {
+    std::cout << error.what() << std::endl;
+    throw std::runtime_error("get_thermalization_length failed");
   }
   return therm_length;
 }
@@ -269,26 +268,27 @@ int get_thermalization_length(std::string base_path,
 int get_bin_length(std::string base_path, std::string spec_additional_path,
                    std::string lattice_size, std::string boundary,
                    std::string velocity, std::string beta) {
-  int therm_length = 0;
+  int bin_length = 0;
   std::stringstream ss;
   std::vector<std::tuple<double, int>> spec_bin_vec;
   try {
-    ss << base_path << "/" << lattice_size << "/" << boundary << "/" << velocity
-       << "/" << "spec_bin_S.log";
-    spec_bin_vec = read_spec_therm(ss.str());
-    therm_length = get_spec(spec_bin_vec, std::stod(beta));
-  } catch (const char *error) {
-    std::cout << error << std::endl;
     try {
+      ss << base_path << "/" << lattice_size << "/" << boundary << "/"
+         << velocity << "/" << "spec_bin_S.log";
+      spec_bin_vec = read_spec(ss.str());
+      bin_length = get_spec(spec_bin_vec, std::stod(beta));
+    } catch (...) {
+      std::cout << "main spec_bin path didn't work, try additional path"
+                << std::endl;
       ss.str(std::string());
       ss << spec_additional_path << "/" << lattice_size << "/" << boundary
          << "/" << velocity << "/" << "spec_bin_S.log";
-      spec_bin_vec = read_spec_therm(ss.str());
-      therm_length = get_spec(spec_bin_vec, std::stod(beta));
-    } catch (const char *error1) {
-      std::cout << error1 << std::endl;
-      throw std::runtime_error("get_thermalization_length failed");
+      spec_bin_vec = read_spec(ss.str());
+      bin_length = get_spec(spec_bin_vec, std::stod(beta));
     }
+  } catch (std::runtime_error &error) {
+    std::cout << error.what() << std::endl;
+    throw std::runtime_error("get_bin_length failed");
   }
-  return therm_length;
+  return bin_length;
 }
