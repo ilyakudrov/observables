@@ -214,10 +214,10 @@ def make_plot_temperature(data, x, y, hue, x_label, y_label, title, image_path, 
         for coord in dashed_line_y:
             plt.axhline(y=coord, color='k', linestyle='--')
 
-    if df_fits is not None:
-        for key in df_fits[hue].unique():
-            plt.plot(df_fits[df_fits[hue] == key][x], df_fits[df_fits[hue] == key][y],
-                     color=color_palette[potential_type_hue[key]], linewidth=1)
+    # if df_fits is not None:
+    #     for key in df_fits[hue].unique():
+    #         plt.plot(df_fits[df_fits[hue] == key][x], df_fits[df_fits[hue] == key][y],
+    #                  color=color_palette[potential_type_hue[key]], linewidth=1)
 
     if show_plot:
         plt.show()

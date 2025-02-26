@@ -99,15 +99,13 @@ void df_load(hmdf::StdDataFrame<unsigned long> &df,
                std::make_pair("conf_end", conf_end));
 }
 
-hmdf::StdDataFrame<unsigned long>
-read_csv(std::vector<int> &x_col, std::vector<int> &y_col,
-         std::vector<std::vector<double>> &observables_col,
-         std::vector<int> &conf_end, std::string file_path, int row_num,
-         int last_conf) {
+void read_csv(std::vector<int> &x_col, std::vector<int> &y_col,
+              std::vector<std::vector<double>> &observables_col,
+              std::vector<int> &conf_end, std::string file_path, int row_num,
+              int last_conf) {
   double start_time;
   double end_time;
   double search_time;
-  hmdf::StdDataFrame<unsigned long> df;
   std::ifstream file_stream(file_path);
   std::string line;
   std::vector<std::string> parsed_line;
@@ -148,7 +146,6 @@ read_csv(std::vector<int> &x_col, std::vector<int> &y_col,
                               observables_col_tmp[i].end());
   }
   conf_end.insert(conf_end.end(), conf_end_tmp.begin(), conf_end_tmp.end());
-  return df;
 }
 
 hmdf::StdDataFrame<unsigned long> read_data(std::string dir_path, int row_num,
@@ -168,7 +165,7 @@ hmdf::StdDataFrame<unsigned long> read_data(std::string dir_path, int row_num,
   int count = 0;
   for (auto &chain_dir : directories) {
     std::set<std::filesystem::path> files = get_files(chain_dir);
-    last_conf = conf_tmp;
+    last_conf += conf_tmp;
     for (auto &file_path : files) {
       try {
         read_csv(x_col, y_col, observables_col, conf_end, file_path, row_num,
@@ -177,6 +174,7 @@ hmdf::StdDataFrame<unsigned long> read_data(std::string dir_path, int row_num,
         if (count == 0) {
           block_size = get_block_size(file_path);
         }
+        count++;
       } catch (...) {
       }
     }
@@ -185,6 +183,78 @@ hmdf::StdDataFrame<unsigned long> read_data(std::string dir_path, int row_num,
   std::iota(std::begin(idx_col), std::end(idx_col), 0);
   df_load(df, idx_col, x_col, y_col, observables_col, conf_end);
   return df;
+}
+
+void read_csv_to_vec(
+    std::vector<std::vector<std::vector<std::vector<double>>>> &data,
+    std::string file_path, int Ns, int last_conf, int thermalization_length) {
+  double start_time;
+  double end_time;
+  double search_time;
+  if (std::get<1>(get_file_conf_range(file_path)) + last_conf >
+      thermalization_length) {
+    int row_num = Ns * Ns;
+    std::ifstream file_stream(file_path);
+    std::string line;
+    std::vector<std::string> parsed_line;
+    int row_count = 0;
+    std::vector<std::vector<std::vector<double>>> vec_tmp(
+        Ns, std::vector<std::vector<double>>(Ns, std::vector<double>(20)));
+    while (std::getline(file_stream, line)) {
+      row_count++;
+      parsed_line = parse_line(line);
+      if (parsed_line.size() != 22) {
+        throw std::runtime_error(file_path + " has wrong number of columns");
+      }
+      for (int i = 0; i < 20; i++) {
+        vec_tmp[std::stoi(parsed_line[0])][std::stoi(parsed_line[1])][i] =
+            std::stod(parsed_line[i + 2]);
+      }
+    }
+    if (row_count != row_num) {
+      throw std::runtime_error(file_path + " has wrong number of rows");
+    }
+    for (int i = 0; i < Ns; i++) {
+      for (int j = 0; j < Ns; j++) {
+        for (int k = 0; k < 20; k++) {
+          data[i][j][k].push_back(vec_tmp[i][j][k]);
+        }
+      }
+    }
+  }
+}
+
+std::vector<std::vector<std::vector<std::vector<double>>>>
+read_data_to_vector(std::string dir_path, int Ns, int &block_size,
+                    int thermalization_length) {
+  double start_time;
+  double end_time;
+  double search_time;
+  int row_num = Ns * Ns;
+  std::vector<std::vector<std::vector<std::vector<double>>>> data(
+      Ns, std::vector<std::vector<std::vector<double>>>(
+              Ns, std::vector<std::vector<double>>(20)));
+  std::string file_path;
+  int last_conf = 0;
+  int conf_tmp = 0;
+  std::set<std::filesystem::path> directories = get_directories(dir_path);
+  int count = 0;
+  for (auto &chain_dir : directories) {
+    std::set<std::filesystem::path> files = get_files(chain_dir);
+    last_conf += conf_tmp;
+    for (auto &file_path : files) {
+      try {
+        read_csv_to_vec(data, file_path, Ns, last_conf, thermalization_length);
+        conf_tmp = std::get<1>(get_file_conf_range(file_path));
+        if (count == 0) {
+          block_size = get_block_size(file_path);
+        }
+        count++;
+      } catch (...) {
+      }
+    }
+  }
+  return data;
 }
 
 std::tuple<int, int, int> get_lattice_sizes(std::string lattice_size) {

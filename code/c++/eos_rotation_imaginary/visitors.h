@@ -668,6 +668,36 @@ private:
   result_type result_;
 };
 
+class SquareMeanSingleVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef int value_type;
+  typedef double result_type;
+
+  SquareMeanSingleVisitor() {}
+  void pre() {}
+  void post() {}
+
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    int n = idx_end - idx_begin;
+    result_ = 0;
+    auto it1 = value1_begin;
+    // #pragma omp parallel for firstprivate(it1) reduction(+ : result_)
+    for (int i = 0; i < n; i++) {
+      result_ += sqrt(it1[i]);
+    }
+    result_ /= n;
+  }
+
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  result_type result_;
+};
+
 class GroupbyIndicesVisitor {
 public:
   typedef unsigned long index_type;

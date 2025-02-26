@@ -12,10 +12,10 @@
 #include <tuple>
 
 void add_to_map(
-    std::map<std::tuple<int, int, double>,
+    std::map<std::tuple<int, double, int, int>,
              std::vector<std::tuple<double, double>>> &result,
     std::map<std::string, std::tuple<double, double>> &jackknife_aver,
-    int bin_size, int box_size, double radius) {
+    int bin_size, double rad_aver, int thickness, int cut) {
   std::vector<std::string> observables = {
       "S",   "Jv", "Jv1", "Jv2",    "Blab",    "E",  "Elab", "Bz",
       "Bxy", "Ez", "Exy", "ElabzT", "ElabxyT", "Ae", "Am",   "AlabeT"};
@@ -24,7 +24,7 @@ void add_to_map(
     tmp[i] = std::make_tuple(std::get<0>(jackknife_aver[observables[i]]),
                              std::get<1>(jackknife_aver[observables[i]]));
   }
-  result[std::make_tuple(bin_size, box_size, radius)] = tmp;
+  result[std::make_tuple(bin_size, rad_aver, thickness, cut)] = tmp;
 }
 
 int main(int argc, char *argv[]) {
@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
   std::tuple<int, int, int> lattice_sizes = get_lattice_sizes(lattice_size);
   int Ns = std::get<2>(lattice_sizes);
   int coord_max = Ns / 2;
+  int Nt = std::get<0>(lattice_sizes);
 
   start_time = omp_get_wtime();
   int block_size = 1;
@@ -143,13 +144,15 @@ int main(int argc, char *argv[]) {
       std::vector<std::vector<double>> data_aver;
       hmdf::StdDataFrame<unsigned long> df1;
       hmdf::StdDataFrame<unsigned long> df_aver;
-      std::map<std::tuple<int, int, double>,
+      std::map<std::tuple<int, double, int, int>,
                std::vector<std::tuple<double, double>>>
           result;
+      int cut_step = Nt;
+      if (Nt > 10) {
+        cut_step = Nt / 6;
+      }
       end_time = omp_get_wtime();
-      for (int cut = 0; cut < coord_max - 2; cut++) {
-        // for (int cut = 0; cut < 2; cut++) {
-        // start_time = omp_get_wtime();
+      for (auto cut : {0, cut_step, 2 * cut_step, 3 * cut_step, 4 * cut_step}) {
         auto functor_cut = [coord_max, cut](const unsigned long &, const int &x,
                                             const int &y) -> bool {
           return (x <= 2 * coord_max - cut) && (x >= cut) &&
@@ -162,38 +165,55 @@ int main(int argc, char *argv[]) {
         // std::cout << "box cut time: " << search_time << std::endl;
 
         radii_sq = get_radii_sq(coord_max - cut);
-        for (int rad_cut : radii_sq) {
+        for (int thickness : {cut_step, 2 * cut_step, cut_step * 3}) {
+          int rad_inner = 1;
           // std::cout << "rad_cut: " << rad_cut << std::endl;
           // start_time = omp_get_wtime();
-          auto functor_rad_cut = [rad_cut](const unsigned long &,
-                                           const int &rad_sq) -> bool {
-            return rad_sq <= rad_cut;
-          };
-          df1 = df.get_data_by_sel<int, decltype(functor_rad_cut), int, double>(
-              "rad_sqared", functor_rad_cut);
-          // end_time = omp_get_wtime();
-          // search_time = end_time - start_time;
-          // std::cout << "radii cut time: " << search_time << std::endl;
+          while (rad_inner < coord_max * sqrt(2)) {
+            auto functor_rad_cut = [rad_inner,
+                                    thickness](const unsigned long &,
+                                               const int &rad_sq) -> bool {
+              return (rad_sq >= rad_inner * rad_inner) &&
+                     (rad_sq <
+                      (rad_inner + thickness) * (rad_inner + thickness));
+            };
+            df1 =
+                df.get_data_by_sel<int, decltype(functor_rad_cut), int, double>(
+                    "rad_sqared", functor_rad_cut);
+            // end_time = omp_get_wtime();
+            // search_time = end_time - start_time;
+            // std::cout << "radii cut time: " << search_time << std::endl;
 
-          // start_time = omp_get_wtime();
-          data_aver = observables_aver(df1);
-          // end_time = omp_get_wtime();
-          // search_time = end_time - start_time;
-          // std::cout << "observables_aver time: " << search_time << std::endl;
+            if (!df1.empty()) {
+              SquareMeanSingleVisitor square_mean_visitor;
+              df1.single_act_visit<int>("rad_sqared", square_mean_visitor);
+              double rad_aver = square_mean_visitor.get_result();
+              std::cout << "rad_aver: " << rad_aver << std::endl;
 
-          // std::cout.precision(10);
-          // start_time = omp_get_wtime();
-          std::map<std::string, std::tuple<double, double>> jackknife_aver =
-              jackknife(data_aver, bin_size);
-          add_to_map(result, jackknife_aver, bin_size * block_size,
-                     coord_max - cut, sqrt(rad_cut));
-          // for (auto &res : jackknife_aver) {
-          //   std::cout << res.first << " " << std::get<0>(res.second) << " "
-          //             << std::get<1>(res.second) << std::endl;
-          // }
-          // end_time = omp_get_wtime();
-          // search_time = end_time - start_time;
-          // std::cout << "jackknife time: " << search_time << std::endl;
+              // start_time = omp_get_wtime();
+              data_aver = observables_aver(df1);
+              // end_time = omp_get_wtime();
+              // search_time = end_time - start_time;
+              // std::cout << "observables_aver time: " << search_time <<
+              // std::endl;
+
+              // std::cout.precision(10);
+              // start_time = omp_get_wtime();
+              std::map<std::string, std::tuple<double, double>> jackknife_aver =
+                  jackknife(data_aver, bin_size);
+              add_to_map(result, jackknife_aver, bin_size * block_size,
+                         rad_aver, thickness, cut);
+              // for (auto &res : jackknife_aver) {
+              //   std::cout << res.first << " " << std::get<0>(res.second) << "
+              //   "
+              //             << std::get<1>(res.second) << std::endl;
+              // }
+              // end_time = omp_get_wtime();
+              // search_time = end_time - start_time;
+              // std::cout << "jackknife time: " << search_time << std::endl;
+            }
+            rad_inner = rad_inner + 1;
+          }
         }
       }
       end_time = omp_get_wtime();
@@ -205,13 +225,15 @@ int main(int argc, char *argv[]) {
       }
 
       std::ofstream stream_result;
-      stream_result.open(result_path + "/observables_result.csv");
+      stream_result.open(result_path + "/observables_ring_result.csv");
       stream_result.precision(17);
       stream_result
-          << "S S_err Jv Jv_err Jv1 Jv1_err Jv2 Jv2_err Blab Blab_err E E_err "
-             "Elab Elab_err Bz Bz_err Bxy Bxy_err Ez Ez_err Exy Exy_err ElabzT "
+          << "S S_err Jv Jv_err Jv1 Jv1_err Jv2 Jv2_err Blab Blab_err E "
+             "E_err "
+             "Elab Elab_err Bz Bz_err Bxy Bxy_err Ez Ez_err Exy Exy_err "
+             "ElabzT "
              "ElabzT_err ElabxyT ElabxyT_err Ae Ae_err Am Am_err AlabeT "
-             "AlabeT_err bin_size box_size radius"
+             "AlabeT_err bin_size rad_aver thickness cut"
           << std::endl;
 
       for (auto &res : result) {
@@ -220,7 +242,8 @@ int main(int argc, char *argv[]) {
                         << std::get<1>(res.second[i]) << " ";
         }
         stream_result << get<0>(res.first) << " " << get<1>(res.first) << " "
-                      << get<2>(res.first) << std::endl;
+                      << get<2>(res.first) << " " << get<3>(res.first)
+                      << std::endl;
       }
       stream_result.close();
     }
