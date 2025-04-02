@@ -17,7 +17,7 @@ def get_dir_names(path: str) -> List[str]:
         break
     return directories
 
-def get_file_names(path: str) -> List[str]:
+def get_file_names(path: str, obs_name) -> List[str]:
     """Get names of files with blocked eos data in directory path.
 
     Args:
@@ -29,9 +29,9 @@ def get_file_names(path: str) -> List[str]:
     for (dirpath, dirnames, filenames) in os.walk(path):
         files.extend(filenames)
         break
-    return list(f for f in files if f[f.find('-') + 1:].startswith('SEBxy') and f.startswith(f'block'))
+    return list(f for f in files if f[f.find('-') + 1:].startswith(obs_name) and f.startswith(f'block'))
 
-def get_unblocked_files(path: str) -> List[str]:
+def get_unblocked_files(path: str, obs_name) -> List[str]:
     """Get names of initial eos files directory path.
 
     Args:
@@ -43,7 +43,7 @@ def get_unblocked_files(path: str) -> List[str]:
     for (dirpath, dirnames, filenames) in os.walk(path):
         files.extend(filenames)
         break
-    return list(f for f in files if f.startswith('SEBxy'))
+    return list(f for f in files if f.startswith(obs_name))
 
 def get_block_size(f: str) -> int:
     """Extract block size of eos data from it's name.
@@ -83,14 +83,14 @@ def check_spec(path):
         spec_info[spec_name] = tmp
     return spec_info
 
-def get_data_info(beta_path):
+def get_data_info(beta_path, obs_name):
     chain_dirs = get_dir_names(beta_path)
     file_number = 0
     observation_number = 0
     unblocked_data = 0
     for chain in chain_dirs:
 #        print('chain', chain)
-        filenames = get_file_names(f'{beta_path}/{chain}')
+        filenames = get_file_names(f'{beta_path}/{chain}', obs_name)
         for file in filenames:
 #            print('file', file)
             if os.stat(f'{beta_path}/{chain}/{file}').st_size != 0:
@@ -100,7 +100,7 @@ def get_data_info(beta_path):
                     observation_number += get_block_size(file)
                 except:
                     pass
-        unblocked_files = get_unblocked_files(f'{beta_path}/{chain}')
+        unblocked_files = get_unblocked_files(f'{beta_path}/{chain}', obs_name)
         for file in unblocked_files:
             if os.stat(f'{beta_path}/{chain}/{file}').st_size != 0:
                 unblocked_data += 1
@@ -109,6 +109,7 @@ def get_data_info(beta_path):
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_paths', nargs='+')
 parser.add_argument('--result_path')
+parser.add_argument('--obs_name')
 args = parser.parse_args()
 print('args: ', args)
 lattice_names = ['24x24x97sq', '30x30x121sq', '30x30x181sq', '30x30x81sq', '36x36x145sq', '42x42x169sq',
@@ -139,4 +140,7 @@ for base_path in args.data_paths:
 #                        info_data[key] = [value]
 #                    print('info_data', info_data)
                     df = pd.concat([df, pd.DataFrame(info_data)])
-df.to_csv(f'{args.result_path}/data_summary.csv', index=False)
+if args.obs_name == 'PLxy':
+    df.to_csv(f'{args.result_path}/data_polyakov_summary.csv', index=False)
+elif args.obs_name == 'SEBxy':
+    df.to_csv(f'{args.result_path}/data_summary.csv', index=False)
