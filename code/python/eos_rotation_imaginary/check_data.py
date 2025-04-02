@@ -132,7 +132,7 @@ for base_path in args.data_paths:
                 beta_dirs = get_dir_names(f'{lattice_dir}/{boundary}/{velocity}')
                 for beta in beta_dirs:
 #                    print('beta', beta)
-                    file_number, observation_number, unblocked_data = get_data_info(f'{lattice_dir}/{boundary}/{velocity}/{beta}')
+                    file_number, observation_number, unblocked_data = get_data_info(f'{lattice_dir}/{boundary}/{velocity}/{beta}', args.obs_name)
                     info_data = {'lattice_dir': [lattice_dir], 'lattice_size': [lattice_size], 'boundary': [boundary],
                                 'velocity': [velocity], 'beta': [beta], 'file_number': [file_number],
                                 'observation_number': [observation_number], 'unblocked_data': [unblocked_data]}
