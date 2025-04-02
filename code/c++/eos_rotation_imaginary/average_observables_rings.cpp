@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
               SquareMeanSingleVisitor square_mean_visitor;
               df1.single_act_visit<int>("rad_sqared", square_mean_visitor);
               double rad_aver = square_mean_visitor.get_result();
-              std::cout << "rad_aver: " << rad_aver << std::endl;
+              // std::cout << "rad_aver: " << rad_aver << std::endl;
 
               // start_time = omp_get_wtime();
               data_aver = observables_aver(df1);

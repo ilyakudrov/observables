@@ -743,15 +743,9 @@ public:
   template <typename K, typename H>
   void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
                   const H &value1_end) {
-    std::cout << "size: " << index_.size() << std::endl;
-    // for (int i = 0; i < index_.size(); i++) {
-    //   std::cout << index_[i] << std::endl;
-    // }
     int n = idx_end - idx_begin;
     auto it1 = value1_begin;
-    // #pragma omp parallel for firstprivate(it1)
     for (int i = 0; i < n; i++) {
-      // std::cout << i << std::endl;
       result_[index_[i]] += it1[i];
     }
     for (int i = 0; i < result_.size(); i++) {
@@ -784,40 +778,17 @@ public:
     int n = idx_end - idx_begin;
     for (auto &pl : place_) {
       result_[pl.second] = std::make_tuple(n, 0);
-      // std::cout << pl.first << " " << pl.second << std::endl;
     }
-    std::tuple<int, int> &tmp = result_[it[0]];
-    // std::get<0>(tmp) = 3;
-    // std::get<1>(tmp) = 5;
-    // for (int i = 0; i < 5; i++) {
-    //   std::cout << it[i] << " " << std::get<0>(result_[it[i]]) << " "
-    //             << std::get<1>(result_[it[i]]) << std::endl;
-    // }
-    // for (auto &res : result_) {
-    //   std::cout << res.first << " " << std::get<0>(res.second) << " "
-    //             << std::get<1>(res.second) << std::endl;
-    // }
     int pos1, pos2;
     for (int i = 0; i < n; i++) {
       std::tuple<int, int> &tmp = result_[place_[it[i]]];
-      // std::cout << i << " " << std::get<0>(tmp) << " " << std::get<1>(tmp)
-      //           << " " << std::get<0>(result_[it[i]]) << " "
-      //           << std::get<1>(result_[it[i]]) << " " << it[i] << std::endl;
       if (std::get<0>(tmp) > i) {
         std::get<0>(tmp) = i;
-        // std::cout << i << " " << std::get<0>(tmp) << std::endl;
       }
       if (std::get<1>(tmp) < i) {
         std::get<1>(tmp) = i;
       }
-      // std::cout << i << " " << std::get<0>(tmp) << " " << std::get<1>(tmp)
-      //           << " " << std::get<0>(result_[it[i]]) << " "
-      //           << std::get<1>(result_[it[i]]) << " " << it[i] << std::endl;
     }
-    // for (auto &res : result_) {
-    //   std::cout << res.first << " " << std::get<0>(res.second) << " "
-    //             << std::get<1>(res.second) << std::endl;
-    // }
   }
 
   result_type &get_result() { return result_; }
@@ -845,15 +816,9 @@ public:
     int n = idx_end - idx_begin;
     auto it1 = value1_begin;
     result_ = result_type(borders_.size());
-    // for (auto &bord : borders_) {
-    //   std::cout << bord.first << " " << std::get<0>(bord.second) << " "
-    //             << std::get<1>(bord.second) << std::endl;
-    // }
     for (auto &border_pair : borders_) {
-      // #pragma omp parallel for firstprivate(border_pair, it1)
       for (int i = std::get<0>(border_pair.second);
            i <= std::get<1>(border_pair.second); i++) {
-        // std::cout << i << std::endl;
         result_[border_pair.first] += it1[i];
       }
       result_[border_pair.first] /= (std::get<1>(border_pair.second) -
