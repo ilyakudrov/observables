@@ -42,3 +42,5 @@ std::vector<double> do_jackknife(const H &data_begin, const H &data_end,
 std::vector<std::vector<double>>
 do_jackknife(std::vector<std::vector<double>> &data,
              std::vector<unsigned long> &bin_borders);
+std::vector<double>
+get_polyakov_module_vec(std::vector<std::vector<double>> &data_jackknife);

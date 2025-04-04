@@ -2,7 +2,7 @@ GCC=g++
 FLAGS=-Ofast -fopenmp -march=native -mtune=native -std=c++23
 ARCH=test
 OBJFILES=read_data_$(ARCH).o jackknife_$(ARCH).o make_observables_$(ARCH).o data_processing_$(ARCH).o
-TARGETS=average_observables average_distribution average_observables_rings
+TARGETS=average_observables average_distribution average_observables_rings average_polyakov average_polyakov_distribution average_polyakov_rings
 DATAFRAME_PATH=/home/ilya/soft/source/DataFrame
 DATAFRAME_INCLUDE=$(DATAFRAME_PATH)/include
 DATAFRAME_OBJ=$(DATAFRAME_PATH)/obj/Linux.GCC64/DateTime.o

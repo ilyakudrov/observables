@@ -78,3 +78,14 @@ do_jackknife(std::vector<std::vector<double>> &data,
 
   return data_jackknife;
 }
+
+std::vector<double>
+get_polyakov_module_vec(std::vector<std::vector<double>> &data_jackknife) {
+  std::vector<double> polyakov_module(data_jackknife[0].size());
+#pragma omp parallel for
+  for (int i = 0; i < data_jackknife[0].size(); i++) {
+    polyakov_module[i] = sqrt(data_jackknife[0][i] * data_jackknife[0][i] +
+                              data_jackknife[1][i] * data_jackknife[1][i]);
+  }
+  return polyakov_module;
+}

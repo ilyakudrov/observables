@@ -119,6 +119,24 @@ observables_aver(hmdf::StdDataFrame<unsigned long> &df) {
   return result;
 }
 
+std::vector<std::vector<double>>
+observables_aver_polyakov(hmdf::StdDataFrame<unsigned long> &df) {
+  std::vector<std::vector<double>> result(3);
+  std::vector<std::string> observables = {"ReL", "ImL", "modL"};
+
+  std::unordered_map<int, int> place_map = make_map_place(df);
+#pragma omp parallel for firstprivate(place_map)
+  for (int i = 0; i < observables.size(); i++) {
+    GroupbyBordersVisitor groupby_borders_visitor(place_map);
+    df.single_act_visit<int>("conf_end", groupby_borders_visitor);
+    MeanBordersVisitor mean_borders_visitor(
+        groupby_borders_visitor.get_result());
+    df.single_act_visit<double>(observables[i].c_str(), mean_borders_visitor);
+    result[i] = mean_borders_visitor.get_result();
+  }
+  return result;
+}
+
 std::map<std::string, std::tuple<double, double>>
 jackknife(std::vector<std::vector<double>> &data, int bin_size) {
   std::vector<std::string> observables = {
@@ -128,6 +146,21 @@ jackknife(std::vector<std::vector<double>> &data, int bin_size) {
       get_bin_borders(data[0].size(), bin_size);
   std::vector<std::vector<double>> jackknife_vec =
       do_jackknife(data, bin_borders);
+  std::map<std::string, std::tuple<double, double>> result;
+  for (int i = 0; i < jackknife_vec.size(); i++) {
+    result[observables[i]] = get_aver(jackknife_vec[i]);
+  }
+  return result;
+}
+
+std::map<std::string, std::tuple<double, double>>
+jackknife_polyakov(std::vector<std::vector<double>> &data, int bin_size) {
+  std::vector<std::string> observables = {"ReL", "ImL", "modL", "mod<L>"};
+  std::vector<unsigned long> bin_borders =
+      get_bin_borders(data[0].size(), bin_size);
+  std::vector<std::vector<double>> jackknife_vec =
+      do_jackknife(data, bin_borders);
+  jackknife_vec.push_back(get_polyakov_module_vec(jackknife_vec));
   std::map<std::string, std::tuple<double, double>> result;
   for (int i = 0; i < jackknife_vec.size(); i++) {
     result[observables[i]] = get_aver(jackknife_vec[i]);

@@ -17,7 +17,11 @@ std::vector<std::vector<double>>
 observables_aver(std::vector<hmdf::StdDataFrame<unsigned long>> &dfs);
 std::vector<std::vector<double>>
 observables_aver(hmdf::StdDataFrame<unsigned long> &df);
+std::vector<std::vector<double>>
+observables_aver_polyakov(hmdf::StdDataFrame<unsigned long> &df);
 std::map<std::string, std::tuple<double, double>>
 jackknife(std::vector<std::vector<double>> &data, int bin_size);
+std::map<std::string, std::tuple<double, double>>
+jackknife_polyakov(std::vector<std::vector<double>> &data, int bin_size);
 std::unordered_map<int, int>
 make_map_place(hmdf::StdDataFrame<unsigned long> &df);
