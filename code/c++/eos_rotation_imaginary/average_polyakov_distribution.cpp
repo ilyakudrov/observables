@@ -81,6 +81,12 @@ int main(int argc, char *argv[]) {
   search_time = end_time - start_time;
   std::cout << "read time: " << search_time << std::endl;
 
+  for (int i = 0; i < Ns; i++) {
+    for (int j = 0; j < Ns; j++) {
+      data[i][j].erase(data[i][j].begin() + 2);
+    }
+  }
+
   int bin_size =
       get_bin_length_polyakov(base_path, spec_additional_path, lattice_size,
                               boundary, velocity, beta) /
