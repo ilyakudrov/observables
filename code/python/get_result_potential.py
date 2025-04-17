@@ -23,19 +23,19 @@ pd.options.mode.chained_assignment = None
 
 
 def get_potential(data):
-    time_size_min = data["T"].min()
-    time_size_max = data["T"].max()
+    time_size_min = data["time_size"].min()
+    time_size_max = data["time_size"].max()
 
     potential = []
 
     # print(data)
 
     for time_size in range(time_size_min, time_size_max):
-        x = np.vstack((data.loc[data['T'] == time_size, 'wilson_loop'].to_numpy(),
-                       data.loc[data['T'] == time_size + 1, 'wilson_loop'].to_numpy()))
+        x = np.vstack((data.loc[data['time_size'] == time_size, 'wilson_loop'].to_numpy(),
+                       data.loc[data['time_size'] == time_size + 1, 'wilson_loop'].to_numpy()))
         field, err = stat.jackknife_var_numba(x, potential_numba)
         potential.append([time_size, field, err])
-    return pd.DataFrame(potential, columns=['T', 'aV(r)', 'err'])
+    return pd.DataFrame(potential, columns=['time_size', 'aV(r)', 'err'])
 
 def get_wilson_loop(data):
     wilson_loop, err = stat.jackknife_var_numba(data.loc[:, 'wilson_loop'].to_numpy(), potential_numba)
@@ -167,7 +167,7 @@ def read_no_copy(chains, conf_max, path, CSV_names, dtype):
     return data
 
 def read_copy(chains, conf_max, path, copy, CSV_names, dtype):
-    data = pd.DataFrame()
+    data = []
     for chain in chains:
         for i in range(0, conf_max + 1):
             file_path = f'{path}/{chain}/wilson_loop_{i:04}_{copy}'
@@ -177,8 +177,8 @@ def read_copy(chains, conf_max, path, copy, CSV_names, dtype):
                                         dtype=dtype)
                 df["conf"] = f'{i}-{chain}'
                 df["copy"] = copy
-                data = pd.concat([data, df])
-    return data
+                data.append(df)
+    return pd.concat(data)
 
 def read_copy_last(chains, conf_max, path, copy, CSV_names, dtype):
     data = pd.DataFrame()
@@ -220,6 +220,7 @@ print('args: ', args)
 
 axis = 'on-axis'
 conf_type = "gluodynamics"
+# conf_type = "qc2dstag"
 conf_sizes = args.size
 theory_type = 'su3'
 betas = args.beta
@@ -230,6 +231,7 @@ matrix_type_array = args.matrix_type
 operator_type = 'wilson_gevp'
 # operator_type = 'wilson_loop_spatial'
 representation = 'adjoint'
+# representation = 'fundamental'
 additional_parameters_arr = args.additional_parameters
 
 is_binning = False
@@ -245,14 +247,14 @@ calculation_type = 'smearing'
 #              "r/a": np.int32, "wilson_loop": np.float64}
 #     base_dir = 'smearing'
 if calculation_type == 'smearing':
-    potential_parameters = ['smearing_step', 'r/a']
-    CSV_names = ['smearing_step1', 'smearing_step2', "T", "r/a", "wilson_loop"]
+    potential_parameters = ['smearing_step', 'space_size']
+    CSV_names = ['smearing_step1', 'smearing_step2', "time_size", "space_size", "wilson_loop"]
     # CSV_names = ['smearing_step', "T", "r/a", "wilson_loop"]
-    names_out = ['smearing_step1', 'smearing_step2', 'T', 'r/a', 'aV(r)', 'err']
+    names_out = ['smearing_step1', 'smearing_step2', 'time_size', 'space_size', 'aV(r)', 'err']
     # names_out = ['smearing_step', 'T', 'r/a', 'aV(r)', 'err']
-    dtype = {'smearing_step1': np.int32, 'smearing_step2': np.int32, "T": np.int32,
+    dtype = {'smearing_step1': np.int32, 'smearing_step2': np.int32, "time_size": np.int32,
     # dtype = {'smearing_step': np.int32, "T": np.int32,
-             "r/a": np.int32, "wilson_loop": np.float64}
+             "space_size": np.int32, "wilson_loop": np.float64}
     base_dir = ''
 
 elif calculation_type == 'no_smearing':
@@ -263,7 +265,7 @@ elif calculation_type == 'no_smearing':
     base_dir = ''
 
 conf_max = 5000
-# mu1 = ['mu0.40']
+# mu1 = ['mu0.00']
 mu1 = ['/']
 #chains = ["/"]
 # mu1 = ['mu0.05',
@@ -286,6 +288,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     print('matrix_type: ', matrix_type, ', smeared: ', smeared, ' beta: ', beta,' conf_size: ',
           conf_size, ' mu: ', mu,' additional_parameters: ', additional_parameters)
     path = f'{base_path}/{base_dir}/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{matrix_type}/{smeared}/{additional_parameters}'
+    print(path)
     if copies > 0:
         copy_range = range(1, args.copies + 1)
         groupby_params = ['copy'] + potential_parameters
@@ -295,8 +298,10 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     df1 = []
     start = time.time()
     for copy in copy_range:
-        df = read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy)
-        print(df.to_string())
+        # df = read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy)
+        df = read_copy(chains, conf_max, path, copy, CSV_names, dtype)
+        print(df)
+        # print(df.to_string())
         #df = df.persist()
         df = df[df['smearing_step1'] == df['smearing_step2']]
         df = df.rename({'smearing_step1': 'smearing_step'}, axis=1)

@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
     data = read_data(dir_path, file_start, file_end, padding, num_max,
                      smearing_max);
   }
+  // std::cout << data.size() << std::endl;
   std::map<std::tuple<int, int>, std::tuple<double, double>> potential =
       calculate_potential(data, 1, t0);
   for (auto const &[key, value] : potential) {

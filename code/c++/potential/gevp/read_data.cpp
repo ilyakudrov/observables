@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -30,10 +31,19 @@ void read_csv(
   std::string line;
   std::vector<std::string> parsed_line;
   std::getline(file_stream, line);
+  std::vector<int> smearing_points = {11, 31, 51, 71};
   while (std::getline(file_stream, line)) {
     parsed_line = parse_line(line);
+    // if (std::stoi(parsed_line[0]) <= smearing_max &&
+    //     std::stoi(parsed_line[0]) >= 11 &&
+    //     std::stoi(parsed_line[1]) <= smearing_max &&
+    //     std::stoi(parsed_line[1]) >= 11 && std::stoi(parsed_line[2]) >= 1) {
     if (std::stoi(parsed_line[0]) <= smearing_max &&
         std::stoi(parsed_line[1]) <= smearing_max &&
+        std::find(smearing_points.begin(), smearing_points.end(),
+                  std::stoi(parsed_line[0])) != smearing_points.end() &&
+        std::find(smearing_points.begin(), smearing_points.end(),
+                  std::stoi(parsed_line[1])) != smearing_points.end() &&
         std::stoi(parsed_line[2]) >= 1) {
       data[{std::stoi(parsed_line[3]), std::stoi(parsed_line[2]),
             std::stoi(parsed_line[0]), std::stoi(parsed_line[1])}]

@@ -29,13 +29,14 @@ def plot_T_fit(df, df_pot, decomposition_type, image_path):
     plt.close()
 
 def potential_T_fit(lattice_size, L, beta, smearing, additional_params, decomposition_type, copy=None):
-    paths = [{'path': f'../../result/smearing/potential/wilson_loop/fundamental/on-axis/su3/gluodynamics/{lattice_size}/beta{beta}/{smearing}/{additional_params}/potential_{decomposition_type}.csv',
-            'parameters': {'beta': f'beta={beta}'}, 'constraints': {'r/a': (1, L // 2), 'T': (1, L // 2 - 1)}}]
+    paths = [{'path': f'../../result/potential_gevp/fundamental/on-axis/su2/qc2dstag/{lattice_size}/mu0.00/original/{smearing}/{additional_params}/potential_0.csv',
+            'parameters': {'beta': f'beta={beta}', 'smearing_step': 51}, 'constraints': {'space_size': (1, L // 2), 'time_size': (1, L // 2 - 1)}}]
     if copy is not None:
         paths[0]['constraints'] = {'copy': (copy, copy)}
-    image_path = f'../../images/smearing/potential/su3/gluodynamics/T_fit/{lattice_size}/beta{beta}/{smearing}/{additional_params}/{decomposition_type}'
-    print(paths[0]['path'])
+    image_path = f'../../images/potential_gevp/fundamental/on-axis/su2/qc2dstag/T_fit/{lattice_size}/mu0.00/{smearing}/{additional_params}/{decomposition_type}'
     df = potential_data.get_potantial_df(paths, coluns_to_multiindex=['smearing_step'])
+    df = df.rename({'time_size': 'T', 'space_size': 'r/a', 'potential': 'aV(r)'}, axis=1)
+    print(df)
     df_fit = df.groupby(df.index.names + ['r/a']).apply(fit.make_fit_range, fit.func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', L // 2 - 4).reset_index(level=-1, drop=True).reset_index(level=df.index.names + ['r/a'])
     df_curve = df_fit.groupby(df.index.names + ['r/a', 'T_min', 'T_max']).apply(fit.make_fit_curve, fit.func_exponent, 'T', 'aV(r)', ['V', 'a', 'b']).reset_index(level=-1, drop=True).reset_index(level=df.index.names + ['r/a', 'T_min', 'T_max'])
     # df_fit = df.groupby(df.index.names + ['r/a']).apply(fit.make_fit_range, fit.func_double_exponent, ['V', 'a', 'b', 'c', 'd'], 'T', 'aV(r)', 'err', L // 2 - 4).reset_index(level=-1, drop=True).reset_index(level=df.index.names + ['r/a'])
@@ -120,7 +121,7 @@ def potential_T_fit_wrapping(args):
 # pool = multiprocessing.Pool(4)
 # pool.map(potential_T_fit_wrapping, args)
 
-potential_T_fit('16^4', 16, '6.0', 'HYP1_alpha=1_1_0.5_APE_alpha=0.6', '/', 'original')
+potential_T_fit('40^4', 40, '/', 'HYP1_alpha=1_1_0.5_APE_alpha=0.5', '/', 'original')
 # potential_T_fit('24^4', 24, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'monopole')
 # potential_T_fit('32^4', 32, '6.0', 'HYP0_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'monopole')
 # potential_T_fit('28^4', 28, '6.1', 'HYP0_alpha=1_1_0.5_APE_alpha=0.6', 'steps_0/copies=20', 'monopole')

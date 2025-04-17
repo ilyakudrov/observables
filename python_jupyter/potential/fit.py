@@ -114,8 +114,8 @@ def generate_ranges(min, max, range_min_len):
 def potential_fit_T_range(df, range_min_len=None):
     if range_min_len is None:
         range_min_len = df.reset_index(level='range_min_T').reset_index(drop=True).loc[0, 'range_min_T']
-    df_fit = make_fit_range(df, func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', range_min_len)
-    # df_fit = make_fit_range(df, func_double_exponent, ['V', 'a', 'b', 'c', 'd'], 'T', 'aV(r)', 'err', range_min_len)
+    # df_fit = make_fit_range(df, func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', range_min_len)
+    df_fit = make_fit_range(df, func_double_exponent, ['V', 'a', 'b', 'c', 'd'], 'T', 'aV(r)', 'err', range_min_len)
     # print(df_fit)
     if df_fit.empty:
         return pd.DataFrame()

@@ -63,7 +63,6 @@ def read_data(path, name, observables, add_columns, lattice, border):
         beta_dirs = get_dir_names(f'{path}/{lattice}/{border}/{velocity}')
         for beta in beta_dirs:
             file_path = f'{path}/{lattice}/{border}/{velocity}/{beta}/{name}'
-            # print(file_path)
             if os.path.isfile(file_path):
                 df_tmp = pd.read_csv(file_path, delimiter=' ')
                 df_tmp = concat_observables(df_tmp, observables, add_columns)
@@ -436,7 +435,8 @@ def distribution_temperature(observable):
     df_T[observable] = df_T[observable] - df_0[observable]
     df_T[f'{observable}_err'] = np.sqrt(df_T[f'{observable}_err'] ** 2 + df_0[f'{observable}_err'] ** 2)
     df_T = df_T[df_T['beta'] >= 3.85]
-    df_T = df_T[df_T['beta'].isin([3.860, 4.020, 4.120, 4.192, 4.280, 4.440, 4.600, 4.760, 5.160])]
+    # df_T = df_T[df_T['beta'].isin([3.860, 4.020, 4.120, 4.192, 4.280, 4.440, 4.600, 4.760, 5.160])]
+    df_T = df_T[df_T['beta'].isin([3.860, 4.020, 4.120, 4.280, 4.440, 4.600, 4.760, 5.160])]
     # df_T = df_T[df_T['beta'].isin([4.440, 4.600, 4.760, 5.160])]
     fm_to_GeV = 1/0.197327
     scale_setter = scale_setters.ExtendedSymanzikScaleSetter()
@@ -455,23 +455,27 @@ def distribution_temperature(observable):
     df_T['rad_aver'] = df_T['rad_aver'] / R
     df_T = df_T[df_T['rad_aver'] <= 1]
     df_0 = read_data(path, 'observables_result.csv', [observable], ['box_size', 'radius'], '30x30x121sq', 'OBCb_cV')
-    df_0 = df_0[df_0['beta'].isin([3.860, 4.020, 4.120, 4.192, 4.280, 4.440, 4.600, 4.760, 5.160])]
+    df_0 = df_0[df_0['beta'].isin([3.860, 4.020, 4.120, 4.280, 4.440, 4.600, 4.760, 5.160])]
     df_0 = df_0[df_0['velocity'].isin([0])]
-    df_0 = df_0[df_0['box_size'] == R]
-    df_0 = df_0[df_0['radius'] == R * math.sqrt(2)]
+    df_0 = df_0[df_0['box_size'] == (R - 10)]
+    df_0 = df_0[df_0['radius'] == (R - 10) * math.sqrt(2)]
     df_T0 = read_data(path, 'observables_result.csv', [observable], ['box_size', 'radius'], '5x30x121sq', 'OBCb_cV')
-    df_T0 = df_T0[df_T0['beta'].isin([3.860, 4.020, 4.120, 4.192, 4.280, 4.440, 4.600, 4.760, 5.160])]
+    # print(df_T0[df_T0['velocity'] == 0.0].to_string())
+    # print(df_T0.to_string())
+    df_T0 = df_T0[df_T0['beta'].isin([3.860, 4.020, 4.120, 4.280, 4.440, 4.600, 4.760, 5.160])]
     df_T0 = df_T0[df_T0['velocity'].isin([0])]
-    df_T0 = df_T0[df_T0['box_size'] == R]
-    df_T0 = df_T0[df_T0['radius'] == R * math.sqrt(2)]
+    df_T0 = df_T0[df_T0['box_size'] == (R - 10)]
+    df_T0 = df_T0[df_T0['radius'] == (R - 10) * math.sqrt(2)]
     df_0[observable] = df_T0[observable] - df_0[observable]
     df_0[f'{observable}_err'] = np.sqrt(df_T0[f'{observable}_err'] ** 2 + df_0[f'{observable}_err'] ** 2)
+    # print(df_0.to_string())
     df_0['border'] = 'nt30o'
     df_0['beta_crit'] = df_0.apply(lambda x: beta_critical_aver[x['border']], axis=1)
     df_0[r'$T/T_{c}$'] = (scale_setter.get_spacing_in_fm(df_0['beta_crit'])/scale_setter.get_spacing_in_fm(df_0['beta'])).round(2)
     df_0['rad_aver'] = 0
     df_0['beta_deriv'] = dbeta_da_derivative(df_0['beta'])
     df_0['a'] = scale_setter.get_spacing_in_fm(df_0['beta'])
+    # print(df_0.to_string())
     unique = df_T[['velocity', 'cut', 'thickness']].drop_duplicates()
     df_tmp = []
     for index in unique.index:
