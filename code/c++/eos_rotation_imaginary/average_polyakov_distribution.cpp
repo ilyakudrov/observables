@@ -91,6 +91,9 @@ int main(int argc, char *argv[]) {
       get_bin_length_polyakov(base_path, spec_additional_path, lattice_size,
                               boundary, velocity, beta) /
       block_size;
+  if (bin_size == 0) {
+    bin_size = 1;
+  }
 
   if (data[0][0][0].size() > 3 * bin_size) {
     std::map<std::string, std::tuple<double, double>> jackknife_aver;

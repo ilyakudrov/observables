@@ -98,6 +98,9 @@ int main(int argc, char *argv[]) {
     int bin_size = get_bin_length(base_path, spec_additional_path, lattice_size,
                                   boundary, velocity, beta) /
                    block_size;
+    if (bin_size == 0) {
+      bin_size = 1;
+    }
 
     start_time = omp_get_wtime();
     df = df.get_data_by_sel<int, decltype(functor_less), int, double>(
