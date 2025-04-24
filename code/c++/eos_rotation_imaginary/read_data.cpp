@@ -162,7 +162,7 @@ hmdf::StdDataFrame<unsigned long> read_data(std::string dir_path, int row_num,
   int last_conf = 0;
   int conf_tmp = 0;
   std::set<std::filesystem::path> directories = get_directories(dir_path);
-  int count = 0;
+  int block_tmp;
   for (auto &chain_dir : directories) {
     std::set<std::filesystem::path> files = get_files(chain_dir, obs_name);
     last_conf += conf_tmp;
@@ -171,10 +171,10 @@ hmdf::StdDataFrame<unsigned long> read_data(std::string dir_path, int row_num,
         read_csv(x_col, y_col, observables_col, conf_end, file_path, row_num,
                  last_conf);
         conf_tmp = std::get<1>(get_file_conf_range(file_path));
-        if (count == 0) {
-          block_size = get_block_size(file_path);
+        block_tmp = get_block_size(file_path);
+        if (block_tmp > block_size) {
+          block_size = block_tmp;
         }
-        count++;
       } catch (...) {
       }
     }
@@ -239,7 +239,7 @@ read_data_to_vector(std::string dir_path, int Ns, int &block_size,
   int last_conf = 0;
   int conf_tmp = 0;
   std::set<std::filesystem::path> directories = get_directories(dir_path);
-  int count = 0;
+  int block_tmp;
   for (auto &chain_dir : directories) {
     std::set<std::filesystem::path> files = get_files(chain_dir, obs_name);
     last_conf += conf_tmp;
@@ -247,10 +247,10 @@ read_data_to_vector(std::string dir_path, int Ns, int &block_size,
       try {
         read_csv_to_vec(data, file_path, Ns, last_conf, thermalization_length);
         conf_tmp = std::get<1>(get_file_conf_range(file_path));
-        if (count == 0) {
-          block_size = get_block_size(file_path);
+        block_tmp = get_block_size(file_path);
+        if (block_tmp > block_size) {
+          block_size = block_tmp;
         }
-        count++;
       } catch (...) {
       }
     }
@@ -469,7 +469,7 @@ read_data_polyakov(std::string dir_path, int row_num, int &block_size) {
   int last_conf = 0;
   int conf_tmp = 0;
   std::set<std::filesystem::path> directories = get_directories(dir_path);
-  int count = 0;
+  int block_tmp;
   for (auto &chain_dir : directories) {
     std::set<std::filesystem::path> files = get_files(chain_dir, obs_name);
     last_conf += conf_tmp;
@@ -478,10 +478,10 @@ read_data_polyakov(std::string dir_path, int row_num, int &block_size) {
         read_csv_polyakov(x_col, y_col, observables_col, conf_end, file_path,
                           row_num, last_conf);
         conf_tmp = std::get<1>(get_file_conf_range(file_path));
-        if (count == 0) {
-          block_size = get_block_size(file_path);
+        block_tmp = get_block_size(file_path);
+        if (block_tmp > block_size) {
+          block_size = block_tmp;
         }
-        count++;
       } catch (...) {
       }
     }
@@ -546,7 +546,7 @@ read_data_to_vector_polyakov(std::string dir_path, int Ns, int &block_size,
   int last_conf = 0;
   int conf_tmp = 0;
   std::set<std::filesystem::path> directories = get_directories(dir_path);
-  int count = 0;
+  int block_tmp;
   for (auto &chain_dir : directories) {
     std::set<std::filesystem::path> files = get_files(chain_dir, obs_name);
     last_conf += conf_tmp;
@@ -555,10 +555,10 @@ read_data_to_vector_polyakov(std::string dir_path, int Ns, int &block_size,
         read_csv_to_vec_polyakov(data, file_path, Ns, last_conf,
                                  thermalization_length);
         conf_tmp = std::get<1>(get_file_conf_range(file_path));
-        if (count == 0) {
-          block_size = get_block_size(file_path);
+        block_tmp = get_block_size(file_path);
+        if (block_tmp > block_size) {
+          block_size = block_tmp;
         }
-        count++;
       } catch (...) {
       }
     }

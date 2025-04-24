@@ -192,11 +192,11 @@ conf_type = "gluodynamics"
 # conf_type = "su2_suzuki"
 # conf_type = "SU2_dinam"
 #conf_sizes = ["32^3x8"]
-conf_sizes = ["36^4"]
+conf_sizes = ["24^4"]
 # conf_sizes = ["nt16_gov", "nt14", "nt12"]
 theory_type = 'su3'
 # betas = ['beta2.779']
-betas = ['beta6.1']
+betas = ['beta6.0']
 copies = 0
 copy_single = False
 # betas = ['beta2.7', 'beta2.8']
@@ -207,15 +207,15 @@ smeared_array = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5']
 # smeared_array = ['HYP0_APE_alpha=0.5']
 # matrix_type_array = ['monopole',
 #                      'monopoless', 'photon', 'offdiagonal']
-#matrix_type_array = ['original']
-matrix_type_array = ['abelian']
+matrix_type_array = ['monopoless']
+# matrix_type_array = ['abelian']
 #matrix_type_array = ['monopole',
 #                      'monopoless', 'photon',
 #                      'offdiagonal', 'abelian']
 # operator_type = 'wilson_loop_spatial'
 operator_type = 'wilson_gevp'
-representation = 'fundamental'
-# representation = 'adjoint'
+# representation = 'fundamental'
+representation = 'adjoint'
 # additional_parameters_arr = ['steps_500/copies=3/compensate_1', 'steps_1000/copies=3/compensate_1',
 #  'steps_2000/copies=3/compensate_1', 'steps_4000/copies=3/compensate_1', 'steps_8000/copies=3/compensate_1']
 # additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
@@ -231,7 +231,7 @@ representation = 'fundamental'
 # additional_parameters_arr = ['steps_25/copies=4', 'steps_50/copies=4',
 #                              'steps_100/copies=4', 'steps_200/copies=4',
 #                              'steps_1000/copies=4', 'steps_2000/copies=4']
-additional_parameters_arr = ['steps_0/copies=10']
+additional_parameters_arr = ['steps_0/copies=20']
 # additional_parameters_arr = ['steps_500/copies=3', 'steps_1000/copies=3',
 #                              'steps_2000/copies=3', 'steps_4000/copies=3',
 #                              'steps_8000/copies=3']
@@ -309,6 +309,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     start = time.time()
     for copy in copy_range:
         df = read_copy(chains, conf_max, path, copy, CSV_names, dtype)
+        # df = read_no_copy(chains, conf_max, path, CSV_names, dtype)
         print(df)
         df = df[df['smearing_step1'] == df['smearing_step2']]
         df = df.rename({'smearing_step1': 'smearing_step'}, axis=1)
