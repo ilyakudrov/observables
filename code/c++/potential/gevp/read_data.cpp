@@ -35,9 +35,8 @@ void read_csv(
   while (std::getline(file_stream, line)) {
     parsed_line = parse_line(line);
     // if (std::stoi(parsed_line[0]) <= smearing_max &&
-    //     std::stoi(parsed_line[0]) >= 11 &&
+    //     std::stoi(parsed_line[0]) >= 1 &&
     //     std::stoi(parsed_line[1]) <= smearing_max &&
-    //     std::stoi(parsed_line[1]) >= 11 && std::stoi(parsed_line[2]) >= 1) {
     if (std::find(smearing_points.begin(), smearing_points.end(),
                   std::stoi(parsed_line[0])) != smearing_points.end() &&
         std::find(smearing_points.begin(), smearing_points.end(),

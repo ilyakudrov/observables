@@ -22,6 +22,9 @@ def func_coloumb(x, c, alpha):
 def func_linear(x, c, sigma):
     return c + sigma * x
 
+def func_constant(x, c):
+    return c
+
 def chi_square(x, y, popt, func_fit):
     """
     Calculate chi_square of a fit with func_fit
@@ -111,11 +114,12 @@ def generate_ranges(min, max, range_min_len):
             ranges.append((i, j))
     return ranges
 
-def potential_fit_T_range(df, range_min_len=None):
+def potential_fit_T_range(df, fit_func, param_list, range_min_len=None):
     if range_min_len is None:
         range_min_len = df.reset_index(level='range_min_T').reset_index(drop=True).loc[0, 'range_min_T']
     # df_fit = make_fit_range(df, func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', range_min_len)
-    df_fit = make_fit_range(df, func_double_exponent, ['V', 'a', 'b', 'c', 'd'], 'T', 'aV(r)', 'err', range_min_len)
+    df_fit = make_fit_range(df, fit_func, param_list, 'T', 'aV(r)', 'err', range_min_len)
+    # df_fit = make_fit_range(df, func_constant, ['V'], 'T', 'aV(r)', 'err', range_min_len)
     # print(df_fit)
     if df_fit.empty:
         return pd.DataFrame()

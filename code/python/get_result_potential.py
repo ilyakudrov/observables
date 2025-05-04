@@ -300,6 +300,7 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
     for copy in copy_range:
         # df = read_data_single_copy(path, chains, conf_max, CSV_names, dtype, copy)
         df = read_copy(chains, conf_max, path, copy, CSV_names, dtype)
+        # df = read_no_copy(chains, conf_max, path, CSV_names, dtype)
         print(df)
         # print(df.to_string())
         #df = df.persist()
