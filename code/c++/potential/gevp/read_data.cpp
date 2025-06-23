@@ -31,7 +31,7 @@ void read_csv(
   std::string line;
   std::vector<std::string> parsed_line;
   std::getline(file_stream, line);
-  std::vector<int> smearing_points = {81, 91, 101};
+  std::vector<int> smearing_points = {31, 51, 71};
   while (std::getline(file_stream, line)) {
     parsed_line = parse_line(line);
     // if (std::stoi(parsed_line[0]) <= smearing_max &&
@@ -85,7 +85,7 @@ read_data_copies(std::string dir_path, std::string file_start,
   std::vector<std::string> chains = {"",    "s0/", "s1/", "s2/", "s3/", "s4/",
                                      "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
   for (auto chain : chains) {
-    for (int i = 1; i <= num_max; i++) {
+    for (int i = 500; i <= num_max; i++) {
       for (int j = copy; j >= 0; j--) {
         std::stringstream ss;
         ss << dir_path << "/" << chain << file_start << std::setw(padding)

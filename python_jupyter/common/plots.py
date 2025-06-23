@@ -43,7 +43,7 @@ def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, 
     fg = seaborn.FacetGrid(data=data, hue=hue, height=5,
                            aspect=1.6, palette=color_palette, legend_out=True, **fg_kws)
     if err is not None:
-        fg.map(plt.errorbar, x, y, err, mfc=None, fmt='o', ms=5, capsize=5, lw=0.5, ls=None
+        fg.map(plt.errorbar, x, y, err, mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls=None
            ).add_legend()
     else:
         fg.map(plt.errorbar, x, y, mfc=None, fmt='o', ms=3, capsize=5, lw=0.5, ls=None
