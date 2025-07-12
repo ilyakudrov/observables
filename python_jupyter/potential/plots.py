@@ -3,7 +3,7 @@ import seaborn
 import matplotlib.pyplot as plt
 from PIL import Image
 
-import potential_data
+import python_jupyter.common.potential_data as potential_data
 
 
 def save_image(image_path, image_name, fg):

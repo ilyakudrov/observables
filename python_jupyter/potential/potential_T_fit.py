@@ -12,8 +12,8 @@ import multiprocessing
 sys.path.append(os.path.join(os.path.dirname(
     os.path.abspath(''))))
 import common.plots as plots
-import potential_data
-import fit
+import python_jupyter.common.potential_data as potential_data
+import python_jupyter.common.fit as fit
 
 warnings.simplefilter("ignore", OptimizeWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
