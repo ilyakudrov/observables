@@ -23,4 +23,4 @@ velocity - velocity dir name
 lattice_size - lattice_size dir name
 boundary - boundary dir name
 result_path - path where to save result (has to be created)
-spec_additional_path - additional path, where program will try t ofind spec files
+spec_additional_path - additional path, where program will try to find spec files
