@@ -1,0 +1,26 @@
+This project is ment to be a pile of different programs on python and c++ for proseccing latticce QCD data.
+
+It's poorely documented, but here could be some information about some particular programs of this project.
+
+1. Eos rotation imaginary processing:
+
+it's located in code/c++/eos_rotation_imaginary, it has 6 main programs: average_distribution, average_observables_rings, average_observables, average_polyakov_distribution, average_polyakov_rings, average_polyakov.
+
+-how to compile: make ${program_name} DATAFRAME_PATH=${DATAFRAME_PATH} GCC=${GCC_PATH}(optional) ARCH=${ARCH}
+example: make average_distribution DATAFRAME_PATH=/home/itep/kudrov/source/DataFrame GCC=/home/itep/kudrov/installed/gcc-13/bin/g++
+DATAFRAME_PATH - path to data_frame library
+ARCH - appendix to executional name (default: test), i.e. average_distribution_test
+
+requires data_frame library https://github.com/hosseinmoein/DataFrame, makefile takes path to this library (DATAFRAME_PATH)
+
+-how to use:
+
+${program_name} --base_path ${base_path} --beta ${beta} --velocity ${velocity} --lattice_size ${lattice_size} --boundary ${boundary} --result_path ${result_path} --spec_additional_path ${spec_additional_path}
+
+base_path - path to directory with lattice_size
+beta - beta dir name
+velocity - velocity dir name
+lattice_size - lattice_size dir name
+boundary - boundary dir name
+result_path - path where to save result (has to be created)
+spec_additional_path - additional path, where program will try t ofind spec files
