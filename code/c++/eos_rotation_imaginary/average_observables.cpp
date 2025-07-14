@@ -12,10 +12,10 @@
 #include <tuple>
 
 void add_to_map(
-    std::map<std::tuple<int, int, double>,
+    std::map<std::tuple<int, int, int, double>,
              std::vector<std::tuple<double, double>>> &result,
     std::map<std::string, std::tuple<double, double>> &jackknife_aver,
-    int bin_size, int box_size, double radius) {
+    int bin_size, int thermalization_length, int box_size, double radius) {
   std::vector<std::string> observables = {
       "S",   "Jv", "Jv1", "Jv2",    "Blab",    "E",  "Elab", "Bz",
       "Bxy", "Ez", "Exy", "ElabzT", "ElabxyT", "Ae", "Am",   "AlabeT"};
@@ -24,7 +24,8 @@ void add_to_map(
     tmp[i] = std::make_tuple(std::get<0>(jackknife_aver[observables[i]]),
                              std::get<1>(jackknife_aver[observables[i]]));
   }
-  result[std::make_tuple(bin_size, box_size, radius)] = tmp;
+  result[std::make_tuple(bin_size, thermalization_length, box_size, radius)] =
+      tmp;
 }
 
 int main(int argc, char *argv[]) {
@@ -146,13 +147,11 @@ int main(int argc, char *argv[]) {
       std::vector<std::vector<double>> data_aver;
       hmdf::StdDataFrame<unsigned long> df1;
       hmdf::StdDataFrame<unsigned long> df_aver;
-      std::map<std::tuple<int, int, double>,
+      std::map<std::tuple<int, int, int, double>,
                std::vector<std::tuple<double, double>>>
           result;
-      end_time = omp_get_wtime();
+      start_time = omp_get_wtime();
       for (int cut = 0; cut < coord_max - 2; cut++) {
-        // for (int cut = 0; cut < 2; cut++) {
-        // start_time = omp_get_wtime();
         auto functor_cut = [coord_max, cut](const unsigned long &, const int &x,
                                             const int &y) -> bool {
           return (x <= 2 * coord_max - cut) && (x >= cut) &&
@@ -160,43 +159,19 @@ int main(int argc, char *argv[]) {
         };
         df = df.get_data_by_sel<int, int, decltype(functor_cut), int, double>(
             "x", "y", functor_cut);
-        // end_time = omp_get_wtime();
-        // search_time = end_time - start_time;
-        // std::cout << "box cut time: " << search_time << std::endl;
-
         radii_sq = get_radii_sq(coord_max - cut);
         for (int rad_cut : radii_sq) {
-          // std::cout << "rad_cut: " << rad_cut << std::endl;
-          // start_time = omp_get_wtime();
           auto functor_rad_cut = [rad_cut](const unsigned long &,
                                            const int &rad_sq) -> bool {
             return rad_sq <= rad_cut;
           };
           df1 = df.get_data_by_sel<int, decltype(functor_rad_cut), int, double>(
               "rad_sqared", functor_rad_cut);
-          // end_time = omp_get_wtime();
-          // search_time = end_time - start_time;
-          // std::cout << "radii cut time: " << search_time << std::endl;
-
-          // start_time = omp_get_wtime();
           data_aver = observables_aver(df1);
-          // end_time = omp_get_wtime();
-          // search_time = end_time - start_time;
-          // std::cout << "observables_aver time: " << search_time << std::endl;
-
-          // std::cout.precision(10);
-          // start_time = omp_get_wtime();
           std::map<std::string, std::tuple<double, double>> jackknife_aver =
               jackknife(data_aver, bin_size);
           add_to_map(result, jackknife_aver, bin_size * block_size,
-                     coord_max - cut, sqrt(rad_cut));
-          // for (auto &res : jackknife_aver) {
-          //   std::cout << res.first << " " << std::get<0>(res.second) << " "
-          //             << std::get<1>(res.second) << std::endl;
-          // }
-          // end_time = omp_get_wtime();
-          // search_time = end_time - start_time;
-          // std::cout << "jackknife time: " << search_time << std::endl;
+                     thermalization_length, coord_max - cut, sqrt(rad_cut));
         }
       }
       end_time = omp_get_wtime();
@@ -206,7 +181,6 @@ int main(int argc, char *argv[]) {
         std::filesystem::create_directories(result_path);
       } catch (...) {
       }
-
       std::ofstream stream_result;
       stream_result.open(result_path + "/observables_result.csv");
       stream_result.precision(17);
@@ -214,7 +188,7 @@ int main(int argc, char *argv[]) {
           << "S S_err Jv Jv_err Jv1 Jv1_err Jv2 Jv2_err Blab Blab_err E E_err "
              "Elab Elab_err Bz Bz_err Bxy Bxy_err Ez Ez_err Exy Exy_err ElabzT "
              "ElabzT_err ElabxyT ElabxyT_err Ae Ae_err Am Am_err AlabeT "
-             "AlabeT_err bin_size box_size radius"
+             "AlabeT_err bin_size thermalization_length box_size radius"
           << std::endl;
 
       for (auto &res : result) {
@@ -223,7 +197,8 @@ int main(int argc, char *argv[]) {
                         << std::get<1>(res.second[i]) << " ";
         }
         stream_result << get<0>(res.first) << " " << get<1>(res.first) << " "
-                      << get<2>(res.first) << std::endl;
+                      << get<2>(res.first) << " " << get<3>(res.first)
+                      << std::endl;
       }
       stream_result.close();
     }

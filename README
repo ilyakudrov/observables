@@ -24,3 +24,6 @@ lattice_size - lattice_size dir name
 boundary - boundary dir name
 result_path - path where to save result (has to be created)
 spec_additional_path - additional path, where program will try to find spec files
+
+spec files have to be in ${spec_additional_path} or ${velocity} dirs and be called "spec_bin_Pl.log", "spec_bin_S.log" and "spec_therm.log"
+spec files are two column space separated files with columns "beta" "spec" (without headr, just two numbers), where spec is corresponding input parameter, i.e. thermalization_length or bin_size

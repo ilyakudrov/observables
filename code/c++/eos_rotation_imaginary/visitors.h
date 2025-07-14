@@ -698,6 +698,122 @@ private:
   result_type result_;
 };
 
+class R4MeanSingleVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef int value_type;
+  typedef double result_type;
+  R4MeanSingleVisitor() {}
+  void pre() {}
+  void post() {}
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    int n = idx_end - idx_begin;
+    result_ = 0;
+    auto it1 = value1_begin;
+    double tmp;
+    // #pragma omp parallel for firstprivate(it1) reduction(+ : result_)
+    for (int i = 0; i < n; i++) {
+      tmp = (double)it1[i];
+      result_ += tmp * tmp;
+    }
+    result_ /= n;
+  }
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  result_type result_;
+};
+
+class R6MeanSingleVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef int value_type;
+  typedef double result_type;
+  R6MeanSingleVisitor() {}
+  void pre() {}
+  void post() {}
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    int n = idx_end - idx_begin;
+    result_ = 0;
+    auto it1 = value1_begin;
+    double tmp;
+    // #pragma omp parallel for firstprivate(it1) reduction(+ : result_)
+    for (int i = 0; i < n; i++) {
+      tmp = (double)it1[i];
+      result_ += tmp * tmp * tmp;
+    }
+    result_ /= n;
+  }
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  result_type result_;
+};
+
+class R8MeanSingleVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef int value_type;
+  typedef double result_type;
+  R8MeanSingleVisitor() {}
+  void pre() {}
+  void post() {}
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    int n = idx_end - idx_begin;
+    result_ = 0;
+    auto it1 = value1_begin;
+    double tmp;
+    // #pragma omp parallel for firstprivate(it1) reduction(+ : result_)
+    for (int i = 0; i < n; i++) {
+      tmp = (double)it1[i];
+      result_ += tmp * tmp * tmp * tmp;
+    }
+    result_ /= n;
+  }
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  result_type result_;
+};
+
+class R10MeanSingleVisitor {
+public:
+  typedef unsigned long index_type;
+  typedef int value_type;
+  typedef double result_type;
+  R10MeanSingleVisitor() {}
+  void pre() {}
+  void post() {}
+  template <typename K, typename H>
+  void operator()(const K &idx_begin, const K &idx_end, const H &value1_begin,
+                  const H &value1_end) {
+    int n = idx_end - idx_begin;
+    result_ = 0;
+    auto it1 = value1_begin;
+    double tmp;
+    // #pragma omp parallel for firstprivate(it1) reduction(+ : result_)
+    for (int i = 0; i < n; i++) {
+      tmp = (double)it1[i];
+      result_ += tmp * tmp * tmp * tmp * tmp;
+    }
+    result_ /= n;
+  }
+  result_type &get_result() { return result_; }
+  const result_type &get_result() const { return result_; }
+
+private:
+  result_type result_;
+};
+
 class GroupbyIndicesVisitor {
 public:
   typedef unsigned long index_type;

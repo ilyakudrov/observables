@@ -9,10 +9,10 @@
 #include <tuple>
 
 void add_to_map(
-    std::map<std::tuple<int, int, int>, std::vector<std::tuple<double, double>>>
-        &result,
+    std::map<std::tuple<int, int, int, int>,
+             std::vector<std::tuple<double, double>>> &result,
     std::map<std::string, std::tuple<double, double>> &jackknife_aver, int x,
-    int y, int bin_size) {
+    int y, int bin_size, int thermalization_length) {
   std::vector<std::string> observables = {
       "S",   "Jv", "Jv1", "Jv2",    "Blab",    "E",  "Elab", "Bz",
       "Bxy", "Ez", "Exy", "ElabzT", "ElabxyT", "Ae", "Am",   "AlabeT"};
@@ -21,7 +21,7 @@ void add_to_map(
     tmp[i] = std::make_tuple(std::get<0>(jackknife_aver[observables[i]]),
                              std::get<1>(jackknife_aver[observables[i]]));
   }
-  result[std::make_tuple(x, y, bin_size)] = tmp;
+  result[std::make_tuple(x, y, bin_size, thermalization_length)] = tmp;
 }
 
 int main(int argc, char *argv[]) {
@@ -97,12 +97,14 @@ int main(int argc, char *argv[]) {
     std::cout << "make_observables time: " << search_time << std::endl;
 
     std::map<std::string, std::tuple<double, double>> jackknife_aver;
-    std::map<std::tuple<int, int, int>, std::vector<std::tuple<double, double>>>
+    std::map<std::tuple<int, int, int, int>,
+             std::vector<std::tuple<double, double>>>
         result;
     for (int i = 0; i < Ns; i++) {
       for (int j = 0; j < Ns; j++) {
         jackknife_aver = jackknife(data[i][j], bin_size);
-        add_to_map(result, jackknife_aver, i, j, bin_size * block_size);
+        add_to_map(result, jackknife_aver, i, j, bin_size * block_size,
+                   thermalization_length);
       }
     }
 
@@ -122,7 +124,7 @@ int main(int argc, char *argv[]) {
            "E_err "
            "Elab Elab_err Bz Bz_err Bxy Bxy_err Ez Ez_err Exy Exy_err ElabzT "
            "ElabzT_err ElabxyT ElabxyT_err Ae Ae_err Am Am_err AlabeT "
-           "AlabeT_err bin_size"
+           "AlabeT_err bin_size thermalization_length"
         << std::endl;
 
     for (auto &res : result) {
@@ -131,7 +133,8 @@ int main(int argc, char *argv[]) {
         stream_result << std::get<0>(res.second[i]) << " "
                       << std::get<1>(res.second[i]) << " ";
       }
-      stream_result << get<2>(res.first) << std::endl;
+      stream_result << get<2>(res.first) << " " << get<3>(res.first)
+                    << std::endl;
     }
     stream_result.close();
   }
