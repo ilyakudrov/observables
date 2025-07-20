@@ -1,9 +1,9 @@
 #include "jackknife.h"
 #include "read_data.h"
 
-#include "fstream"
-#include "iostream"
-#include "vector"
+#include <fstream>
+#include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -37,39 +37,35 @@ int main(int argc, char *argv[]) {
   cout << "padding " << padding << endl;
   cout << "num_max " << num_max << endl;
 
-  std::map<std::tuple<int, int, int, int, int, int, int, int>,
-           std::tuple<std::vector<double>, std::vector<double>>>
-      data;
+  std::map<int, std::vector<double>> data;
   data = read_data(dir_path, file_start, file_end, padding, num_max);
   if (!data.empty()) {
-    int data_size = (unsigned long)get<0>(data.begin()->second).size();
+    int data_size = data.begin()->second.size();
     std::vector<unsigned long> bin_borders = get_bin_borders(data_size, 1);
-    vector<double> jackknife_data;
-    std::map<std::tuple<int, int, int, int, int, int, int, int>,
+    std::vector<vector<double>> jackknife_data;
+    std::map<int,
              std::tuple<std::tuple<double, double>, std::tuple<double, double>>>
         result;
-    std::tuple<double, double> aver_real, aver_imag;
+    std::tuple<double, double> aver_polyakov_loop, aver_susceptibility;
     for (auto pair : data) {
-      jackknife_data = do_jackknife(get<0>(pair.second), bin_borders);
-      aver_real = get_aver(jackknife_data);
-      jackknife_data = do_jackknife(get<1>(pair.second), bin_borders);
-      aver_imag = get_aver(jackknife_data);
-      result[pair.first] = {aver_real, aver_imag};
+      jackknife_data = do_jackknife(pair.second, bin_borders);
+      aver_polyakov_loop = get_aver(jackknife_data[0]);
+      aver_susceptibility = get_aver(jackknife_data[1]);
+      result[pair.first] = {aver_polyakov_loop, aver_susceptibility};
     }
-    ofstream stream_propagator;
-    stream_propagator.precision(17);
-    stream_propagator.open(output_path);
-    stream_propagator << "p1,p2,p3,p4,mu,nu,a,b,Dr,Dr_err,Di,Di_err" << endl;
+    ofstream stream_polyakov_loop;
+    stream_polyakov_loop.precision(17);
+    stream_polyakov_loop.open(output_path);
+    stream_polyakov_loop << "HYP_step,polyakov_loop,polyakov_loop_err,"
+                            "susceptibility,susceptibility_err"
+                         << endl;
     for (auto const &[key, value] : result) {
-      stream_propagator << get<0>(key) << "," << get<1>(key) << ","
-                        << get<2>(key) << "," << get<3>(key) << ","
-                        << get<4>(key) << "," << get<5>(key) << ","
-                        << get<6>(key) << "," << get<7>(key) << ","
-                        << get<0>(get<0>(value)) << "," << get<1>(get<0>(value))
-                        << "," << get<0>(get<1>(value)) << ","
-                        << get<1>(get<1>(value)) << endl;
+      stream_polyakov_loop << key << "," << get<0>(get<0>(value)) << ","
+                           << get<1>(get<0>(value)) << ","
+                           << get<0>(get<1>(value)) << ","
+                           << get<1>(get<1>(value)) << endl;
     }
-    stream_propagator.close();
+    stream_polyakov_loop.close();
   } else {
     cout << "data is empty" << endl;
   }

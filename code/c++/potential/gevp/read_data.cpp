@@ -85,7 +85,7 @@ read_data_copies(std::string dir_path, std::string file_start,
   std::vector<std::string> chains = {"",    "s0/", "s1/", "s2/", "s3/", "s4/",
                                      "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
   for (auto chain : chains) {
-    for (int i = 500; i <= num_max; i++) {
+    for (int i = 0; i <= num_max; i++) {
       for (int j = copy; j >= 0; j--) {
         std::stringstream ss;
         ss << dir_path << "/" << chain << file_start << std::setw(padding)
