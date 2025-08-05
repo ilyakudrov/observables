@@ -1,5 +1,5 @@
 #!/bin/bash
-dir_path="../../../../data/gluon_propagator/on-axis/su2/gluodynamics/66^3x8/beta2.701/original"
+dir_path="../../../../data/gluon_propagator/su2/gluodynamics/66^3x8/beta2.701/original"
 file_start="gluon_propagator_"
 file_end=""
 output_path="./result/gluon_propagator.csv"
