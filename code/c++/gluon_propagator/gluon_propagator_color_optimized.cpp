@@ -37,40 +37,39 @@ int main(int argc, char *argv[]) {
   cout << "padding " << padding << endl;
   cout << "num_max " << num_max << endl;
 
-  std::map<std::tuple<int, int, int, int>,
+  std::map<std::tuple<double, double, double, double, int, int>,
            std::tuple<std::vector<double>, std::vector<double>>>
       data;
-  std::set<std::tuple<double, double, double, double>> momenta =
-      read_momenta(dir_path, file_start, file_end, padding, num_max);
   std::map<std::tuple<double, double, double, double, int, int, int, int>,
            std::tuple<std::tuple<double, double>, std::tuple<double, double>>>
       result;
-  for (auto momentum : momenta) {
-    data = read_data_single_momentum(momentum, dir_path, file_start, file_end,
-                                     padding, num_max);
-    if (!data.empty()) {
-      int data_size = (unsigned long)get<0>(data.begin()->second).size();
-      std::vector<unsigned long> bin_borders = get_bin_borders(data_size, 1);
-      vector<double> jackknife_data;
-      std::tuple<double, double> aver_real, aver_imag;
-      for (auto pair : data) {
-        cout << std::get<0>(momentum) << " " << std::get<1>(momentum) << " "
-             << std::get<2>(momentum) << " " << std::get<3>(momentum)
-             << std::endl;
-        jackknife_data = do_jackknife(get<0>(pair.second), bin_borders);
-        aver_real = get_aver(jackknife_data);
-        jackknife_data = do_jackknife(get<1>(pair.second), bin_borders);
-        aver_imag = get_aver(jackknife_data);
-        result[{std::get<0>(momentum), std::get<1>(momentum),
-                std::get<2>(momentum), std::get<3>(momentum),
-                std::get<0>(pair.first), std::get<1>(pair.first),
-                std::get<2>(pair.first), std::get<3>(pair.first)}] = {
-            aver_real, aver_imag};
+  for (int a = 0; a < 3; a++) {
+    for (int b = 0; b < 3; b++) {
+      std::tuple<int, int> colors = {a, b};
+      data = read_data_color_components(colors, dir_path, file_start, file_end,
+                                        padding, num_max);
+      if (!data.empty()) {
+        int data_size = (unsigned long)get<0>(data.begin()->second).size();
+        std::vector<unsigned long> bin_borders = get_bin_borders(data_size, 1);
+        vector<double> jackknife_data;
+        std::tuple<double, double> aver_real, aver_imag;
+        for (auto pair : data) {
+          cout << std::get<0>(colors) << " " << std::get<1>(colors)
+               << std::endl;
+          jackknife_data = do_jackknife(get<0>(pair.second), bin_borders);
+          aver_real = get_aver(jackknife_data);
+          jackknife_data = do_jackknife(get<1>(pair.second), bin_borders);
+          aver_imag = get_aver(jackknife_data);
+          result[{std::get<0>(pair.first), std::get<1>(pair.first),
+                  std::get<2>(pair.first), std::get<3>(pair.first),
+                  std::get<4>(pair.first), std::get<5>(pair.first),
+                  std::get<0>(colors), std::get<1>(colors)}] = {aver_real,
+                                                                aver_imag};
+        }
+      } else {
+        cout << std::get<0>(colors) << " " << std::get<1>(colors)
+             << " data is empty" << endl;
       }
-    } else {
-      cout << std::get<0>(momentum) << " " << std::get<1>(momentum) << " "
-           << std::get<2>(momentum) << " " << std::get<3>(momentum)
-           << " data is empty" << endl;
     }
   }
   ofstream stream_propagator;

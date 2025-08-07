@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   cout << "padding " << padding << endl;
   cout << "num_max " << num_max << endl;
 
-  std::map<std::tuple<int, int, int, int, int, int, int, int>,
+  std::map<std::tuple<double, double, double, double, int, int, int, int>,
            std::tuple<std::vector<double>, std::vector<double>>>
       data;
   data = read_data(dir_path, file_start, file_end, padding, num_max);
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     int data_size = (unsigned long)get<0>(data.begin()->second).size();
     std::vector<unsigned long> bin_borders = get_bin_borders(data_size, 1);
     vector<double> jackknife_data;
-    std::map<std::tuple<int, int, int, int, int, int, int, int>,
+    std::map<std::tuple<double, double, double, double, int, int, int, int>,
              std::tuple<std::tuple<double, double>, std::tuple<double, double>>>
         result;
     std::tuple<double, double> aver_real, aver_imag;
