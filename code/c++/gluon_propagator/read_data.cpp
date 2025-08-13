@@ -246,3 +246,47 @@ read_data_color_components(std::tuple<int, int> &colors, std::string dir_path,
   }
   return data;
 }
+
+void read_csv_diagonal(
+    std::string file_path,
+    std::map<std::tuple<double, double, double, double, int>,
+             std::tuple<std::vector<double>, std::vector<double>>> &data) {
+  std::ifstream file_stream(file_path);
+  std::string line;
+  std::vector<std::string> parsed_line;
+  std::getline(file_stream, line);
+  while (std::getline(file_stream, line)) {
+    parsed_line = parse_line(line);
+    std::get<0>(data[{std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                      std::stod(parsed_line[2]), std::stod(parsed_line[3]),
+                      std::stoi(parsed_line[4])}])
+        .push_back(double(std::stod(parsed_line[8])));
+    std::get<1>(data[{std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                      std::stod(parsed_line[2]), std::stod(parsed_line[3]),
+                      std::stoi(parsed_line[4])}])
+        .push_back(double(std::stod(parsed_line[9])));
+  }
+}
+
+std::map<std::tuple<double, double, double, double, int>,
+         std::tuple<std::vector<double>, std::vector<double>>>
+read_data_diagonal(std::string dir_path, std::string file_start,
+                   std::string file_end, int padding, int num_max) {
+  std::map<std::tuple<double, double, double, double, int>,
+           std::tuple<std::vector<double>, std::vector<double>>>
+      data;
+  std::string file_path;
+  std::vector<std::string> chains = {"",    "s0/", "s1/", "s2/", "s3/", "s4/",
+                                     "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
+  for (auto chain : chains) {
+    for (int i = 1; i <= num_max; i++) {
+      std::stringstream ss;
+      ss << dir_path << "/" << chain << file_start << std::setw(padding)
+         << std::setfill('0') << std::to_string(i) << file_end;
+      file_path = ss.str();
+      if (std::filesystem::exists(file_path))
+        read_csv_diagonal(file_path, data);
+    }
+  }
+  return data;
+}
