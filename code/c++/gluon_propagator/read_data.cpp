@@ -260,11 +260,11 @@ void read_csv_diagonal(
     std::get<0>(data[{std::stod(parsed_line[0]), std::stod(parsed_line[1]),
                       std::stod(parsed_line[2]), std::stod(parsed_line[3]),
                       std::stoi(parsed_line[4])}])
-        .push_back(double(std::stod(parsed_line[8])));
+        .push_back(double(std::stod(parsed_line[5])));
     std::get<1>(data[{std::stod(parsed_line[0]), std::stod(parsed_line[1]),
                       std::stod(parsed_line[2]), std::stod(parsed_line[3]),
                       std::stoi(parsed_line[4])}])
-        .push_back(double(std::stod(parsed_line[9])));
+        .push_back(double(std::stod(parsed_line[6])));
   }
 }
 
