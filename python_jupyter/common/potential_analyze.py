@@ -5,9 +5,9 @@ import numpy as np
 from scipy.optimize import curve_fit
 import pandas as pd
 
-import plots
+import common.plots
 import scaler
-import python_jupyter.common.fit as fit
+import common.fit as fit
 
 def shift_fit(df1, df2, fit_range1, fit_range2, fit_func):
         """potential from df1 gets shifted towards potential from df2

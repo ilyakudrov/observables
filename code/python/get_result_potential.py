@@ -219,10 +219,10 @@ args = parser.parse_args()
 print('args: ', args)
 
 axis = 'on-axis'
-conf_type = "gluodynamics"
-# conf_type = "qc2dstag"
+#conf_type = "gluodynamics"
+conf_type = "qc2dstag"
 conf_sizes = args.size
-theory_type = 'su3'
+theory_type = 'su2'
 betas = args.beta
 copies = args.copies
 smeared_array = args.smearing
@@ -230,8 +230,8 @@ matrix_type_array = args.matrix_type
 # operator_type = 'wilson_loop'
 operator_type = 'wilson_gevp'
 # operator_type = 'wilson_loop_spatial'
-representation = 'adjoint'
-# representation = 'fundamental'
+#representation = 'adjoint'
+representation = 'fundamental'
 additional_parameters_arr = args.additional_parameters
 
 is_binning = False
@@ -266,7 +266,7 @@ elif calculation_type == 'no_smearing':
 
 conf_max = 5000
 # mu1 = ['mu0.00']
-mu1 = ['/']
+mu1 = ['mu0.40']
 #chains = ["/"]
 # mu1 = ['mu0.05',
 #        'mu0.20', 'mu0.25',
@@ -274,7 +274,7 @@ mu1 = ['/']
 # mu1 = ['mu0.40']
 # chains = ['s1', 's2']
 chains = ['/', 's0', 's1', 's2', 's3',
-           's4', 's5', 's6', 's7', 's8']
+           's4', 's5', 's6', 's7', 's8', 's9', 's10']
 
 # adjoint_fix = True
 adjoint_fix = False

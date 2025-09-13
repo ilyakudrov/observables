@@ -26,6 +26,9 @@ def func_linear(x, c, sigma):
 def func_constant(x, c):
     return c
 
+def func_polynomial3(x, a, b, c, d):
+    return a * x**3 + b * x**2 + c * x + d
+
 def chi_square(x, y, popt, func_fit):
     """
     Calculate chi_square of a fit with func_fit
