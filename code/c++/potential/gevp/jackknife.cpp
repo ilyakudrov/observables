@@ -101,9 +101,9 @@ make_gevp(const std::vector<std::vector<double>> &data_jackknife_0,
         count++;
       }
     }
-    if (test_bool) {
-      std::cout << A << std::endl << std::endl;
-    }
+    // if (test_bool) {
+    //   std::cout << A << std::endl << std::endl;
+    // }
     ges.compute(A, B, Eigen::DecompositionOptions::EigenvaluesOnly);
     auto eigenvalues = ges.eigenvalues();
     if (test_bool) {
@@ -112,7 +112,7 @@ make_gevp(const std::vector<std::vector<double>> &data_jackknife_0,
       }
       std::cout << std::endl << std::endl;
     }
-    lambdas[i] = eigenvalues[eigenvalues.size() - 1];
+    lambdas[i] = eigenvalues[eigenvalues.size() - 2];
   }
   return lambdas;
 }
@@ -138,10 +138,10 @@ std::tuple<double, double> potential_aver(std::vector<double> &lambda_t1,
   // #pragma omp parallel for shared(lambda_t1, lambda_t2, tmp) private(a)
   for (long int i = 0; i < n; i++) {
     a = lambda_t1[i] / lambda_t2[i];
-    if (test_bool) {
-      std::cout << lambda_t1[i] << " " << lambda_t2[i] << " " << std::log(a)
-                << std::endl;
-    }
+    // if (test_bool) {
+    //   std::cout << lambda_t1[i] << " " << lambda_t2[i] << " " << std::log(a)
+    //             << std::endl;
+    // }
     if (a > 0)
       tmp[i] = std::log(a);
     else
@@ -170,16 +170,13 @@ std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
       get_bin_borders(data[data.begin()->first][0].size(), bin_size);
   bool test_bool = false;
   for (const auto &pair : sizes) {
-    for (int i = 0; i < pair.second.size(); i++) {
-      std::cout << pair.first << " " << pair.second[i] << std::endl;
-    }
     std::vector<std::vector<double>> lambdas;
     std::vector<std::vector<double>> data_jackknife_0 =
         do_jackknife(data[{pair.first, pair.second[t0]}], bin_borders);
     for (int t = t0 + 1; t < pair.second.size(); t++) {
       std::vector<std::vector<double>> data_jackknife_t =
           do_jackknife(data[{pair.first, pair.second[t]}], bin_borders);
-      if (pair.first == 20 && t == 18) {
+      if (pair.first == 4 && t == 10) {
         test_bool = true;
       } else {
         test_bool = false;
@@ -193,7 +190,7 @@ std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
       // }
     }
     for (int t = t0 + 1; t < pair.second.size() - 1; t++) {
-      if (pair.first == 20 && t == 8) {
+      if (pair.first == 4 && t == 11) {
         test_bool = true;
       } else {
         test_bool = false;

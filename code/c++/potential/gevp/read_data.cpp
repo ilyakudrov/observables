@@ -31,7 +31,7 @@ void read_csv(
   std::string line;
   std::vector<std::string> parsed_line;
   std::getline(file_stream, line);
-  std::vector<int> smearing_points = {20, 50, 90};
+  std::vector<int> smearing_points = {20, 40, 60};
   while (std::getline(file_stream, line)) {
     parsed_line = parse_line(line);
     // if (std::stoi(parsed_line[0]) <= smearing_max &&
