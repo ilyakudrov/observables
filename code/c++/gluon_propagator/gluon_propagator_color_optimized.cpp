@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
   string output_path;
   int padding;
   int num_max;
+  int color_num;
   for (int i = 1; i < argc; i++) {
     if (string(argv[i]) == "--dir_path") {
       dir_path = argv[++i];
@@ -27,6 +28,8 @@ int main(int argc, char *argv[]) {
       padding = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "--num_max") {
       num_max = stoi(string(argv[++i]));
+    } else if (string(argv[i]) == "--color_num") {
+      color_num = stoi(string(argv[++i]));
     }
   }
 
@@ -36,6 +39,7 @@ int main(int argc, char *argv[]) {
   cout << "output_path " << output_path << endl;
   cout << "padding " << padding << endl;
   cout << "num_max " << num_max << endl;
+  cout << "color_num " << color_num << endl;
 
   std::map<std::tuple<double, double, double, double, int, int>,
            std::tuple<std::vector<double>, std::vector<double>>>
@@ -43,8 +47,8 @@ int main(int argc, char *argv[]) {
   std::map<std::tuple<double, double, double, double, int, int, int, int>,
            std::tuple<std::tuple<double, double>, std::tuple<double, double>>>
       result;
-  for (int a = 0; a < 3; a++) {
-    for (int b = 0; b < 3; b++) {
+  for (int a = 0; a < color_num; a++) {
+    for (int b = 0; b < color_num; b++) {
       std::tuple<int, int> colors = {a, b};
       data = read_data_color_components(colors, dir_path, file_start, file_end,
                                         padding, num_max);

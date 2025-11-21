@@ -3,7 +3,6 @@
 #include <Eigen/Eigenvalues>
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <map>
 #include <vector>
 
@@ -75,25 +74,18 @@ do_jackknife(std::vector<std::vector<double>> &data,
 
 std::vector<double>
 make_gevp(const std::vector<std::vector<double>> &data_jackknife_0,
-          const std::vector<std::vector<double>> &data_jackknife_t,
-          bool test_bool) {
+          const std::vector<std::vector<double>> &data_jackknife_t) {
   Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> ges;
   int matrix_size = (round(sqrt(1 + 8 * data_jackknife_0.size())) - 1) / 2;
   Eigen::MatrixXd A(matrix_size, matrix_size);
   Eigen::MatrixXd B(matrix_size, matrix_size);
   std::vector<double> lambdas(data_jackknife_0[0].size());
-  // #pragma omp parallel for firstprivate(A, B, ges)                               \
+#pragma omp parallel for firstprivate(A, B, ges)                               \
     shared(data_jackknife_0, data_jackknife_t, lambdas)
   for (int i = 0; i < data_jackknife_0[0].size(); i++) {
     int count = 0;
     for (int j = 0; j < matrix_size; j++) {
       for (int k = j; k < matrix_size; k++) {
-        // if (j == k) {
-        //   B(j, k) = 1;
-        // } else {
-        //   B(j, k) = 0;
-        //   B(k, j) = 0;
-        // }
         A(j, k) = data_jackknife_t[count][i];
         B(j, k) = data_jackknife_0[count][i];
         A(k, j) = data_jackknife_t[count][i];
@@ -101,18 +93,60 @@ make_gevp(const std::vector<std::vector<double>> &data_jackknife_0,
         count++;
       }
     }
-    // if (test_bool) {
-    //   std::cout << A << std::endl << std::endl;
-    // }
     ges.compute(A, B, Eigen::DecompositionOptions::EigenvaluesOnly);
     auto eigenvalues = ges.eigenvalues();
-    if (test_bool) {
-      for (int i = 0; i < eigenvalues.size(); i++) {
-        std::cout << eigenvalues[i] << " ";
+    lambdas[i] = eigenvalues[eigenvalues.size() - 1];
+  }
+  return lambdas;
+}
+
+std::vector<double>
+make_gevp_trunc(const std::vector<std::vector<double>> &data_jackknife_0,
+                const std::vector<std::vector<double>> &data_jackknife_t) {
+  Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> ges;
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> saes;
+  int matrix_size = (round(sqrt(1 + 8 * data_jackknife_0.size())) - 1) / 2;
+  Eigen::MatrixXd A(matrix_size, matrix_size);
+  Eigen::MatrixXd B(matrix_size, matrix_size);
+  std::vector<double> lambdas(data_jackknife_0[0].size());
+#pragma omp parallel for firstprivate(A, B, ges)                               \
+    shared(data_jackknife_0, data_jackknife_t, lambdas)
+  for (int i = 0; i < data_jackknife_0[0].size(); i++) {
+    int count = 0;
+    for (int j = 0; j < matrix_size; j++) {
+      for (int k = j; k < matrix_size; k++) {
+        A(j, k) = data_jackknife_t[count][i];
+        B(j, k) = data_jackknife_0[count][i];
+        A(k, j) = data_jackknife_t[count][i];
+        B(k, j) = data_jackknife_0[count][i];
+        count++;
       }
-      std::cout << std::endl << std::endl;
     }
-    lambdas[i] = eigenvalues[eigenvalues.size() - 2];
+    saes.compute(A);
+    auto eigenvectors = saes.eigenvectors();
+    Eigen::MatrixXd C(3, 3);
+    for (int j = 0; j < 3; j++) {
+      for (int k = j; k < 3; k++) {
+        C(j, k) = eigenvectors.col(eigenvectors.size() - 1 - j).transpose() *
+                  A * eigenvectors.col(eigenvectors.size() - 1 - k);
+        C(k, j) = C(j, k);
+      }
+    }
+    saes.compute(B);
+    eigenvectors = saes.eigenvectors();
+    Eigen::MatrixXd D(3, 3);
+    for (int j = 0; j < 3; j++) {
+      for (int k = j; k < 3; k++) {
+        D(j, k) = eigenvectors.col(eigenvectors.size() - 1 - j).transpose() *
+                  A * eigenvectors.col(eigenvectors.size() - 1 - k);
+        D(k, j) = D(j, k);
+      }
+    }
+    // ges.compute(C, D, Eigen::DecompositionOptions::EigenvaluesOnly);
+    // auto eigenvalues = ges.eigenvalues();
+    // lambdas[i] = eigenvalues[eigenvalues.size() - 1];
+    auto eigenvalues = saes.eigenvalues();
+    lambdas[i] = eigenvalues[eigenvalues.size() - 1];
   }
   return lambdas;
 }
@@ -130,18 +164,13 @@ std::map<int, std::vector<int>> get_sizes(
 }
 
 std::tuple<double, double> potential_aver(std::vector<double> &lambda_t1,
-                                          std::vector<double> &lambda_t2,
-                                          bool test_bool) {
+                                          std::vector<double> &lambda_t2) {
   long int n = lambda_t1.size();
   std::vector<double> tmp(n);
   double a;
   // #pragma omp parallel for shared(lambda_t1, lambda_t2, tmp) private(a)
   for (long int i = 0; i < n; i++) {
     a = lambda_t1[i] / lambda_t2[i];
-    // if (test_bool) {
-    //   std::cout << lambda_t1[i] << " " << lambda_t2[i] << " " << std::log(a)
-    //             << std::endl;
-    // }
     if (a > 0)
       tmp[i] = std::log(a);
     else
@@ -168,7 +197,6 @@ std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
   std::map<int, std::vector<int>> sizes = get_sizes(data);
   std::vector<unsigned long> bin_borders =
       get_bin_borders(data[data.begin()->first][0].size(), bin_size);
-  bool test_bool = false;
   for (const auto &pair : sizes) {
     std::vector<std::vector<double>> lambdas;
     std::vector<std::vector<double>> data_jackknife_0 =
@@ -176,27 +204,11 @@ std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
     for (int t = t0 + 1; t < pair.second.size(); t++) {
       std::vector<std::vector<double>> data_jackknife_t =
           do_jackknife(data[{pair.first, pair.second[t]}], bin_borders);
-      if (pair.first == 4 && t == 10) {
-        test_bool = true;
-      } else {
-        test_bool = false;
-      }
-      lambdas.push_back(
-          make_gevp(data_jackknife_0, data_jackknife_t, test_bool));
-      // if (pair.first == 20 && t == 19) {
-      //   for (int i = 0; i < lambdas[t - 1].size(); i++) {
-      //     std::cout << lambdas[t - 1][i] << std::endl;
-      //   }
-      // }
+      lambdas.push_back(make_gevp_trunc(data_jackknife_0, data_jackknife_t));
     }
     for (int t = t0 + 1; t < pair.second.size() - 1; t++) {
-      if (pair.first == 4 && t == 11) {
-        test_bool = true;
-      } else {
-        test_bool = false;
-      }
       potential[{pair.first, pair.second[t]}] =
-          potential_aver(lambdas[t - 1 - t0], lambdas[t - t0], test_bool);
+          potential_aver(lambdas[t - 1 - t0], lambdas[t - t0]);
     }
   }
   return potential;
