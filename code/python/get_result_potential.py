@@ -224,10 +224,11 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
         df1 = pd.DataFrame()
     print(df1)
 
-    path_output = f"../../result/potential/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
-    try:
-        os.makedirs(f'{path_output}')
-    except:
-        pass
-    df1.to_csv(
-        f"{path_output}/potential_{matrix_type}.csv", index=False)
+    if not df1.empty:
+        path_output = f"../../result/potential/{operator_type}/{representation}/{axis}/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smeared}/{additional_parameters}"
+        try:
+            os.makedirs(f'{path_output}')
+        except:
+            pass
+        df1.to_csv(
+            f"{path_output}/potential_{matrix_type}.csv", index=False)
