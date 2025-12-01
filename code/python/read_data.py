@@ -7,8 +7,12 @@ def read_no_copy(chains, conf_max, path, file_name, padding):
         for i in range(0, conf_max + 1):
             file_path = f'{path}/{chain}/{file_name}_{i:0{padding}}'
             if (os.path.isfile(file_path)):
-                data.append(pd.read_csv(file_path))
-                data[-1]["conf"] = f'{i}-{chain}'
+                try:
+                    df_file = pd.read_csv(file_path)
+                    df_file["conf"] = f'{i}-{chain}'
+                except:
+                    df_file = pd.DataFrame()
+                data.append(df_file)
     try:
         result_df = pd.concat(data)
     except:
@@ -21,9 +25,14 @@ def read_copy_each(chains, conf_max, path, file_name, padding, copy):
         for i in range(0, conf_max + 1):
             file_path = f'{path}/{chain}/{file_name}_{i:0{padding}}_{copy}'
             if (os.path.isfile(file_path)):
-                data.append(pd.read_csv(file_path))
-                data[-1]["conf"] = f'{i}-{chain}'
-                data[-1]["copy"] = copy
+                try:
+                    df_file = pd.read_csv(file_path)
+                    df_file["conf"] = f'{i}-{chain}'
+                    df_file["copy"] = copy
+                except:
+                    df_file = pd.DataFrame()
+                data.append(df_file)
+
     try:
         result_df = pd.concat(data)
     except:
@@ -38,9 +47,13 @@ def read_copy_best(chains, conf_max, path, file_name, padding, copy):
             while c >= 0:
                 file_path = f'{path}/{chain}/{file_name}_{i:0{padding}}_{c}'
                 if (os.path.isfile(file_path)):
-                    data.append(pd.read_csv(file_path))
-                    data[-1]['conf'] = f'{i}-{chain}'
-                    data[-1]['copy'] = copy
+                    try:
+                        df_file = pd.read_csv(file_path)
+                        df_file['conf'] = f'{i}-{chain}'
+                        df_file['copy'] = copy
+                    except:
+                        df_file = pd.DataFrame()
+                    data.append(df_file)
                     break
                 c -= 1
     try:
