@@ -26,17 +26,19 @@ pd.options.mode.chained_assignment = None
 def get_potential(data):
     time_size_min = data["time_size"].min()
     time_size_max = data["time_size"].max()
-
     potential = []
-
-    # print(data)
-
     for time_size in range(time_size_min, time_size_max):
-        x = np.vstack((data.loc[data['time_size'] == time_size, 'wilson_loop'].to_numpy(),
-                       data.loc[data['time_size'] == time_size + 1, 'wilson_loop'].to_numpy()))
-        field, err = stat.jackknife_var_numba(x, potential_numba)
-        potential.append([time_size, field, err])
-    return pd.DataFrame(potential, columns=['time_size', 'aV(r)', 'err'])
+        x1 = data.loc[data['time_size'] == time_size, 'wilson_loop'].to_numpy()
+        x2 = data.loc[data['time_size'] == time_size + 1, 'wilson_loop'].to_numpy()
+        if len(x1) > 10 and len(x2) > 10:
+            x = np.vstack((x1, x2))
+            field, err = stat.jackknife_var_numba(x, potential_numba)
+            potential.append([time_size, field, err])
+    if len(potential) > 0:
+        df_result = pd.DataFrame(potential, columns=['time_size', 'aV(r)', 'err'])
+    else:
+        df_result = pd.DataFrame()
+    return df_result
 
 def get_wilson_loop(data):
     wilson_loop, err = stat.jackknife_var_numba(data.loc[:, 'wilson_loop'].to_numpy(), potential_numba)
