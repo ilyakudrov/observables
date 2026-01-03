@@ -33,6 +33,14 @@ def field_numba(x):
     for i in range(n):
         y[i] = (x[0][i] - x[1][i]) / x[2][i]
     return y
+# @njit
+# def field_numba(x):
+#     n = x.shape[1]
+#     y = np.zeros(n)
+#     for i in range(n):
+#         y[i] = (x[0][i]) / x[2][i]
+#         # y[i] = (x[1][i]) / x[2][i]
+#     return y
 
 
 @njit
@@ -89,24 +97,22 @@ conf_type = "qc2dstag"
 theory_type = 'su2'
 flux_coord = 'd'
 # flux_coord = 'x_tr'
-direction_arr = ['longitudinal', 'transversal']
+direction_arr = ['longitudinal']
 # direction = 'transversal'
 # direction = '_tr'
 shift = False
 # shift = True
 fix_tr = False
 # fix_tr = True
-# smearing_arr = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
-#                 'HYP1_alpha=1_1_0.5_APE_alpha=0.5',
-#                 'HYP2_alpha=1_1_0.5_APE_alpha=0.5',
-#                 'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
-smearing_arr = ['HYP1_alpha=1_1_0.5_APE_alpha=0.5']
+smearing_arr = ['HYP0_alpha=1_1_0.5_APE_alpha=0.5',
+                'HYP1_alpha=1_1_0.5_APE_alpha=0.5',
+                'HYP3_alpha=1_1_0.5_APE_alpha=0.5']
+# smearing_arr = ['HYP5_alpha=1_1_0.5_APE_alpha=0.5']
 # smearing = '/'
 
 betas = ['/']
 # betas = ['beta2.5']
-decomposition_plaket_arr = ['original']
-decomposition_wilson_arr = ['original']
+decomposition = ['original']
 conf_sizes = ["40^4"]
 # conf_sizes = ["32^4"]
 mu_arr = ['mu0.00']
@@ -122,16 +128,15 @@ additional_parameters_arr = ['/']
 chains = ['/']
 # chains = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
 
-
-iter_arrays = [betas, decomposition_plaket_arr, decomposition_wilson_arr,
+iter_arrays = [betas, decomposition,
                conf_sizes, mu_arr, additional_parameters_arr, smearing_arr, direction_arr]
-for beta, decomposition_plaket, decomposition_wilson, conf_size, mu, additional_parameters, smearing, direction in itertools.product(*iter_arrays):
-    print(decomposition_plaket, decomposition_wilson, conf_size, mu, beta)
+for beta, decomposition, conf_size, mu, additional_parameters, smearing, direction in itertools.product(*iter_arrays):
+    print(decomposition, conf_size, mu, beta)
     data_electric = []
     data_magnetic = []
     for chain in chains:
         for i in range(conf_max + 1):
-            file_path_electric = f'../../data/flux_tube_schwinger/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{decomposition_plaket}-{decomposition_wilson}/{smearing}/{chain}/{direction}/electric_l_{i:04}'
+            file_path_electric = f'../../data/flux_tube_schwinger/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{decomposition}/{smearing}/{chain}/{direction}/electric_l_{i:04}'
             # file_path_magnetic = f'../../data/flux_tube_wilson/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{decomposition_plaket}-{decomposition_wilson}/{smearing}/{chain}/{direction}/magnetic_{i:04}'
             # print(file_path_electric)
             # if(os.path.isfile(file_path_electric) & os.path.isfile(file_path_magnetic)):
@@ -150,14 +155,14 @@ for beta, decomposition_plaket, decomposition_wilson, conf_size, mu, additional_
     # df = pd.concat(df, axis=1)
     # df = df.loc[:, ~df.columns.duplicated()]
 
-    df['correlator_wilson'] = df['correlator_wilson'] / 2
+    # df['correlator_wilson'] = df['correlator_wilson'] / 2
 
     # df = df[(df['T'] <= 16) & (df['R'] <= 16) & (df['d'] <= 16)]
 
     # df = average_d(df, flux_coord)
 
     df = df.groupby(['T', 'R', flux_coord]).apply(
-        get_flux).reset_index()
+        get_flux, include_groups=False).reset_index()
 
     path_output = f"../../result/flux_tube_schwinger/{theory_type}/{conf_type}/{conf_size}/{beta}/{mu}/{smearing}/{direction}"
 
@@ -167,4 +172,4 @@ for beta, decomposition_plaket, decomposition_wilson, conf_size, mu, additional_
         pass
 
     df.to_csv(
-        f"{path_output}/flux_tube_{decomposition_plaket}-{decomposition_wilson}.csv", index=False)
+        f"{path_output}/flux_tube_{decomposition}.csv", index=False)

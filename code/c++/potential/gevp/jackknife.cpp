@@ -3,6 +3,7 @@
 #include <Eigen/Eigenvalues>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <map>
 #include <vector>
 
@@ -102,51 +103,74 @@ make_gevp(const std::vector<std::vector<double>> &data_jackknife_0,
 
 std::vector<double>
 make_gevp_trunc(const std::vector<std::vector<double>> &data_jackknife_0,
-                const std::vector<std::vector<double>> &data_jackknife_t) {
+                const std::vector<std::vector<double>> &data_jackknife_t,
+                const std::vector<std::vector<double>> &data_jackknife_i) {
+  std::cout.precision(17);
   Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> ges;
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> saes;
   int matrix_size = (round(sqrt(1 + 8 * data_jackknife_0.size())) - 1) / 2;
   Eigen::MatrixXd A(matrix_size, matrix_size);
   Eigen::MatrixXd B(matrix_size, matrix_size);
+  Eigen::MatrixXd E(matrix_size, matrix_size);
+  Eigen::MatrixXd C(3, 3);
+  Eigen::MatrixXd D(3, 3);
   std::vector<double> lambdas(data_jackknife_0[0].size());
-#pragma omp parallel for firstprivate(A, B, ges)                               \
-    shared(data_jackknife_0, data_jackknife_t, lambdas)
+#pragma omp parallel for firstprivate(A, B, C, D, ges, saes)                   \
+    shared(data_jackknife_0, data_jackknife_t, data_jackknife_i, lambdas)
   for (int i = 0; i < data_jackknife_0[0].size(); i++) {
     int count = 0;
     for (int j = 0; j < matrix_size; j++) {
       for (int k = j; k < matrix_size; k++) {
         A(j, k) = data_jackknife_t[count][i];
         B(j, k) = data_jackknife_0[count][i];
+        E(j, k) = data_jackknife_i[count][i];
         A(k, j) = data_jackknife_t[count][i];
         B(k, j) = data_jackknife_0[count][i];
+        E(k, j) = data_jackknife_i[count][i];
         count++;
       }
     }
-    saes.compute(A);
+    // saes.compute(A);
+    saes.compute(E);
+    // std::cout << i << std::endl;
+    // std::cout << "E:" << std::endl;
+    // std::cout << E << std::endl;
+    // std::cout << "E eigenvalues:" << std::endl;
+    // std::cout << saes.eigenvalues() << std::endl;
+    // std::cout << "E eigenvectors:" << std::endl;
+    // std::cout << saes.eigenvectors() << std::endl;
     auto eigenvectors = saes.eigenvectors();
-    Eigen::MatrixXd C(3, 3);
     for (int j = 0; j < 3; j++) {
-      for (int k = j; k < 3; k++) {
-        C(j, k) = eigenvectors.col(eigenvectors.size() - 1 - j).transpose() *
-                  A * eigenvectors.col(eigenvectors.size() - 1 - k);
-        C(k, j) = C(j, k);
+      for (int k = 0; k < 3; k++) {
+        C(j, k) = eigenvectors.col(eigenvectors.cols() - 1 - j).transpose() *
+                  A * eigenvectors.col(eigenvectors.cols() - 1 - k);
       }
     }
-    saes.compute(B);
-    eigenvectors = saes.eigenvectors();
-    Eigen::MatrixXd D(3, 3);
+    // saes.compute(B);
+    // eigenvectors = saes.eigenvectors();
     for (int j = 0; j < 3; j++) {
-      for (int k = j; k < 3; k++) {
-        D(j, k) = eigenvectors.col(eigenvectors.size() - 1 - j).transpose() *
-                  A * eigenvectors.col(eigenvectors.size() - 1 - k);
-        D(k, j) = D(j, k);
+      for (int k = 0; k < 3; k++) {
+        D(j, k) = eigenvectors.col(eigenvectors.cols() - 1 - j).transpose() *
+                  B * eigenvectors.col(eigenvectors.cols() - 1 - k);
       }
     }
-    // ges.compute(C, D, Eigen::DecompositionOptions::EigenvaluesOnly);
-    // auto eigenvalues = ges.eigenvalues();
-    // lambdas[i] = eigenvalues[eigenvalues.size() - 1];
-    auto eigenvalues = saes.eigenvalues();
+    ges.compute(C, D, Eigen::DecompositionOptions::EigenvaluesOnly);
+    // std::cout << i << std::endl;
+    // std::cout << "A:" << std::endl;
+    // std::cout << A << std::endl;
+    // std::cout << "B:" << std::endl;
+    // std::cout << B << std::endl;
+    // std::cout << "C:" << std::endl;
+    // std::cout << C << std::endl;
+    // std::cout << "D:" << std::endl;
+    // std::cout << D << std::endl;
+    // std::cout << "ges eigenvalues:" << std::endl;
+    // std::cout << ges.eigenvalues() << std::endl;
+    auto eigenvalues = ges.eigenvalues();
+    // std::cout << eigenvalues[eigenvalues.size() - 1] << std::endl;
     lambdas[i] = eigenvalues[eigenvalues.size() - 1];
+    // auto eigenvalues = saes.eigenvalues();
+    // lambdas[i] = eigenvalues[eigenvalues.size() - 1];
   }
   return lambdas;
 }
@@ -165,6 +189,7 @@ std::map<int, std::vector<int>> get_sizes(
 
 std::tuple<double, double> potential_aver(std::vector<double> &lambda_t1,
                                           std::vector<double> &lambda_t2) {
+  std::cout.precision(17);
   long int n = lambda_t1.size();
   std::vector<double> tmp(n);
   double a;
@@ -175,6 +200,8 @@ std::tuple<double, double> potential_aver(std::vector<double> &lambda_t1,
       tmp[i] = std::log(a);
     else
       tmp[i] = 0;
+    // std::cout << i << " " << lambda_t1[i] << " " << lambda_t2[i] << " " << a
+    //           << " " << tmp[i] << std::endl;
   }
   double aver = 0;
   double sigma = 0;
@@ -204,7 +231,11 @@ std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
     for (int t = t0 + 1; t < pair.second.size(); t++) {
       std::vector<std::vector<double>> data_jackknife_t =
           do_jackknife(data[{pair.first, pair.second[t]}], bin_borders);
-      lambdas.push_back(make_gevp_trunc(data_jackknife_0, data_jackknife_t));
+      // std::vector<std::vector<double>> data_jackknife_i =
+      //     do_jackknife(data[{pair.first, pair.second[t0 + 1]}], bin_borders);
+      // lambdas.push_back(make_gevp_trunc(data_jackknife_0, data_jackknife_t,
+      //                                   data_jackknife_i));
+      lambdas.push_back(make_gevp(data_jackknife_0, data_jackknife_t));
     }
     for (int t = t0 + 1; t < pair.second.size() - 1; t++) {
       potential[{pair.first, pair.second[t]}] =

@@ -172,8 +172,8 @@ mu1 = args.mu
 chains = ['/', 's0', 's1', 's2', 's3',
            's4', 's5', 's6', 's7', 's8', 's9', 's10']
 
-base_path = "../../data"
-# base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
+# base_path = "../../data"
+base_path = "/home/clusters/rrcmpi/kudrov/observables_cluster/result"
 
 potential_parameters = ['smearing_step', 'space_size']
 
@@ -204,9 +204,10 @@ for matrix_type, smeared, beta, conf_size, mu, additional_parameters in itertool
             df = read_data.read_no_copy(chains, conf_max, path,
                                         'wilson_loop', 4)
         if not df.empty:
-            df = df[df['smearing_step1'] == df['smearing_step2']]
-            df = df.rename({'smearing_step1': 'smearing_step'}, axis=1)
-            df = df.drop('smearing_step2', axis=1)
+            if 'smearing_step1' in df.columns and 'smearing_step2' in df.columns:
+                df = df[df['smearing_step1'] == df['smearing_step2']]
+                df = df.rename({'smearing_step1': 'smearing_step'}, axis=1)
+                df = df.drop('smearing_step2', axis=1)
             print(df)
             if is_binning:
                 bin_sizes = int_log_range(1, bin_max, bin_step)
