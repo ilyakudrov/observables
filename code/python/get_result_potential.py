@@ -160,7 +160,6 @@ additional_parameters_arr = args.additional_parameters
 is_binning = False
 bin_max = 5
 bin_step = 1.3
-calculation_type = 'smearing'
 
 conf_max = 5000
 # mu1 = ['mu0.00']
