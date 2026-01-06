@@ -231,11 +231,11 @@ std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
     for (int t = t0 + 1; t < pair.second.size(); t++) {
       std::vector<std::vector<double>> data_jackknife_t =
           do_jackknife(data[{pair.first, pair.second[t]}], bin_borders);
-      // std::vector<std::vector<double>> data_jackknife_i =
-      //     do_jackknife(data[{pair.first, pair.second[t0 + 1]}], bin_borders);
-      // lambdas.push_back(make_gevp_trunc(data_jackknife_0, data_jackknife_t,
-      //                                   data_jackknife_i));
-      lambdas.push_back(make_gevp(data_jackknife_0, data_jackknife_t));
+      std::vector<std::vector<double>> data_jackknife_i =
+          do_jackknife(data[{pair.first, pair.second[t0]}], bin_borders);
+      lambdas.push_back(make_gevp_trunc(data_jackknife_0, data_jackknife_t,
+                                        data_jackknife_i));
+      // lambdas.push_back(make_gevp(data_jackknife_0, data_jackknife_t));
     }
     for (int t = t0 + 1; t < pair.second.size() - 1; t++) {
       potential[{pair.first, pair.second[t]}] =
