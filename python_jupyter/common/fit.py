@@ -14,6 +14,9 @@ def func_double_exponent(x, a, b, c, d, e):
 def func_cornell(x, c, alpha, sigma):
     return c + alpha / x + sigma * x
 
+def func_cornell_force(x, alpha, sigma):
+    return - alpha / x**2 + sigma
+
 def func_screened(x, c, alpha, mass):
     return c + alpha / x * math.exp(-mass * x)
 

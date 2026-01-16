@@ -130,15 +130,7 @@ make_gevp_trunc(const std::vector<std::vector<double>> &data_jackknife_0,
         count++;
       }
     }
-    // saes.compute(A);
     saes.compute(E);
-    // std::cout << i << std::endl;
-    // std::cout << "E:" << std::endl;
-    // std::cout << E << std::endl;
-    // std::cout << "E eigenvalues:" << std::endl;
-    // std::cout << saes.eigenvalues() << std::endl;
-    // std::cout << "E eigenvectors:" << std::endl;
-    // std::cout << saes.eigenvectors() << std::endl;
     auto eigenvectors = saes.eigenvectors();
     for (int j = 0; j < 3; j++) {
       for (int k = 0; k < 3; k++) {
@@ -146,8 +138,6 @@ make_gevp_trunc(const std::vector<std::vector<double>> &data_jackknife_0,
                   A * eigenvectors.col(eigenvectors.cols() - 1 - k);
       }
     }
-    // saes.compute(B);
-    // eigenvectors = saes.eigenvectors();
     for (int j = 0; j < 3; j++) {
       for (int k = 0; k < 3; k++) {
         D(j, k) = eigenvectors.col(eigenvectors.cols() - 1 - j).transpose() *
@@ -155,22 +145,8 @@ make_gevp_trunc(const std::vector<std::vector<double>> &data_jackknife_0,
       }
     }
     ges.compute(C, D, Eigen::DecompositionOptions::EigenvaluesOnly);
-    // std::cout << i << std::endl;
-    // std::cout << "A:" << std::endl;
-    // std::cout << A << std::endl;
-    // std::cout << "B:" << std::endl;
-    // std::cout << B << std::endl;
-    // std::cout << "C:" << std::endl;
-    // std::cout << C << std::endl;
-    // std::cout << "D:" << std::endl;
-    // std::cout << D << std::endl;
-    // std::cout << "ges eigenvalues:" << std::endl;
-    // std::cout << ges.eigenvalues() << std::endl;
     auto eigenvalues = ges.eigenvalues();
-    // std::cout << eigenvalues[eigenvalues.size() - 1] << std::endl;
     lambdas[i] = eigenvalues[eigenvalues.size() - 1];
-    // auto eigenvalues = saes.eigenvalues();
-    // lambdas[i] = eigenvalues[eigenvalues.size() - 1];
   }
   return lambdas;
 }
@@ -193,15 +169,13 @@ std::tuple<double, double> potential_aver(std::vector<double> &lambda_t1,
   long int n = lambda_t1.size();
   std::vector<double> tmp(n);
   double a;
-  // #pragma omp parallel for shared(lambda_t1, lambda_t2, tmp) private(a)
+#pragma omp parallel for shared(lambda_t1, lambda_t2, tmp) private(a)
   for (long int i = 0; i < n; i++) {
     a = lambda_t1[i] / lambda_t2[i];
     if (a > 0)
       tmp[i] = std::log(a);
     else
       tmp[i] = 0;
-    // std::cout << i << " " << lambda_t1[i] << " " << lambda_t2[i] << " " << a
-    //           << " " << tmp[i] << std::endl;
   }
   double aver = 0;
   double sigma = 0;
@@ -243,4 +217,104 @@ std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_potential(
     }
   }
   return potential;
+}
+
+std::vector<double> get_potential_r_t(std::vector<double> &lambda_t1,
+                                      std::vector<double> &lambda_t2) {
+  double a;
+  long int n = lambda_t1.size();
+  std::vector<double> potential(n);
+#pragma omp parallel for shared(lambda_t1, lambda_t2, potential) private(a)
+  for (long int i = 0; i < n; i++) {
+    a = lambda_t1[i] / lambda_t2[i];
+    if (a > 0)
+      potential[i] = std::log(a);
+    else
+      potential[i] = 0;
+  }
+  return potential;
+}
+
+std::vector<std::vector<double>> calculate_potential_r(
+    std::map<std::tuple<int, int>, std::vector<std::vector<double>>> &data,
+    int bin_size, int t0, int r, const std::vector<int> &t_array) {
+  std::vector<std::vector<double>> potential;
+  std::vector<unsigned long> bin_borders =
+      get_bin_borders(data[data.begin()->first][0].size(), bin_size);
+  std::vector<std::vector<double>> lambdas;
+  std::vector<std::vector<double>> data_jackknife_0 =
+      do_jackknife(data[{r, t_array[t0]}], bin_borders);
+  for (int t = t0 + 1; t < t_array.size(); t++) {
+    std::vector<std::vector<double>> data_jackknife_t =
+        do_jackknife(data[{r, t_array[t]}], bin_borders);
+    std::vector<std::vector<double>> data_jackknife_i =
+        do_jackknife(data[{r, t_array[t0]}], bin_borders);
+    lambdas.push_back(
+        make_gevp_trunc(data_jackknife_0, data_jackknife_t, data_jackknife_i));
+    // lambdas.push_back(make_gevp(data_jackknife_0, data_jackknife_t));
+  }
+  for (int t = t0 + 1; t < t_array.size() - 1; t++) {
+    potential.push_back(
+        get_potential_r_t(lambdas[t - 1 - t0], lambdas[t - t0]));
+  }
+  return potential;
+}
+
+std::vector<std::tuple<double, double>>
+force_aver(std::vector<std::vector<double>> &potential_r1,
+           std::vector<std::vector<double>> &potential_r2) {
+  std::cout.precision(17);
+  std::vector<std::tuple<double, double>> forces(potential_r1.size());
+  for (int i = 0; i < potential_r1.size(); i++) {
+    long int n = potential_r1[i].size();
+    std::vector<double> tmp(n);
+#pragma omp parallel for shared(potential_r1, potential_r2, tmp)
+    for (long int j = 0; j < n; j++) {
+      tmp[j] = potential_r2[i][j] - potential_r1[i][j];
+    }
+    double aver = 0;
+    double sigma = 0;
+#pragma omp parallel for reduction(+ : aver)
+    for (int j = 0; j < n; j++) {
+      aver += tmp[j];
+    }
+    aver /= n;
+#pragma omp parallel for shared(tmp) firstprivate(aver) reduction(+ : sigma)
+    for (long int j = 0; j < n; j++) {
+      sigma += (tmp[j] - aver) * (tmp[j] - aver);
+    }
+    forces[i] = {aver, sqrt((n - 1) / (n + .0) * sigma)};
+  }
+  return forces;
+}
+
+std::vector<double> get_r_vector(std::map<int, std::vector<int>> &sizes) {
+  std::vector<double> r_vector;
+  for (const auto &pair : sizes) {
+    r_vector.push_back(pair.first);
+  }
+  std::sort(r_vector.begin(), r_vector.end());
+  return r_vector;
+}
+
+std::map<std::tuple<int, int>, std::tuple<double, double>> calculate_force(
+    std::map<std::tuple<int, int>, std::vector<std::vector<double>>> &data,
+    int bin_size, int t0) {
+  std::map<std::tuple<int, int>, std::tuple<double, double>> force;
+  std::map<int, std::vector<int>> sizes = get_sizes(data);
+  std::vector<std::vector<std::vector<double>>> potential_jackknife;
+  for (const auto &pair : sizes) {
+    potential_jackknife.push_back(
+        calculate_potential_r(data, bin_size, t0, pair.first, pair.second));
+  }
+  std::vector<std::tuple<double, double>> force_r;
+  int r0 = sizes.begin()->first;
+  std::vector<double> r_vector = get_r_vector(sizes);
+  for (int i = 0; i < potential_jackknife.size() - 1; i++) {
+    force_r = force_aver(potential_jackknife[i], potential_jackknife[i + 1]);
+    for (int j = 0; j < force_r.size(); j++) {
+      force[{r_vector[i], sizes[r_vector[i]][t0 + 1 + j]}] = force_r[j];
+    }
+  }
+  return force;
 }

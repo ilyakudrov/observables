@@ -2,7 +2,7 @@ GCC=g++
 FLAGS=-O3 -fopenmp -march=native -mtune=native -std=c++17
 ARCH=test
 OBJFILES=read_data_$(ARCH).o jackknife_$(ARCH).o
-TARGETS=potential_gevp
+TARGETS=potential_gevp force_gevp
 EIGH_PATH="/home/ilya/soft/source/eigen-master"
 
 $(TARGETS): %: %.cpp $(OBJFILES)
