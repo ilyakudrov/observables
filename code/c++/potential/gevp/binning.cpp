@@ -19,9 +19,9 @@ get_bin_edges(std::map<std::tuple<std::string, int, int>, double> &functional) {
   double iqr = values[values.size() * 3 / 4] - values[values.size() / 4];
   double bin_width = 2 * iqr / std::cbrt(values.size());
   std::vector<double> bin_edges;
-  double right_edge = min * 0.9999999999;
+  double right_edge = values[0] * 0.9999999;
   bin_edges.push_back(right_edge);
-  while (right_edge < max) {
+  while (right_edge <= max) {
     right_edge += bin_width;
     bin_edges.push_back(right_edge);
   }

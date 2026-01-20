@@ -1,8 +1,8 @@
 GCC=g++
 FLAGS=-O3 -fopenmp -march=native -mtune=native -std=c++17
 ARCH=test
-OBJFILES=read_data_$(ARCH).o jackknife_$(ARCH).o
-TARGETS=potential_gevp force_gevp
+OBJFILES=read_data_$(ARCH).o jackknife_$(ARCH).o binning_$(ARCH).o
+TARGETS=potential_gevp potential_gevp_binning force_gevp
 EIGH_PATH="/home/ilya/soft/source/eigen-master"
 
 $(TARGETS): %: %.cpp $(OBJFILES)

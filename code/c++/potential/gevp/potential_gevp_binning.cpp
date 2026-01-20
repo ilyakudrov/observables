@@ -20,9 +20,7 @@ int main(int argc, char *argv[]) {
   string output_path;
   string functional_path;
   int padding;
-  int padding_functional;
   int num_max;
-  int smearing_max;
   int t0;
   for (int i = 1; i < argc; i++) {
     if (string(argv[i]) == "-dir_path") {
@@ -37,12 +35,8 @@ int main(int argc, char *argv[]) {
       functional_path = argv[++i];
     } else if (string(argv[i]) == "-padding") {
       padding = stoi(string(argv[++i]));
-    } else if (string(argv[i]) == "-padding_functional") {
-      padding_functional = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-num_max") {
       num_max = stoi(string(argv[++i]));
-    } else if (string(argv[i]) == "-smearing_max") {
-      smearing_max = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-t0") {
       t0 = stoi(string(argv[++i]));
     }
@@ -51,47 +45,39 @@ int main(int argc, char *argv[]) {
   cout << "file_start " << file_start << endl;
   cout << "file_end " << file_end << endl;
   cout << "output_path " << output_path << endl;
+  cout << "functional_path " << functional_path << endl;
   cout << "padding " << padding << endl;
   cout << "num_max " << num_max << endl;
-  cout << "smearing_max " << smearing_max << endl;
   cout << "t0 " << t0 << endl;
 
+  std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
   std::map<std::tuple<std::string, int, int>, double> functional =
-      read_functional(functional_path, padding_functional, num_max);
-  std::map<double, std::vector<std::tuple<std::string, int, int>>> bins =
-      bin_functional(functional);
-
+      read_functional(functional_path, padding, num_max);
+  std::vector<double> functional_bins = get_bin_edges(functional);
+  double functional_average;
+  std::map<std::tuple<int, int, double>, std::tuple<double, double>> result;
+  for (int i = 0; i < functional_bins.size() - 1; i++) {
+    data = read_data_bins(dir_path, file_start, file_end, padding, functional,
+                          functional_bins[i], functional_bins[i + 1],
+                          functional_average);
+    if (!data.empty()) {
+      if (data.begin()->second[0].size() >= 10) {
+        std::map<std::tuple<int, int>, std::tuple<double, double>> potential =
+            calculate_potential(data, 1, t0);
+        for (const auto &pair : potential) {
+          result[{std::get<0>(pair.first), std::get<1>(pair.first),
+                  functional_average}] = pair.second;
+        }
+      }
+    }
+  }
   ofstream stream_potential;
   stream_potential.precision(17);
   stream_potential.open(output_path);
-  stream_potential << "functional,space_size,time_size,potential,err" << endl;
-
-  for (const auto &pair : bins) {
-    if (pair.second.size() > 5) {
-      cout << pair.second.size() << endl;
-      std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
-
-      data = read_data(dir_path, pair.second, file_start, file_end, padding,
-                       smearing_max);
-
-      for (const auto &a : data) {
-        cout << get<0>(a.first) << " " << get<1>(a.first) << " "
-             << a.second[0].size() << endl;
-        break;
-      }
-
-      std::map<std::tuple<int, int>, std::tuple<double, double>> potential =
-          calculate_potential(data, 1, t0);
-      for (auto const &[key, value] : potential) {
-        cout << pair.first << ", " << get<0>(key) << ", " << get<1>(key) << ": "
-             << get<0>(value) << " +- " << get<1>(value) << endl;
-      }
-      for (auto const &[key, value] : potential) {
-        stream_potential << pair.first << "," << get<0>(key) << ","
-                         << get<1>(key) << "," << get<0>(value) << ","
-                         << get<1>(value) << endl;
-      }
-    }
+  stream_potential << "space_size,time_size,functional,potential,err" << endl;
+  for (auto const &[key, value] : result) {
+    stream_potential << get<0>(key) << "," << get<1>(key) << "," << get<2>(key)
+                     << "," << get<0>(value) << "," << get<1>(value) << endl;
   }
   stream_potential.close();
 }
