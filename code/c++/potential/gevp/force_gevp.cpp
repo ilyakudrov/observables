@@ -19,7 +19,6 @@ int main(int argc, char *argv[]) {
   string output_path;
   int padding;
   int num_max;
-  int smearing_max;
   int t0;
   bool copies;
   int copy;
@@ -36,8 +35,6 @@ int main(int argc, char *argv[]) {
       padding = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-num_max") {
       num_max = stoi(string(argv[++i]));
-    } else if (string(argv[i]) == "-smearing_max") {
-      smearing_max = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-t0") {
       t0 = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-copies") {
@@ -52,7 +49,6 @@ int main(int argc, char *argv[]) {
   cout << "output_path " << output_path << endl;
   cout << "padding " << padding << endl;
   cout << "num_max " << num_max << endl;
-  cout << "smearing_max " << smearing_max << endl;
   cout << "t0 " << t0 << endl;
   cout << "copies " << copies << endl;
   cout << "copy " << copy << endl;
@@ -61,10 +57,9 @@ int main(int argc, char *argv[]) {
 
   if (copies) {
     data = read_data_copies(dir_path, file_start, file_end, padding, num_max,
-                            smearing_max, copy);
+                            copy);
   } else {
-    data = read_data(dir_path, file_start, file_end, padding, num_max,
-                     smearing_max);
+    data = read_data(dir_path, file_start, file_end, padding, num_max);
   }
   std::map<std::tuple<int, int>, std::tuple<double, double>> potential =
       calculate_force(data, 1, t0);
