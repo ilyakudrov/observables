@@ -2,6 +2,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import chi2
 import pandas as pd
+import dask.dataframe as dd
 import math
 
 
@@ -149,3 +150,58 @@ def fit_from_original(data, potential_type, fit_func, fit_parameters):
                                  data.loc[data['potential_type'] == potential_type, 'r/a'].max(), 'r/a', 'aV(r)', ['V0', 'sigma'])
     fit_shifted['potential_type'] = potential_type
     return fit_shifted
+
+def potential_fit_T_range_dd(df, fit_func, param_list, range_min_len=None):
+    if range_min_len is None:
+        range_min_len = df.reset_index(level='range_min_T').reset_index(drop=True).loc[0, 'range_min_T']
+    # df_fit = make_fit_range(df, func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', range_min_len)
+    df_fit = make_fit_range(df, fit_func, param_list, 'T', 'aV(r)', 'err', range_min_len)
+    # df_fit = make_fit_range(df, func_constant, ['V'], 'T', 'aV(r)', 'err', range_min_len)
+    if df_fit.empty:
+        return dd.from_pandas(pd.DataFrame())
+    V_aver = (df_fit['V'] * df_fit['w_V']).sum()
+    dV_stat = (df_fit['V_err'] ** 2 * df_fit['w_V']).sum()
+    dV_syst = (df_fit['w_V'] * (df_fit['V'] - V_aver) ** 2).sum()
+    return dd.from_pandas(pd.DataFrame({'T': [None], 'aV(r)': [V_aver], 'err': [math.sqrt(dV_syst + dV_stat)]}))
+
+def make_fit_range_dd(df, fit_func, param_names, x_col, y_col, err_col, range_min_len=None):
+    if range_min_len is None:
+        range_min_len = df.reset_index(level='range_min_r').reset_index(drop=True).loc[0, 'range_min_r']
+    fit_range = (df[x_col].min(), df[x_col].max())
+    ranges = generate_ranges(*fit_range, range_min_len)
+    fit_df = []
+    for r in ranges:
+        fit_df.append(make_fit(df, r, fit_func, param_names, x_col, y_col, err_col=err_col))
+        fit_df[-1][f'{x_col}_min'] = r[0]
+        fit_df[-1][f'{x_col}_max'] = r[1]
+    fit_df = dd.concat(fit_df)
+    fit_df = fit_df[~fit_df.isin([np.nan, np.inf, -np.inf]).any(axis=1)]
+    if fit_df.empty:
+        return dd.from_pandas(pd.DataFrame())
+    for name in param_names:
+        fit_df[f'w_{name}'] = fit_df['p_value'] / fit_df[f'{name}_err'] ** 2
+        norm = fit_df[f'w_{name}'].sum()
+        fit_df[f'w_{name}'] = fit_df[f'w_{name}'] / norm
+    return fit_df
+
+def average_fit_p_value_dd(df_fit, param_names, x_col):
+    data = {}
+    for name in param_names:
+        aver = (df_fit[name] * df_fit[f'w_{name}']).sum()
+        err_stat = (df_fit[f'{name}_err'] ** 2 * df_fit[f'w_{name}']).sum()
+        df_fit[f'w_{name}'] * (df_fit[name] - aver) ** 2
+        err_syst = (df_fit[f'w_{name}'] * (df_fit[name] - aver) ** 2).sum()
+        data[name] = [aver]
+        data[f'{name}_err'] = [np.sqrt(err_syst + err_stat)]
+    data[f'{x_col}_min'] = df_fit[f'{x_col}_min'].min()
+    data[f'{x_col}_max'] = df_fit[f'{x_col}_max'].max()
+    return dd.from_pandas(pd.DataFrame(data))
+
+def make_fit_curve_dd(fit_params, fit_func, x_col, y_col, param_names):
+    """Takes fit parameters and makes fit curve"""
+    x_min = fit_params.reset_index().loc[0, f'{x_col}_min']
+    x_max = fit_params.reset_index().loc[0, f'{x_col}_max']
+    fit_params = fit_params.iloc[0][param_names].values
+    x = np.linspace(x_min, x_max, 1000)
+    y = fit_func(x, *fit_params)
+    return dd.from_pandas(pd.DataFrame({x_col: x, y_col: y}))

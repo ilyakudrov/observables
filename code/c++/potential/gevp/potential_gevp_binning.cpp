@@ -19,7 +19,8 @@ int main(int argc, char *argv[]) {
   string file_end;
   string output_path;
   string functional_path;
-  int padding;
+  int padding_conf;
+  int padding_functional;
   int num_max;
   int t0;
   for (int i = 1; i < argc; i++) {
@@ -33,8 +34,10 @@ int main(int argc, char *argv[]) {
       output_path = argv[++i];
     } else if (string(argv[i]) == "-functional_path") {
       functional_path = argv[++i];
-    } else if (string(argv[i]) == "-padding") {
-      padding = stoi(string(argv[++i]));
+    } else if (string(argv[i]) == "-padding_conf") {
+      padding_conf = stoi(string(argv[++i]));
+    } else if (string(argv[i]) == "-padding_functional") {
+      padding_functional = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-num_max") {
       num_max = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-t0") {
@@ -46,20 +49,21 @@ int main(int argc, char *argv[]) {
   cout << "file_end " << file_end << endl;
   cout << "output_path " << output_path << endl;
   cout << "functional_path " << functional_path << endl;
-  cout << "padding " << padding << endl;
+  cout << "padding_conf " << padding_conf << endl;
+  cout << "padding_functional " << padding_functional << endl;
   cout << "num_max " << num_max << endl;
   cout << "t0 " << t0 << endl;
 
   std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
   std::map<std::tuple<std::string, int, int>, double> functional =
-      read_functional(functional_path, padding, num_max);
+      read_functional(functional_path, padding_functional, num_max);
   std::vector<double> functional_bins = get_bin_edges(functional);
   double functional_average;
   std::map<std::tuple<int, int, double>, std::tuple<double, double>> result;
   for (int i = 0; i < functional_bins.size() - 1; i++) {
-    data = read_data_bins(dir_path, file_start, file_end, padding, functional,
-                          functional_bins[i], functional_bins[i + 1],
-                          functional_average);
+    data = read_data_bins(dir_path, file_start, file_end, padding_conf,
+                          functional, functional_bins[i],
+                          functional_bins[i + 1], functional_average);
     if (!data.empty()) {
       if (data.begin()->second[0].size() >= 10) {
         std::map<std::tuple<int, int>, std::tuple<double, double>> potential =

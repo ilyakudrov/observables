@@ -3,6 +3,7 @@ import math
 import numpy as np
 import seaborn
 import matplotlib.pyplot as plt
+import dask.dataframe as dd
 
 import common.fit
 import common.plots
@@ -156,4 +157,27 @@ def get_potantial_df(paths, coluns_to_multiindex = []):
         if coluns_to_multiindex:
             df[-1] = df[-1].set_index(coluns_to_multiindex, append=True)
     df = pd.concat(df).reset_index(level=0, drop=True)
+    return df
+
+def get_potantial_dd(paths, coluns_to_multiindex = []):
+    """
+    Read csv files for potential data and make DataFrame
+
+    Parameters:
+        paths: list of dictionaries with parameters
+        coluns_to_multiindex: columns from csv file to turn to multiindex
+    """
+    df = []
+    for path in paths:
+        df.append(dd.read_csv(path['path']))
+        if 'parameters' in path:
+            for key, value in path['parameters'].items():
+                df[-1][key] = value
+        if 'constraints' in path:
+            for key, val in path['constraints'].items():
+                df[-1] = df[-1][(df[-1][key] >= val[0])
+                                    & (df[-1][key] <= val[1])]
+        if coluns_to_multiindex:
+            df[-1] = df[-1].set_index(coluns_to_multiindex, append=True)
+    df = dd.concat(df).reset_index(level=0, drop=True)
     return df
