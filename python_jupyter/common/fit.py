@@ -154,15 +154,13 @@ def fit_from_original(data, potential_type, fit_func, fit_parameters):
 def potential_fit_T_range_dd(df, fit_func, param_list, range_min_len=None):
     if range_min_len is None:
         range_min_len = df.reset_index(level='range_min_T').reset_index(drop=True).loc[0, 'range_min_T']
-    # df_fit = make_fit_range(df, func_exponent, ['V', 'a', 'b'], 'T', 'aV(r)', 'err', range_min_len)
     df_fit = make_fit_range(df, fit_func, param_list, 'T', 'aV(r)', 'err', range_min_len)
-    # df_fit = make_fit_range(df, func_constant, ['V'], 'T', 'aV(r)', 'err', range_min_len)
     if df_fit.empty:
         return dd.from_pandas(pd.DataFrame())
     V_aver = (df_fit['V'] * df_fit['w_V']).sum()
     dV_stat = (df_fit['V_err'] ** 2 * df_fit['w_V']).sum()
     dV_syst = (df_fit['w_V'] * (df_fit['V'] - V_aver) ** 2).sum()
-    return dd.from_pandas(pd.DataFrame({'T': [None], 'aV(r)': [V_aver], 'err': [math.sqrt(dV_syst + dV_stat)]}))
+    return dd.from_pandas(pd.DataFrame({'aV(r)': [V_aver], 'err': [math.sqrt(dV_syst + dV_stat)]}))
 
 def make_fit_range_dd(df, fit_func, param_names, x_col, y_col, err_col, range_min_len=None):
     if range_min_len is None:
