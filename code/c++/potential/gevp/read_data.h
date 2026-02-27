@@ -18,3 +18,11 @@ read_data_bins(std::string dir_path, std::string file_start,
                std::string file_end, int padding,
                std::map<std::tuple<std::string, int, int>, double> &functional,
                double bin_left, double bin_right, double &functional_average);
+std::map<std::tuple<std::string, int, int>, double>
+read_functional_best_of_n(std::string dir_path, int padding, int num_max,
+                          int n);
+std::map<std::tuple<int, int>, std::vector<std::vector<double>>>
+read_data_best_of_n(
+    std::string dir_path, std::string file_start, std::string file_end,
+    int padding,
+    std::map<std::tuple<std::string, int, int>, double> &functional);

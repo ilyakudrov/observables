@@ -365,6 +365,7 @@ def plot_distribution_temperature(df, observable, observable_label):
     velocity = df.name[0]
     cut = df.name[1]
     thickness = df.name[2]
+    df = df.sort_values(['boundary', 'T'])
     make_plot_temperature(df, 'rad_aver', observable, r'$T/T_{c}$', 'r/R', observable_label, f'distribution {observable}',
               f'../../images/eos_rotation_imaginary/distribution_temperature_dependence/5x30x121sq/{observable}/velocity={velocity}',
               f'distribution_cut={cut}_thickness={thickness}', False, err=f'{observable}' + '_err',
@@ -493,6 +494,7 @@ def distribution_temperature(observable):
     df_T = df_T[[observable, observable + '_err', r'$T/T_{c}$', 'rad_aver', 'boundary', 'cut', 'thickness', 'velocity']]
     # print(df_T)
     df_T = pd.concat([df_T, df_tmp])
+    df_T['T'] = df_T[r'$T/T_{c}$']
     df_T[r'$T/T_{c}$'] = df_T[r'$T/T_{c}$'].astype(str) + ', ' +  df_T['boundary'].astype(str)
     # print(df_T.to_string())
     df_T.set_index(['velocity', 'cut', 'thickness']).groupby(['velocity', 'cut', 'thickness']).apply(plot_distribution_temperature, observable, observable_label, include_groups=False)
