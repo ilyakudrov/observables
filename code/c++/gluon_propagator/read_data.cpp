@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <map>
+#include <numeric>
 #include <set>
 #include <sstream>
 #include <string>
@@ -260,11 +261,11 @@ void read_csv_diagonal(
     std::get<0>(data[{std::stod(parsed_line[0]), std::stod(parsed_line[1]),
                       std::stod(parsed_line[2]), std::stod(parsed_line[3]),
                       std::stoi(parsed_line[4])}])
-        .push_back(double(std::stod(parsed_line[5])));
+        .push_back(std::stod(parsed_line[5]));
     std::get<1>(data[{std::stod(parsed_line[0]), std::stod(parsed_line[1]),
                       std::stod(parsed_line[2]), std::stod(parsed_line[3]),
                       std::stoi(parsed_line[4])}])
-        .push_back(double(std::stod(parsed_line[6])));
+        .push_back(std::stod(parsed_line[6]));
   }
 }
 
@@ -289,4 +290,81 @@ read_data_diagonal(std::string dir_path, std::string file_start,
     }
   }
   return data;
+}
+
+void read_csv_color_components_space_time(
+    std::string file_path,
+    std::map<std::tuple<double, double, double, double>,
+             std::tuple<std::vector<double>, std::vector<double>>> &data_space,
+    std::map<std::tuple<double, double, double, double>,
+             std::tuple<std::vector<double>, std::vector<double>>> &data_time) {
+  std::ifstream file_stream(file_path);
+  std::string line;
+  std::vector<std::string> parsed_line;
+  std::getline(file_stream, line);
+  std::map<std::tuple<double, double, double, double>,
+           std::tuple<std::vector<double>, std::vector<double>>>
+      data_space_tmp;
+  std::map<std::tuple<double, double, double, double>,
+           std::tuple<std::vector<double>, std::vector<double>>>
+      data_time_tmp;
+  while (std::getline(file_stream, line)) {
+    parsed_line = parse_line(line);
+    if (std::stoi(parsed_line[6]) == std::stoi(parsed_line[7])) {
+      if (std::stoi(parsed_line[4]) == std::stoi(parsed_line[5]) &&
+          std::stoi(parsed_line[4]) == 3) {
+        std::get<0>(data_time_tmp[{
+                        std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                        std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
+            .push_back(std::stod(parsed_line[8]));
+        std::get<1>(data_time_tmp[{
+                        std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                        std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
+            .push_back(std::stod(parsed_line[9]));
+      } else {
+        std::get<0>(data_space_tmp[{
+                        std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                        std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
+            .push_back(std::stod(parsed_line[8]));
+        std::get<1>(data_space_tmp[{
+                        std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                        std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
+            .push_back(std::stod(parsed_line[9]));
+      }
+    }
+  }
+  for (auto pair : data_space_tmp) {
+    std::get<0>(data_space[pair.first])
+        .push_back(std::accumulate(std::get<0>(pair.second).begin(),
+                                   std::get<0>(pair.second).end(), 0.0) /
+                   std::get<0>(pair.second).size());
+    std::get<1>(data_space[pair.first])
+        .push_back(std::accumulate(std::get<1>(pair.second).begin(),
+                                   std::get<1>(pair.second).end(), 0.0) /
+                   std::get<1>(pair.second).size());
+  }
+}
+
+void read_data_color_components_space_time(
+    std::map<std::tuple<double, double, double, double>,
+             std::tuple<std::vector<double>, std::vector<double>>>
+        data_space,
+    std::map<std::tuple<double, double, double, double>,
+             std::tuple<std::vector<double>, std::vector<double>>>
+        data_time,
+    std::string dir_path, std::string file_start, std::string file_end,
+    int padding, int num_max) {
+  std::string file_path;
+  std::vector<std::string> chains = {"",    "s0/", "s1/", "s2/", "s3/", "s4/",
+                                     "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
+  for (auto chain : chains) {
+    for (int i = 1; i <= num_max; i++) {
+      std::stringstream ss;
+      ss << dir_path << "/" << chain << file_start << std::setw(padding)
+         << std::setfill('0') << std::to_string(i) << file_end;
+      file_path = ss.str();
+      if (std::filesystem::exists(file_path))
+        read_csv_color_components_space_time(file_path, data_space, data_time);
+    }
+  }
 }
