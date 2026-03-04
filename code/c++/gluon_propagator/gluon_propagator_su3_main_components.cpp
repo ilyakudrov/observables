@@ -50,6 +50,9 @@ int main(int argc, char *argv[]) {
   std::map<std::tuple<double, double, double, double>,
            std::tuple<std::tuple<double, double>, std::tuple<double, double>>>
       result_space;
+  std::map<std::tuple<double, double, double, double>,
+           std::tuple<std::tuple<double, double>, std::tuple<double, double>>>
+      result_time;
   read_data_color_components_space_time(data_space, data_time, dir_path,
                                         file_start, file_end, padding, num_max);
   if (!data_space.empty()) {
@@ -67,6 +70,21 @@ int main(int argc, char *argv[]) {
   } else {
     std::cout << "data is empty" << std::endl;
   }
+  if (!data_time.empty()) {
+    int data_size = (unsigned long)get<0>(data_time.begin()->second).size();
+    std::vector<unsigned long> bin_borders = get_bin_borders(data_size, 1);
+    vector<double> jackknife_data;
+    std::tuple<double, double> aver_real, aver_imag;
+    for (auto pair : data_time) {
+      jackknife_data = do_jackknife(get<0>(pair.second), bin_borders);
+      aver_real = get_aver(jackknife_data);
+      jackknife_data = do_jackknife(get<1>(pair.second), bin_borders);
+      aver_imag = get_aver(jackknife_data);
+      result_time[pair.first] = {aver_real, aver_imag};
+    }
+  } else {
+    std::cout << "data is empty" << std::endl;
+  }
   ofstream stream_propagator;
   stream_propagator.precision(17);
   stream_propagator.open(output_path);
@@ -77,10 +95,10 @@ int main(int argc, char *argv[]) {
                       << "," << get<3>(key) << "," << get<0>(get<0>(value))
                       << "," << get<1>(get<0>(value)) << ","
                       << get<0>(get<1>(value)) << "," << get<1>(get<1>(value))
-                      << "," << get<0>(get<0>(result_space[key])) << ","
-                      << get<1>(get<0>(result_space[key])) << ","
-                      << get<0>(get<1>(result_space[key])) << ","
-                      << get<1>(get<1>(result_space[key])) << endl;
+                      << "," << get<0>(get<0>(result_time[key])) << ","
+                      << get<1>(get<0>(result_time[key])) << ","
+                      << get<0>(get<1>(result_time[key])) << ","
+                      << get<1>(get<1>(result_time[key])) << endl;
   }
   stream_propagator.close();
 }

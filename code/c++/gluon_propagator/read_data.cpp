@@ -311,25 +311,30 @@ void read_csv_color_components_space_time(
   while (std::getline(file_stream, line)) {
     parsed_line = parse_line(line);
     if (std::stoi(parsed_line[6]) == std::stoi(parsed_line[7])) {
-      if (std::stoi(parsed_line[4]) == std::stoi(parsed_line[5]) &&
-          std::stoi(parsed_line[4]) == 3) {
-        std::get<0>(data_time_tmp[{
-                        std::stod(parsed_line[0]), std::stod(parsed_line[1]),
-                        std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
-            .push_back(std::stod(parsed_line[8]));
-        std::get<1>(data_time_tmp[{
-                        std::stod(parsed_line[0]), std::stod(parsed_line[1]),
-                        std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
-            .push_back(std::stod(parsed_line[9]));
-      } else {
-        std::get<0>(data_space_tmp[{
-                        std::stod(parsed_line[0]), std::stod(parsed_line[1]),
-                        std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
-            .push_back(std::stod(parsed_line[8]));
-        std::get<1>(data_space_tmp[{
-                        std::stod(parsed_line[0]), std::stod(parsed_line[1]),
-                        std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
-            .push_back(std::stod(parsed_line[9]));
+      if (std::stoi(parsed_line[4]) == std::stoi(parsed_line[5])) {
+        if (std::stoi(parsed_line[4]) == 3) {
+          std::get<0>(
+              data_time_tmp[{
+                  std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                  std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
+              .push_back(std::stod(parsed_line[8]));
+          std::get<1>(
+              data_time_tmp[{
+                  std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                  std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
+              .push_back(std::stod(parsed_line[9]));
+        } else {
+          std::get<0>(
+              data_space_tmp[{
+                  std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                  std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
+              .push_back(std::stod(parsed_line[8]));
+          std::get<1>(
+              data_space_tmp[{
+                  std::stod(parsed_line[0]), std::stod(parsed_line[1]),
+                  std::stod(parsed_line[2]), std::stod(parsed_line[3])}])
+              .push_back(std::stod(parsed_line[9]));
+        }
       }
     }
   }
