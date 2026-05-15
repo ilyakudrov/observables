@@ -32,7 +32,7 @@ void read_csv(std::string file_path,
   while (std::getline(file_stream, line)) {
     parsed_line = parse_line(line);
     data[{std::stoi(parsed_line[0]), std::stod(parsed_line[1])}].push_back(
-        double(std::stod(parsed_line[1])));
+        double(std::stod(parsed_line[2])));
   }
 }
 

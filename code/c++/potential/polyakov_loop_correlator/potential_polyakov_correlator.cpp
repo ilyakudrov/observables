@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     stream_potential << "HYP_step,R,potential,potential_err" << endl;
     for (auto const &[key, value] : result) {
       stream_potential << get<0>(key) << "," << get<1>(key) << ","
-                       << get<0>(value) << "," << get<1>(value) << "," << endl;
+                       << get<0>(value) << "," << get<1>(value) << endl;
     }
     stream_potential.close();
   } else {
