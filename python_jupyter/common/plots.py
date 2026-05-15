@@ -80,7 +80,7 @@ def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, 
             f'{image_name}', fg)
     return fg
 
-def plot_potential_single(data, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err=None, df_fits=None, black_line_y=None, dashed_line_y=None):
+def plot_potential_single(data, x, y, hue, x_label, y_label, title, image_path, image_name, show_plot, err=None, df_fits=None, black_line_y=None, dashed_line_y=None, x_log_scale=None, y_log_scale=None):
     if hue is not None:
         hues = data[hue].unique()
         n_colors = hues.shape[0]
@@ -119,6 +119,11 @@ def plot_potential_single(data, x, y, hue, x_label, y_label, title, image_path, 
         for key in df_fits[hue].unique():
             plt.plot(df_fits[df_fits[hue] == key][x], df_fits[df_fits[hue] == key][y],
                      color=color_palette[potential_type_hue[key]], linewidth=1)
+
+    if x_log_scale:
+        fg.ax.set_xscale('log')
+    if y_log_scale:
+        fg.ax.set_yscale('log')
 
     if show_plot:
         plt.show()

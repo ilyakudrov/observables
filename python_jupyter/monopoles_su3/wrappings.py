@@ -36,9 +36,9 @@ def wrappings_separate(paths, length_threshold, groupby_keys):
     df['wrappings'] = df['x3_wrap'].apply(np.abs)
     df1 = df.groupby(groupby_keys + ['conf', 'color'])['wrappings'].value_counts().rename('wrapping_number').reset_index()
     df1 = df1[df1['wrappings'] != 0]
-    df1 = df1.set_index(groupby_keys + ['color', 'conf', 'wrappings']).unstack('wrappings', fill_value=0).stack().reset_index()
-    df1 = df1.groupby(groupby_keys + ['conf', 'wrappings'])['wrapping_number'].agg([('wrapping_number', np.mean)]).reset_index(level=groupby_keys + ['conf', 'wrappings'])
-    df1 = df1.groupby(groupby_keys + ['wrappings'])['wrapping_number'].agg([('wrapping_number', np.mean), ('std', lambda x: np.std(x, ddof=1)/math.sqrt(np.size(x)))]).reset_index(level=groupby_keys + ['wrappings'])
+    df1 = df1.set_index(groupby_keys + ['color', 'conf', 'wrappings']).unstack('wrappings', fill_value=0).stack(future_stack=True).reset_index()
+    df1 = df1.groupby(groupby_keys + ['conf', 'wrappings'])['wrapping_number'].agg([('wrapping_number', 'mean')]).reset_index(level=groupby_keys + ['conf', 'wrappings'])
+    df1 = df1.groupby(groupby_keys + ['wrappings'])['wrapping_number'].agg([('wrapping_number', 'mean'), ('std', lambda x: np.std(x, ddof=1)/math.sqrt(np.size(x)))]).reset_index(level=groupby_keys + ['wrappings'])
     return df1
 
 def wrappings_number_dependence(start, end, paths):
