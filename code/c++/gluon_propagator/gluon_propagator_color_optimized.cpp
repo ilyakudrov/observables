@@ -58,8 +58,6 @@ int main(int argc, char *argv[]) {
         vector<double> jackknife_data;
         std::tuple<double, double> aver_real, aver_imag;
         for (auto pair : data) {
-          cout << std::get<0>(colors) << " " << std::get<1>(colors)
-               << std::endl;
           jackknife_data = do_jackknife(get<0>(pair.second), bin_borders);
           aver_real = get_aver(jackknife_data);
           jackknife_data = do_jackknife(get<1>(pair.second), bin_borders);
