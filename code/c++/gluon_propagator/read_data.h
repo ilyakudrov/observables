@@ -33,10 +33,8 @@ read_data_diagonal(std::string dir_path, std::string file_start,
                    std::string file_end, int padding, int num_max);
 void read_data_color_components_space_time(
     std::map<std::tuple<double, double, double, double>,
-             std::tuple<std::vector<double>, std::vector<double>>>
-        data_space,
+             std::tuple<std::vector<double>, std::vector<double>>> &data_space,
     std::map<std::tuple<double, double, double, double>,
-             std::tuple<std::vector<double>, std::vector<double>>>
-        data_time,
+             std::tuple<std::vector<double>, std::vector<double>>> &data_time,
     std::string dir_path, std::string file_start, std::string file_end,
     int padding, int num_max);

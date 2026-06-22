@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <map>
 #include <numeric>
 #include <set>
@@ -339,6 +340,7 @@ void read_csv_color_components_space_time(
     }
   }
   for (auto pair : data_space_tmp) {
+    // std::cout << "ok" << std::endl;
     std::get<0>(data_space[pair.first])
         .push_back(std::accumulate(std::get<0>(pair.second).begin(),
                                    std::get<0>(pair.second).end(), 0.0) /
@@ -348,15 +350,23 @@ void read_csv_color_components_space_time(
                                    std::get<1>(pair.second).end(), 0.0) /
                    std::get<1>(pair.second).size());
   }
+  for (auto pair : data_time_tmp) {
+    std::get<0>(data_time[pair.first])
+        .push_back(std::accumulate(std::get<0>(pair.second).begin(),
+                                   std::get<0>(pair.second).end(), 0.0) /
+                   std::get<0>(pair.second).size());
+    std::get<1>(data_time[pair.first])
+        .push_back(std::accumulate(std::get<1>(pair.second).begin(),
+                                   std::get<1>(pair.second).end(), 0.0) /
+                   std::get<1>(pair.second).size());
+  }
 }
 
 void read_data_color_components_space_time(
     std::map<std::tuple<double, double, double, double>,
-             std::tuple<std::vector<double>, std::vector<double>>>
-        data_space,
+             std::tuple<std::vector<double>, std::vector<double>>> &data_space,
     std::map<std::tuple<double, double, double, double>,
-             std::tuple<std::vector<double>, std::vector<double>>>
-        data_time,
+             std::tuple<std::vector<double>, std::vector<double>>> &data_time,
     std::string dir_path, std::string file_start, std::string file_end,
     int padding, int num_max) {
   std::string file_path;
