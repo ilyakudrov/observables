@@ -257,7 +257,8 @@ int main(int argc, char *argv[]) {
              "Elab Elab_err Bz Bz_err Bxy Bxy_err Ez Ez_err Exy Exy_err "
              "ElabzT "
              "ElabzT_err ElabxyT ElabxyT_err Ae Ae_err Am Am_err AlabeT "
-             "AlabeT_err bin_size thermalization_length rad_aver R2_aver "
+             "AlabeT_err bin_size thermalization_length observations_used "
+             "rad_aver R2_aver "
              "R4_aver R6_aver R8_aver R10_aver R_inner R_outer thickness cut"
           << std::endl;
 
@@ -267,6 +268,7 @@ int main(int argc, char *argv[]) {
                         << std::get<1>(res.second[i]) << " ";
         }
         stream_result << get<0>(res.first) << " " << get<1>(res.first) << " "
+                      << df_len / Ns / Ns * block_size << " "
                       << get<2>(res.first) << " " << get<3>(res.first) << " "
                       << get<4>(res.first) << " " << get<5>(res.first) << " "
                       << get<6>(res.first) << " " << get<7>(res.first) << " "

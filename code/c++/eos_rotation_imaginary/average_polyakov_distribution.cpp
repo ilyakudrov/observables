@@ -119,9 +119,10 @@ int main(int argc, char *argv[]) {
     std::ofstream stream_result;
     stream_result.open(result_path + "/polyakov_distribution.csv");
     stream_result.precision(17);
-    stream_result << "x y ReL ReL_err ImL ImL_err <|L|> <|L|>_err |<L>| "
-                     "|<L>|_err bin_size thermalization_length"
-                  << std::endl;
+    stream_result
+        << "x y ReL ReL_err ImL ImL_err <|L|> <|L|>_err |<L>| "
+           "|<L>|_err bin_size thermalization_length observations_used"
+        << std::endl;
 
     for (auto &res : result) {
       stream_result << get<0>(res.first) << " " << get<1>(res.first) << " ";
@@ -129,8 +130,8 @@ int main(int argc, char *argv[]) {
         stream_result << std::get<0>(res.second[i]) << " "
                       << std::get<1>(res.second[i]) << " ";
       }
-      stream_result << get<2>(res.first) << " " << get<3>(res.first)
-                    << std::endl;
+      stream_result << get<2>(res.first) << " " << get<3>(res.first) << " "
+                    << data[0][0][0].size() * block_size << std::endl;
     }
     stream_result.close();
   }

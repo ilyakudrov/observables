@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
            "E_err "
            "Elab Elab_err Bz Bz_err Bxy Bxy_err Ez Ez_err Exy Exy_err ElabzT "
            "ElabzT_err ElabxyT ElabxyT_err Ae Ae_err Am Am_err AlabeT "
-           "AlabeT_err bin_size thermalization_length"
+           "AlabeT_err bin_size thermalization_length observations_used"
         << std::endl;
 
     for (auto &res : result) {
@@ -133,8 +133,8 @@ int main(int argc, char *argv[]) {
         stream_result << std::get<0>(res.second[i]) << " "
                       << std::get<1>(res.second[i]) << " ";
       }
-      stream_result << get<2>(res.first) << " " << get<3>(res.first)
-                    << std::endl;
+      stream_result << get<2>(res.first) << " " << get<3>(res.first) << " "
+                    << data[0][0][0].size() * block_size << std::endl;
     }
     stream_result.close();
   }

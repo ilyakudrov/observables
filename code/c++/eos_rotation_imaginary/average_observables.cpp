@@ -188,7 +188,8 @@ int main(int argc, char *argv[]) {
           << "S S_err Jv Jv_err Jv1 Jv1_err Jv2 Jv2_err Blab Blab_err E E_err "
              "Elab Elab_err Bz Bz_err Bxy Bxy_err Ez Ez_err Exy Exy_err ElabzT "
              "ElabzT_err ElabxyT ElabxyT_err Ae Ae_err Am Am_err AlabeT "
-             "AlabeT_err bin_size thermalization_length box_size radius"
+             "AlabeT_err bin_size thermalization_length observations_used "
+             "box_size radius"
           << std::endl;
 
       for (auto &res : result) {
@@ -197,6 +198,7 @@ int main(int argc, char *argv[]) {
                         << std::get<1>(res.second[i]) << " ";
         }
         stream_result << get<0>(res.first) << " " << get<1>(res.first) << " "
+                      << df_len / Ns / Ns * block_size << " "
                       << get<2>(res.first) << " " << get<3>(res.first)
                       << std::endl;
       }
