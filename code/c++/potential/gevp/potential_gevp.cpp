@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
   string file_start;
   string file_end;
   string output_path;
+  string chain_line;
   int padding;
   int num_max;
   int t0;
@@ -31,6 +32,8 @@ int main(int argc, char *argv[]) {
       file_end = argv[++i];
     } else if (string(argv[i]) == "-output_path") {
       output_path = argv[++i];
+    } else if (string(argv[i]) == "-chain_line") {
+      chain_line = argv[++i];
     } else if (string(argv[i]) == "-padding") {
       padding = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-num_max") {
@@ -52,14 +55,16 @@ int main(int argc, char *argv[]) {
   cout << "t0 " << t0 << endl;
   cout << "copies " << copies << endl;
   cout << "copy " << copy << endl;
+  cout << "chain_line " << chain_line << endl;
 
   std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
 
   if (copies) {
     data = read_data_copies(dir_path, file_start, file_end, padding, num_max,
-                            copy);
+                            chain_line, copy);
   } else {
-    data = read_data(dir_path, file_start, file_end, padding, num_max);
+    data =
+        read_data(dir_path, file_start, file_end, padding, num_max, chain_line);
   }
   std::map<std::tuple<int, int>, std::tuple<double, double>> potential =
       calculate_potential(data, 1, t0);

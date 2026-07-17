@@ -66,11 +66,10 @@ void read_csv_functional(
 
 std::map<std::tuple<int, int>, std::vector<std::vector<double>>>
 read_data(std::string dir_path, std::string file_start, std::string file_end,
-          int padding, int num_max) {
+          int padding, int num_max, std::string &chain_line) {
   std::map<std::tuple<int, int, int, int>, std::vector<double>> data;
   std::string file_path;
-  std::vector<std::string> chains = {"",    "s0/", "s1/", "s2/", "s3/", "s4/",
-                                     "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
+  std::vector<std::string> chains = parse_line(chain_line);
   // std::vector<std::string> chains = {"s1/"};
   for (auto chain : chains) {
     for (int i = 1; i <= num_max; i++) {
@@ -93,11 +92,11 @@ read_data(std::string dir_path, std::string file_start, std::string file_end,
 
 std::map<std::tuple<int, int>, std::vector<std::vector<double>>>
 read_data_copies(std::string dir_path, std::string file_start,
-                 std::string file_end, int padding, int num_max, int copy) {
+                 std::string file_end, int padding, int num_max,
+                 std::string &chain_line, int copy) {
   std::map<std::tuple<int, int, int, int>, std::vector<double>> data;
   std::string file_path;
-  std::vector<std::string> chains = {"",    "s0/", "s1/", "s2/", "s3/", "s4/",
-                                     "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
+  std::vector<std::string> chains = parse_line(chain_line);
   for (auto chain : chains) {
     for (int i = 0; i <= num_max; i++) {
       for (int j = copy; j >= 0; j--) {
@@ -123,11 +122,11 @@ read_data_copies(std::string dir_path, std::string file_start,
 }
 
 std::map<std::tuple<std::string, int, int>, double>
-read_functional(std::string dir_path, int padding, int num_max) {
+read_functional(std::string dir_path, int padding, int num_max,
+                std::string &chain_line) {
   std::map<std::tuple<std::string, int, int>, double> functional;
   std::string file_path;
-  std::vector<std::string> chains = {"/",   "s0/", "s1/", "s2/", "s3/", "s4/",
-                                     "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
+  std::vector<std::string> chains = parse_line(chain_line);
   for (auto chain : chains) {
     for (int i = 1; i <= num_max; i++) {
       std::stringstream ss;
@@ -149,8 +148,6 @@ read_data_bins(std::string dir_path, std::string file_start,
                double bin_left, double bin_right, double &functional_average) {
   std::map<std::tuple<int, int, int, int>, std::vector<double>> data;
   std::string file_path;
-  std::vector<std::string> chains = {"/",   "s0/", "s1/", "s2/", "s3/", "s4/",
-                                     "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
   functional_average = 0;
   int count = 0;
   for (const auto &pair : functional) {
@@ -203,11 +200,10 @@ void read_csv_functional_best_of_n(
 
 std::map<std::tuple<std::string, int, int>, double>
 read_functional_best_of_n(std::string dir_path, int padding, int num_max,
-                          int n) {
+                          std::string &chain_line, int n) {
   std::map<std::tuple<std::string, int, int>, double> functional;
   std::string file_path;
-  std::vector<std::string> chains = {"/",   "s0/", "s1/", "s2/", "s3/", "s4/",
-                                     "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
+  std::vector<std::string> chains = parse_line(chain_line);
   for (auto chain : chains) {
     for (int i = 1; i <= num_max; i++) {
       std::stringstream ss;
@@ -229,8 +225,6 @@ read_data_best_of_n(
     std::map<std::tuple<std::string, int, int>, double> &functional) {
   std::map<std::tuple<int, int, int, int>, std::vector<double>> data;
   std::string file_path;
-  std::vector<std::string> chains = {"/",   "s0/", "s1/", "s2/", "s3/", "s4/",
-                                     "s5/", "s6/", "s7/", "s8/", "s9/", "s10/"};
   for (const auto &pair : functional) {
     std::stringstream ss;
     ss << dir_path << "/" << std::get<0>(pair.first) << file_start

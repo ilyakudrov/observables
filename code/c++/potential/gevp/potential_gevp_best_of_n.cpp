@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
   string file_start;
   string file_end;
   string output_path;
+  string chain_line;
   string functional_path;
   int padding;
   int padding_functional;
@@ -32,6 +33,8 @@ int main(int argc, char *argv[]) {
       file_end = argv[++i];
     } else if (string(argv[i]) == "-output_path") {
       output_path = argv[++i];
+    } else if (string(argv[i]) == "-chain_line") {
+      chain_line = argv[++i];
     } else if (string(argv[i]) == "-padding") {
       padding = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-functional_path") {
@@ -56,11 +59,12 @@ int main(int argc, char *argv[]) {
   cout << "num_max " << num_max << endl;
   cout << "t0 " << t0 << endl;
   cout << "copy " << copy << endl;
+  cout << "chain_line " << chain_line << endl;
 
   std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
   std::map<std::tuple<std::string, int, int>, double> functional =
       read_functional_best_of_n(functional_path, padding_functional, num_max,
-                                copy + 1);
+                                chain_line, copy + 1);
   // for (auto pair : functional) {
   //   std::cout << std::get<0>(pair.first) << " " << std::get<1>(pair.first)
   //             << " " << std::get<2>(pair.first) << " " << pair.second

@@ -4,14 +4,16 @@
 
 std::map<std::tuple<int, int>, std::vector<std::vector<double>>>
 read_data(std::string dir_path, std::string file_start, std::string file_end,
-          int padding, int num_max);
+          int padding, int num_max, std::string &chain_line);
 
 std::map<std::tuple<int, int>, std::vector<std::vector<double>>>
 read_data_copies(std::string dir_path, std::string file_start,
-                 std::string file_end, int padding, int num_max, int copy);
+                 std::string file_end, int padding, int num_max,
+                 std::string &chain_line, int copy);
 
 std::map<std::tuple<std::string, int, int>, double>
-read_functional(std::string dir_path, int padding, int num_max);
+read_functional(std::string dir_path, int padding, int num_max,
+                std::string &chain_line);
 
 std::map<std::tuple<int, int>, std::vector<std::vector<double>>>
 read_data_bins(std::string dir_path, std::string file_start,
@@ -20,7 +22,7 @@ read_data_bins(std::string dir_path, std::string file_start,
                double bin_left, double bin_right, double &functional_average);
 std::map<std::tuple<std::string, int, int>, double>
 read_functional_best_of_n(std::string dir_path, int padding, int num_max,
-                          int n);
+                          std::string &chain_line, int n);
 std::map<std::tuple<int, int>, std::vector<std::vector<double>>>
 read_data_best_of_n(
     std::string dir_path, std::string file_start, std::string file_end,
