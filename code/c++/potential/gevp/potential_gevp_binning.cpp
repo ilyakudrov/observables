@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
   string file_end;
   string output_path;
   string functional_path;
+  string chain_line;
   int padding_conf;
   int padding_functional;
   int num_max;
@@ -34,6 +35,8 @@ int main(int argc, char *argv[]) {
       output_path = argv[++i];
     } else if (string(argv[i]) == "-functional_path") {
       functional_path = argv[++i];
+    } else if (string(argv[i]) == "-chain_line") {
+      chain_line = argv[++i];
     } else if (string(argv[i]) == "-padding_conf") {
       padding_conf = stoi(string(argv[++i]));
     } else if (string(argv[i]) == "-padding_functional") {
@@ -53,10 +56,11 @@ int main(int argc, char *argv[]) {
   cout << "padding_functional " << padding_functional << endl;
   cout << "num_max " << num_max << endl;
   cout << "t0 " << t0 << endl;
+  cout << "chain_line " << chain_line << endl;
 
   std::map<std::tuple<int, int>, std::vector<std::vector<double>>> data;
   std::map<std::tuple<std::string, int, int>, double> functional =
-      read_functional(functional_path, padding_functional, num_max);
+      read_functional(functional_path, padding_functional, num_max, chain_line);
   std::vector<double> functional_bins = get_bin_edges(functional);
   double functional_average;
   std::map<std::tuple<int, int, double>, std::tuple<double, double>> result;
