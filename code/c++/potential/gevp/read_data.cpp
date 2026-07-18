@@ -74,7 +74,7 @@ read_data(std::string dir_path, std::string file_start, std::string file_end,
   for (auto chain : chains) {
     for (int i = 1; i <= num_max; i++) {
       std::stringstream ss;
-      ss << dir_path << "/" << chain << file_start << std::setw(padding)
+      ss << dir_path << "/" << chain << "/" << file_start << std::setw(padding)
          << std::setfill('0') << std::to_string(i) << file_end;
       file_path = ss.str();
       // std::cout << file_path << std::endl;
@@ -101,9 +101,9 @@ read_data_copies(std::string dir_path, std::string file_start,
     for (int i = 0; i <= num_max; i++) {
       for (int j = copy; j >= 0; j--) {
         std::stringstream ss;
-        ss << dir_path << "/" << chain << file_start << std::setw(padding)
-           << std::setfill('0') << std::to_string(i) << "_" << std::to_string(j)
-           << file_end;
+        ss << dir_path << "/" << chain << "/" << file_start
+           << std::setw(padding) << std::setfill('0') << std::to_string(i)
+           << "_" << std::to_string(j) << file_end;
         file_path = ss.str();
         // std::cout << file_path << std::endl;
         if (std::filesystem::exists(file_path)) {
@@ -130,8 +130,8 @@ read_functional(std::string dir_path, int padding, int num_max,
   for (auto chain : chains) {
     for (int i = 1; i <= num_max; i++) {
       std::stringstream ss;
-      ss << dir_path << "/" << chain << "functional_" << std::setw(padding)
-         << std::setfill('0') << std::to_string(i);
+      ss << dir_path << "/" << chain << "/" << "functional_"
+         << std::setw(padding) << std::setfill('0') << std::to_string(i);
       file_path = ss.str();
       if (std::filesystem::exists(file_path)) {
         read_csv_functional(file_path, functional, chain, i);
@@ -153,7 +153,7 @@ read_data_bins(std::string dir_path, std::string file_start,
   for (const auto &pair : functional) {
     if (pair.second >= bin_left && pair.second < bin_right) {
       std::stringstream ss;
-      ss << dir_path << "/" << std::get<0>(pair.first) << file_start
+      ss << dir_path << "/" << std::get<0>(pair.first) << "/" << file_start
          << std::setw(padding) << std::setfill('0')
          << std::to_string(std::get<1>(pair.first)) << "_"
          << std::to_string(std::get<2>(pair.first)) << file_end;
@@ -207,8 +207,8 @@ read_functional_best_of_n(std::string dir_path, int padding, int num_max,
   for (auto chain : chains) {
     for (int i = 1; i <= num_max; i++) {
       std::stringstream ss;
-      ss << dir_path << "/" << chain << "functional_" << std::setw(padding)
-         << std::setfill('0') << std::to_string(i);
+      ss << dir_path << "/" << chain << "/" << "functional_"
+         << std::setw(padding) << std::setfill('0') << std::to_string(i);
       file_path = ss.str();
       if (std::filesystem::exists(file_path)) {
         read_csv_functional_best_of_n(file_path, functional, chain, i, n);
@@ -227,7 +227,7 @@ read_data_best_of_n(
   std::string file_path;
   for (const auto &pair : functional) {
     std::stringstream ss;
-    ss << dir_path << "/" << std::get<0>(pair.first) << file_start
+    ss << dir_path << "/" << std::get<0>(pair.first) << "/" << file_start
        << std::setw(padding) << std::setfill('0')
        << std::to_string(std::get<1>(pair.first)) << "_"
        << std::to_string(std::get<2>(pair.first)) << file_end;
