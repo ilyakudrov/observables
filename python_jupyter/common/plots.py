@@ -62,7 +62,7 @@ def make_plot(data, x, y, hue, x_label, y_label, title, image_path, image_name, 
                       top=True, left=True, right=True)
     # plt.grid(dash_capstyle='round')
     if black_line_y is not None:
-        plt.axhline(y=black_line_y, color='r', linestyle='-')
+        plt.axhline(y=black_line_y, color='black', linestyle='-')
 
     if dashed_line_y is not None:
         for coord in dashed_line_y:

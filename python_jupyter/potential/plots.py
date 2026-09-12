@@ -165,11 +165,11 @@ def plot_errorbar(data, args, kwargs, ax):
     ax.legend((err_container.lines), ('beta'))
 
 def my_plot_func(*args, **kwargs):
-        ax = kwargs['ax']
-        kwargs1 = dict(kwargs)
-        del kwargs1['data']
-        del kwargs1['ax']
-        kwargs['data'].groupby('beta').apply(plot_errorbar, args, kwargs1, ax)
+    ax = kwargs['ax']
+    kwargs1 = dict(kwargs)
+    del kwargs1['data']
+    del kwargs1['ax']
+    kwargs['data'].groupby('beta').apply(plot_errorbar, args, kwargs1, ax)
 
 def plot_potential_err_markers(data, x, y, err, hue, x_label, y_label, title, image_path, image_name, show_plot, df_fits=None, black_line_y=None):
     color_palette = None
