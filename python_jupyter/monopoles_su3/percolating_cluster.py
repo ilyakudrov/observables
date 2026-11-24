@@ -48,9 +48,13 @@ def cluster_gap_unwrapped(data_unwrapped, data_wrapped, thresholds, groupby_keys
         perc_cluster_aver.append(clusters_divide(data_unwrapped, data_wrapped, threshold, groupby_keys)['length'].mean())
     return perc_cluster_aver
 
-def percolating_clusters(paths_unwrapped, paths_wrapped, min_threshold, max_threshold, threshold_step, groupby_keys, image_path, imag_name):
-    data_unwrapped = monopole_data.read_data_unwrapped_copies(paths_unwrapped).reset_index(drop=True)
-    data_wrapped = monopole_data.read_data_wrapped_copies(paths_wrapped).reset_index(drop=True)
+def percolating_clusters(paths_unwrapped, paths_wrapped, min_threshold, max_threshold, threshold_step, groupby_keys, image_path, imag_name, copies=True):
+    if copies == True:
+        data_unwrapped = monopole_data.read_data_unwrapped_copies(paths_unwrapped).reset_index(drop=True)
+        data_wrapped = monopole_data.read_data_wrapped_copies(paths_wrapped).reset_index(drop=True)
+    else:
+        data_unwrapped = monopole_data.read_data_unwrapped(paths_unwrapped).reset_index(drop=True)
+        data_wrapped = monopole_data.read_data_wrapped(paths_wrapped).reset_index(drop=True)
     size_thresholds = list(range(min_threshold, max_threshold, threshold_step))
     perc_cluster_aver = cluster_gap_unwrapped(data_unwrapped, data_wrapped, size_thresholds, groupby_keys)
     plt.plot(size_thresholds, perc_cluster_aver);
